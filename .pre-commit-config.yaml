@@ -1,0 +1,6 @@
+repos:
+  - repo: https://github.com/tofuutils/pre-commit-opentofu
+    rev: v2.1.0 # Use the latest stable version
+    hooks:
+      - id: tofu_fmt
+      - id: terragrunt_fmt
