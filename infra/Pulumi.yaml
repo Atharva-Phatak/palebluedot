@@ -1,0 +1,3 @@
+name: minikube-pulumi
+runtime: python
+description: Pulumi project to deploy Minikube with PostgreSQL, MinIO, and Ingress.

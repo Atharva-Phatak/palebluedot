@@ -1,0 +1,13 @@
+[project]
+name = "infra"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "loguru>=0.7.3",
+    "pulumi>=3.155.0",
+    "pulumi-command>=1.0.2",
+    "pulumi-kubernetes>=4.21.1",
+    "pulumi-minio>=0.16.3",
+]
