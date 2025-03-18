@@ -7,9 +7,9 @@ minio_pvc_name = "minio-pvc"
 minio_storage = "10Gi"
 minio_storage_path = "/home/atharvaphatak/Desktop/minikube_path/minio"
 minio_deployment_name = "minio"
-minio_service_name = "minio-service"
-minio_access_key = "minio"
-minio_secret_key = "minio123"
+minio_service_name = "minio"
+minio_access_key = "minio@1234"
+minio_secret_key = "minio@local1234"
 minio_ingress_host = "fsml-minio.info"
 
 
@@ -67,10 +67,14 @@ def deploy_minio(
             namespace=namespace.metadata["name"],
         ),
         spec=k8s.apps.v1.DeploymentSpecArgs(
-            selector=k8s.meta.v1.LabelSelectorArgs(match_labels={"app": "minio"}),
+            selector=k8s.meta.v1.LabelSelectorArgs(
+                match_labels={"app.kubernetes.io/name": "minio"}
+            ),
             strategy=k8s.apps.v1.DeploymentStrategyArgs(type="Recreate"),
             template=k8s.core.v1.PodTemplateSpecArgs(
-                metadata=k8s.meta.v1.ObjectMetaArgs(labels={"app": "minio"}),
+                metadata=k8s.meta.v1.ObjectMetaArgs(
+                    labels={"app.kubernetes.io/name": "minio"}
+                ),
                 spec=k8s.core.v1.PodSpecArgs(
                     host_network=True,
                     restart_policy="Always",
@@ -98,7 +102,8 @@ def deploy_minio(
                             ports=[k8s.core.v1.ContainerPortArgs(container_port=9000)],
                             volume_mounts=[
                                 k8s.core.v1.VolumeMountArgs(
-                                    name="storage", mount_path="/data"
+                                    name="storage",
+                                    mount_path="/data",
                                 )
                             ],
                         )
@@ -117,13 +122,13 @@ def deploy_minio(
         metadata=k8s.meta.v1.ObjectMetaArgs(
             name=minio_service_name,
             namespace=namespace.metadata["name"],
-            labels={"app": "minio"},
+            labels={"app.kubernetes.io/name": "minio"},
         ),
         spec=k8s.core.v1.ServiceSpecArgs(
-            selector={"app": "minio"},
+            selector={"app.kubernetes.io/name": "minio"},
             ports=[
                 k8s.core.v1.ServicePortArgs(
-                    name="minio-port", protocol="TCP", port=9000, target_port=9000
+                    name="minio", protocol="TCP", port=9000, target_port=9000
                 )
             ],
             type="ClusterIP",
