@@ -1,0 +1,12 @@
+[project]
+name = "pbd"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "beautifulsoup4>=4.13.3",
+    "kubernetes>=32.0.1",
+    "minio>=7.2.15",
+    "zenml==0.75.1",
+]
