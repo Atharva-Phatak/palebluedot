@@ -21,4 +21,10 @@ def deploy_minio_buckets(
         bucket="data-bucket",
         opts=pulumi.ResourceOptions(depends_on=depends_on, provider=minio_provider),
     )
+    zenml_bucket = pm.S3Bucket(
+        "zenml-bucket",
+        bucket="zenml-bucket",
+        opts=pulumi.ResourceOptions(depends_on=depends_on, provider=minio_provider),
+    )
     pulumi.export("data_bucket", data_bucket.bucket)
+    pulumi.export("zenml_bucket", zenml_bucket.bucket)

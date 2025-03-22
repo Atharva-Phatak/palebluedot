@@ -12,8 +12,8 @@ k8s_provider = get_k8s_provider(depends_on=[minikube_start])
 zenml_namespace = create_namespace(
     provider=k8s_provider, namespace="zenml", depends_on=[minikube_start]
 )
-# Deploy PostgreSQL
-postgres_service = deploy_mysql(
+# Deploy MySQL
+mysql_service = deploy_mysql(
     provider=k8s_provider,
     namespace="zenml",
     depends_on=[minikube_start, zenml_namespace],
@@ -27,7 +27,7 @@ deploy_minio_buckets(
     minio_ingress=minio_ingress,
 )
 deploy_zenml(
-    depends_on=[minikube_start, zenml_namespace, postgres_service],
+    depends_on=[minikube_start, zenml_namespace, mysql_service],
     k8s_provider=k8s_provider,
     namespace="zenml",
 )
