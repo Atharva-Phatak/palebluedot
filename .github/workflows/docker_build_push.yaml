@@ -2,7 +2,6 @@ name: Build and Push Docker Images
 
 on:
   workflow_dispatch:
-
   push:
     branches:
       - main
@@ -15,17 +14,26 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for all branches and tags
 
       - name: Get Changed Folders
         id: filter
         run: |
-          CHANGED=$(git diff --name-only HEAD^ HEAD | grep '^pbd/pipelines/' | cut -d '/' -f 3 | sort -u | jq -R -s -c 'split("\n")[:-1]')
-          echo "folders=$CHANGED" >> $GITHUB_ENV
+          # Check if this is the first commit
+          if [ $(git rev-list --count HEAD) -eq 1 ]; then
+            # If first commit, find all folders
+            CHANGED=$(find pbd/pipelines -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n")[:-1]')
+          else
+            # Otherwise, use git diff to find changed folders
+            CHANGED=$(git diff --name-only HEAD^ HEAD | grep '^pbd/pipelines/' | cut -d '/' -f 3 | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          fi
           echo "folders=$CHANGED" >> $GITHUB_OUTPUT
+          echo "Detected changed folders: $CHANGED"
 
   build-and-push:
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.changed_folders != '[]' }}
+    if: ${{ needs.detect-changes.outputs.changed_folders != '[]' && needs.detect-changes.outputs.changed_folders != '' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
