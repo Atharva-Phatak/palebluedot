@@ -2,6 +2,11 @@ name: Build and Push Docker Images
 
 on:
   workflow_dispatch:
+    inputs:
+      folder:
+        description: 'Folder to build (optional - overrides change detection)'
+        required: false
+        type: string
   push:
     branches:
       - main
@@ -20,8 +25,10 @@ jobs:
       - name: Get Changed Folders
         id: filter
         run: |
-          # Check if this is the first commit
-          if [ $(git rev-list --count HEAD) -eq 1 ]; then
+          # Check if manual folder is provided
+          if [ -n "${{ inputs.folder }}" ]; then
+            CHANGED='["${{ inputs.folder }}"]'
+          elif [ $(git rev-list --count HEAD) -eq 1 ]; then
             # If first commit, find all folders
             CHANGED=$(find pbd/pipelines -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n")[:-1]')
           else
@@ -29,7 +36,7 @@ jobs:
             CHANGED=$(git diff --name-only HEAD^ HEAD | grep '^pbd/pipelines/' | cut -d '/' -f 3 | sort -u | jq -R -s -c 'split("\n")[:-1]')
           fi
           echo "folders=$CHANGED" >> $GITHUB_OUTPUT
-          echo "Detected changed folders: $CHANGED"
+          echo "Detected folders for build: $CHANGED"
 
   build-and-push:
     needs: detect-changes
