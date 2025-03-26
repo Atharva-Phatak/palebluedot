@@ -1,6 +1,8 @@
 # Stage 1: Build stage
 FROM python:3.9-slim AS build
 
+RUN pip install uv
+
 # Set the working directory in the container
 WORKDIR /app
 
@@ -10,7 +12,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy only requirements first to leverage docker cache
-COPY requirements.txt .
+COPY pyproject.toml uv.lock ./
 
 # Install dependencies in the build container
 RUN pip install --no-cache-dir -r requirements.txt
