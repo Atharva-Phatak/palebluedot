@@ -1,0 +1,42 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      changed_folders: ${{ steps.filter.outputs.folders }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Get Changed Folders
+        id: filter
+        run: |
+          CHANGED=$(git diff --name-only HEAD^ HEAD | grep '^pbd/pipelines/' | cut -d '/' -f 3 | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          echo "folders=$CHANGED" >> $GITHUB_ENV
+          echo "folders=$CHANGED" >> $GITHUB_OUTPUT
+
+  build-and-push:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.changed_folders != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        folder: ${{ fromJson(needs.detect-changes.outputs.changed_folders) }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and Push Docker Image
+        run: |
+          IMAGE_NAME=ghcr.io/${{ github.repository_owner }}/pbd-${{ matrix.folder }}:latest
+          docker build -t $IMAGE_NAME pbd/pipelines/${{ matrix.folder }}
+          docker push $IMAGE_NAME
