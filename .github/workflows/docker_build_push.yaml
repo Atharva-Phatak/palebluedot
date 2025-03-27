@@ -1,15 +1,14 @@
 name: Build and Push Docker Images
-
 on:
   workflow_dispatch:
-    inputs:
-      folder:
-        description: 'Folder to build (optional - overrides change detection)'
-        required: false
-        type: string
   push:
     branches:
       - main
+
+# Explicitly set permissions for packages
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   detect-changes:
@@ -19,25 +18,17 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
+      
       - name: Get Changed Folders
         id: filter
         run: |
-          if [ -n "${{ inputs.folder }}" ]; then
-            CHANGED='["${{ inputs.folder }}"]'
-          elif [ $(git rev-list --count HEAD) -eq 1 ]; then
-            CHANGED=$(find pbd/pipelines -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n")[:-1]')
-          else
-            CHANGED=$(git diff --name-only HEAD^ HEAD | grep '^pbd/pipelines/' | cut -d '/' -f 3 | sort -u | jq -R -s -c 'split("\n")[:-1]')
-          fi
+          CHANGED=$(git diff --name-only HEAD^ HEAD | grep '^pbd/pipelines/' | cut -d '/' -f 3 | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          echo "folders=$CHANGED" >> $GITHUB_ENV
           echo "folders=$CHANGED" >> $GITHUB_OUTPUT
-          echo "Detected folders for build: $CHANGED"
 
   build-and-push:
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.changed_folders != '[]' && needs.detect-changes.outputs.changed_folders != '' }}
+    if: ${{ needs.detect-changes.outputs.changed_folders != '[]' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -45,15 +36,20 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
-      - name: Log in to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
       - name: Build and Push Docker Image
-        run: |
-          # Convert repository name to lowercase
-          REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2 | tr '[:upper:]' '[:lower:]')
-          
-          IMAGE_NAME=ghcr.io/$REPO_NAME/pbd-${{ matrix.folder }}:latest
-          docker build -t $IMAGE_NAME pbd/pipelines/${{ matrix.folder }}
-          docker push $IMAGE_NAME
+        uses: docker/build-push-action@v5
+        with:
+          context: pbd/pipelines/${{ matrix.folder }}
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/pbd-${{ matrix.folder }}:latest
