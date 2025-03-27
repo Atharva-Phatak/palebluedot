@@ -63,6 +63,18 @@ jobs:
         with:
           context: pbd/pipelines/${{ matrix.folder }}
           push: true
-          tags: ghcr.io/${{ lower(github.repository_owner) }}/pbd-${{ matrix.folder }}:latest
+          tags: ghcr.io/${{ github.repository_owner }}/pbd-${{ matrix.folder }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Lowercase Repository Owner
+        id: lowercase_repo_owner
+        run: |
+          LOWERCASE_REPO_OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "repo_owner=$LOWERCASE_REPO_OWNER" >> $GITHUB_OUTPUT
+
+      - name: Retag and Push with Lowercase Owner
+        run: |
+          LOWERCASE_IMAGE_NAME=ghcr.io/${{ steps.lowercase_repo_owner.outputs.repo_owner }}/pbd-${{ matrix.folder }}:latest
+          docker tag ghcr.io/${{ github.repository_owner }}/pbd-${{ matrix.folder }}:latest $LOWERCASE_IMAGE_NAME
+          docker push $LOWERCASE_IMAGE_NAME
