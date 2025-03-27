@@ -13,6 +13,8 @@ on:
 permissions:
   contents: read
   packages: write
+  attestations: write
+  id-token: write
 
 jobs:
   detect-changes:
@@ -38,7 +40,6 @@ jobs:
           echo "Detected folders for build: $CHANGED"
   
   build-and-push:
-    permissions: write-all
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.changed_folders != '[]' && needs.detect-changes.outputs.changed_folders != '' }}
     runs-on: ubuntu-latest
@@ -63,10 +64,10 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_PAT }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: pbd/pipelines/${{ matrix.folder }}
           push: true
