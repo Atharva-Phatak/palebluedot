@@ -38,7 +38,7 @@ jobs:
           fi
           echo "folders=$CHANGED" >> $GITHUB_OUTPUT
           echo "Detected folders for build: $CHANGED"
-  
+
   build-and-push:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.changed_folders != '[]' && needs.detect-changes.outputs.changed_folders != '' }}
@@ -49,28 +49,31 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      
+
       - name: Prepare Lowercase Repository Name
         id: repo-details
         run: |
           LOWERCASE_REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
           echo "repo_name=$LOWERCASE_REPO_NAME" >> $GITHUB_OUTPUT
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
+      - name: Prepare Lowercase Repository Owner
+        id: repo-owner
+        run: |
+          echo "repo_owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
           context: pbd/pipelines/${{ matrix.folder }}
           push: true
-          tags: ghcr.io/${{ steps.repo-details.outputs.repo_name }}/pbd-${{ matrix.folder }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          tags: ghcr.io/${{ steps.repo-owner.outputs.repo_owner }}/pbd-${{ matrix.folder }}:latest
