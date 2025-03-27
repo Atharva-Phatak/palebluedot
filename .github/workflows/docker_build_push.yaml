@@ -63,6 +63,6 @@ jobs:
         with:
           context: pbd/pipelines/${{ matrix.folder }}
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/pbd-${{ matrix.folder }}:latest
+          tags: ghcr.io/${{ lower(github.repository_owner) }}/pbd-${{ matrix.folder }}:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
