@@ -1,11 +1,15 @@
 name: Build and Push Docker Images
 on:
   workflow_dispatch:
+    inputs:
+      folder:
+        description: 'Folder to build (optional - overrides change detection)'
+        required: false
+        type: string
   push:
     branches:
       - main
 
-# Explicitly set permissions for packages
 permissions:
   contents: read
   packages: write
@@ -18,17 +22,24 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      
+        with:
+          fetch-depth: 0
       - name: Get Changed Folders
         id: filter
         run: |
-          CHANGED=$(git diff --name-only HEAD^ HEAD | grep '^pbd/pipelines/' | cut -d '/' -f 3 | sort -u | jq -R -s -c 'split("\n")[:-1]')
-          echo "folders=$CHANGED" >> $GITHUB_ENV
+          if [ -n "${{ inputs.folder }}" ]; then
+            CHANGED='["${{ inputs.folder }}"]'
+          elif [ $(git rev-list --count HEAD) -eq 1 ]; then
+            CHANGED=$(find pbd/pipelines -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n")[:-1]')
+          else
+            CHANGED=$(git diff --name-only HEAD^ HEAD | grep '^pbd/pipelines/' | cut -d '/' -f 3 | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          fi
           echo "folders=$CHANGED" >> $GITHUB_OUTPUT
-
+          echo "Detected folders for build: $CHANGED"
+  
   build-and-push:
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.changed_folders != '[]' }}
+    if: ${{ needs.detect-changes.outputs.changed_folders != '[]' && needs.detect-changes.outputs.changed_folders != '' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -53,3 +64,5 @@ jobs:
           context: pbd/pipelines/${{ matrix.folder }}
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/pbd-${{ matrix.folder }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
