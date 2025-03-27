@@ -38,6 +38,7 @@ jobs:
           echo "Detected folders for build: $CHANGED"
   
   build-and-push:
+    permissions: write-all
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.changed_folders != '[]' && needs.detect-changes.outputs.changed_folders != '' }}
     runs-on: ubuntu-latest
