@@ -1,5 +1,5 @@
 # Stage 1: Build stage
-FROM python:3.12-slim AS build
+FROM python:3.10.16 AS build
 # Set the working directory in the container
 WORKDIR /app
 # Install system dependencies if needed
@@ -11,7 +11,7 @@ COPY requirements.txt .
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 # Stage 2: Final image
-FROM python:3.12-slim AS final
+FROM python:3.10.16-slim AS final
 # Set the working directory in the container
 WORKDIR /app
 # Copy the dependencies from the build stage
