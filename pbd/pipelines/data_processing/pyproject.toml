@@ -3,25 +3,12 @@ name = "data-processing"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.10.16,<3.11"
 dependencies = [
     "boto3>=1.37.18",
     "botocore>=1.37.18",
     "minio>=7.2.15",
     "pdf2image>=1.17.0",
     "s3fs>=0.4.2",
-    "torch>=2.6.0",
-    "transformers>=4.50.2",
     "zenml==0.80.0",
-]
-[[tool.uv.index]]
-name = "pytorch-cu118"
-url = "https://download.pytorch.org/whl/cu118"
-explicit = true
-[tool.uv.sources]
-torch = [
-  { index = "pytorch-cu118", marker = "sys_platform == 'linux'" },
-]
-torchvision = [
-  { index = "pytorch-cu118", marker = "sys_platform == 'linux'" },
 ]
