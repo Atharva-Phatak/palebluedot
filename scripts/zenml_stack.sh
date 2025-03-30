@@ -17,8 +17,8 @@ zenml orchestrator register minikube_orchestrator --flavor=kubernetes --kubernet
 echo "Adding github repo"
 zenml code-repository register pbd --type=github --owner=Atharva-Phatak --repository=palebluedot --token={{GITHUB_TOKEN}}
 
+# Get the current active stack
 
 zenml stack register mk_stack -o minikube_orchestrator -a minio_store  --set
-
 
 echo "Setup completed successfully!"
