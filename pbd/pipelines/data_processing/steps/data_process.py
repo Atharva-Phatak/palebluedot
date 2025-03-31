@@ -7,7 +7,6 @@ import logging
 import os
 from minio import Minio
 @step(
-    step_operator="minikube_orchestrator",
     settings = {
         "step_operator" : pod_settings,
         "docker": docker_settings
