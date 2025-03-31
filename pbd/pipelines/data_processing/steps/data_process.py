@@ -7,11 +7,11 @@ import logging
 import os
 from minio import Minio
 @step(
+    step_operator="minikube_orchestrator",
     settings = {
         "step_operator" : pod_settings,
         "docker": docker_settings
     },
-    step_operator="minikube_orchestrator",
 )
 def download_youtube_audio(url:str):
     yt = YouTube(url, on_progress_callback=on_progress)
