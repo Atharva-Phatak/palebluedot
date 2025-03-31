@@ -8,8 +8,7 @@ import os
 from minio import Minio
 @step(
     settings = {
-        "step_operator" : pod_settings,
-        "docker": docker_settings
+        "orchestrator" : pod_settings,
     },
 )
 def download_youtube_audio(url:str):
