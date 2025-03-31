@@ -6,11 +6,7 @@ from zenml import step
 import logging
 import os
 from minio import Minio
-@step(
-    settings = {
-        "orchestrator" : pod_settings,
-    },
-)
+@step()
 def download_youtube_audio(url:str):
     yt = YouTube(url, on_progress_callback=on_progress)
     logging.info(f"Downloading {yt.title}")
