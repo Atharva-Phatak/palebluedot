@@ -5,6 +5,9 @@ from components.provider import get_k8s_provider
 from components.namespace import create_namespace
 from components.buckets import deploy_minio_buckets
 from components.zenml import deploy_zenml
+from components.backup import backup_minio_data
+import pulumi
+
 
 # Ensure Minikube starts before deploying resources
 minikube_start = start_minikube()

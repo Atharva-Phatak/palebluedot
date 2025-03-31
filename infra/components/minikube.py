@@ -6,7 +6,7 @@ def start_minikube():
     # Start Minikube with required settings
     minikube_start = command.local.Command(
         "start-minikube",
-        create="minikube start --cpus 8 --memory 15g --addons=ingress,metrics-servers,yakd --disk-size=60GB",
+        create="minikube start --cpus 8 --memory 15g --gpus all --addons=ingress,metrics-servers,yakd --disk-size=100GB",
         delete="minikube delete",
         opts=pulumi.ResourceOptions(delete_before_replace=True),
     )
