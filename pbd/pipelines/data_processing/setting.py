@@ -1,4 +1,4 @@
-from zenml.integrations.kubernetes.flavors import KubernetesStepOperatorSettings
+from zenml.integrations.kubernetes.flavors import KubernetesOrchestratorSettings
 from zenml.config import DockerSettings
 from zenml.integrations.kubernetes.pod_settings import KubernetesPodSettings
 
@@ -27,8 +27,9 @@ pod_settings = KubernetesPodSettings(resources ={
             }
         ])
 
-k8s_operator_settings = KubernetesStepOperatorSettings(
+k8s_operator_settings = KubernetesOrchestratorSettings(
     pod_settings=pod_settings,
+    orchestrator_pod_settings=pod_settings,
 )
 docker_settings = DockerSettings(
     parent_image="ghcr.io/atharva-phatak/pbd-data_processing:latest",
