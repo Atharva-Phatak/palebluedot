@@ -8,7 +8,6 @@ def deploy_mysql(
     namespace: str,
     depends_on: list = None,
 ) -> k8s.core.v1.Service:
-
     # Persistent Volume
     pv = k8s.core.v1.PersistentVolume(
         "zenml-db-storage",

@@ -3,13 +3,18 @@ import pulumi_kubernetes as k8s
 import configparser
 import os
 
-def create_aws_secret(provider: k8s.Provider,
-                      depends_on: list = None,
-                      namespace:str = "pipeline_namespace"):
+
+def create_aws_secret(
+    provider: k8s.Provider,
+    depends_on: list = None,
+    namespace: str = "pipeline_namespace",
+):
     aws_credentials_path = os.path.expanduser("~/.aws/credentials")
 
     if not os.path.exists(aws_credentials_path):
-        raise FileNotFoundError(f"AWS credentials file not found at {aws_credentials_path}")
+        raise FileNotFoundError(
+            f"AWS credentials file not found at {aws_credentials_path}"
+        )
     # Read credentials from the file
     config = configparser.ConfigParser()
     config.read(aws_credentials_path)
@@ -26,11 +31,13 @@ def create_aws_secret(provider: k8s.Provider,
     aws_credentials_secret = k8s.core.v1.Secret(
         "aws-credentials",
         metadata=k8s.meta.v1.ObjectMetaArgs(
-            name="aws-credentials"
+            name="aws-credentials", namespace=namespace
         ),
         string_data={
             "AWS_ACCESS_KEY_ID": aws_access_key,
             "AWS_SECRET_ACCESS_KEY": aws_secret_key,
-            "AWS_REGION": aws_region
-        }
+            "AWS_REGION": aws_region,
+        },
+        opts=pulumi.ResourceOptions(parent=provider, depends_on=depends_on),
     )
+    return aws_credentials_secret

@@ -2,7 +2,7 @@ import pulumi_kubernetes as k8s
 import pulumi
 import os
 import subprocess
-from pulumi_kubernetes.helm.v3 import Release, LocalChartOpts, ReleaseArgs
+from pulumi_kubernetes.helm.v3 import LocalChartOpts
 
 
 def download_zenml_helm_chart():
@@ -24,9 +24,9 @@ def download_zenml_helm_chart():
 
 
 def deploy_zenml(
-        depends_on: list = None,
-        k8s_provider: k8s.Provider = None,
-        namespace: str = "zenml",
+    depends_on: list = None,
+    k8s_provider: k8s.Provider = None,
+    namespace: str = "zenml",
 ) -> k8s.core.v1.Service:
     chart_path = download_zenml_helm_chart()
     helm_chart = k8s.helm.v3.Chart(
@@ -36,26 +36,28 @@ def deploy_zenml(
             values={
                 "zenml": {
                     "analyticsOptIn": False,
-                    "auth": {"authType": "OAUTH2_PASSWORD_BEARER",
-                             "jwtSecretKey": "465c94a0deed69433b0bdc83b371f0e9975bf31a9dbd4a9a4d8ed0e171ac1569",  # Set a strong secret key here
-                             "jwtTokenAlgorithm": "HS256",
-                             "jwtTokenIssuer": "",
-                             "jwtTokenAudience": "",
-                             "jwtTokenLeewaySeconds": 10,
-                             "jwtTokenExpireMinutes": 120,  # Increased from default to prevent frequent logouts
-                             "authCookieName": "",
-                             "authCookieDomain": "",
-                             "corsAllowOrigins": ["*"],
-                             "maxFailedDeviceAuthAttempts": 5,  # Increased to reduce accidental lockouts
-                             "deviceAuthTimeout": 600,  # Increased timeout to allow more time for auth
-                             "deviceAuthPollingInterval": 10,  # Adjusted for better polling rate
-                             "deviceExpirationMinutes": 1440,  # 1 day (adjust as needed)
-                             "trustedDeviceExpirationMinutes": 20160,  # 14 days for trusted devices
-                             "externalLoginURL": "",
-                             "externalUserInfoURL": "",
-                             "externalServerID": "",
-                             "rbacImplementationSource": "",
-                             "featureGateImplementationSource": "", },
+                    "auth": {
+                        "authType": "OAUTH2_PASSWORD_BEARER",
+                        "jwtSecretKey": "465c94a0deed69433b0bdc83b371f0e9975bf31a9dbd4a9a4d8ed0e171ac1569",  # Set a strong secret key here
+                        "jwtTokenAlgorithm": "HS256",
+                        "jwtTokenIssuer": "",
+                        "jwtTokenAudience": "",
+                        "jwtTokenLeewaySeconds": 10,
+                        "jwtTokenExpireMinutes": 120,  # Increased from default to prevent frequent logouts
+                        "authCookieName": "",
+                        "authCookieDomain": "",
+                        "corsAllowOrigins": ["*"],
+                        "maxFailedDeviceAuthAttempts": 5,  # Increased to reduce accidental lockouts
+                        "deviceAuthTimeout": 600,  # Increased timeout to allow more time for auth
+                        "deviceAuthPollingInterval": 10,  # Adjusted for better polling rate
+                        "deviceExpirationMinutes": 1440,  # 1 day (adjust as needed)
+                        "trustedDeviceExpirationMinutes": 20160,  # 14 days for trusted devices
+                        "externalLoginURL": "",
+                        "externalUserInfoURL": "",
+                        "externalServerID": "",
+                        "rbacImplementationSource": "",
+                        "featureGateImplementationSource": "",
+                    },
                     "database": {
                         # MySQL connection URL without password
                         "url": f"mysql://zenml:zenml@mysql.{namespace}.svc.cluster.local:3306/zenml",
@@ -77,7 +79,6 @@ def deploy_zenml(
                             "nginx.ingress.kubernetes.io/proxy-send-timeout": "300",
                             "nginx.ingress.kubernetes.io/proxy-read-timeout": "300",
                         },
-
                     },
                 }
             },

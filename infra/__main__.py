@@ -5,8 +5,7 @@ from components.provider import get_k8s_provider
 from components.namespace import create_namespace
 from components.buckets import deploy_minio_buckets
 from components.zenml import deploy_zenml
-from components.backup import backup_minio_data
-import pulumi
+from components.secrets import create_aws_secret
 
 
 # Ensure Minikube starts before deploying resources
@@ -15,7 +14,11 @@ k8s_provider = get_k8s_provider(depends_on=[minikube_start])
 zenml_namespace = create_namespace(
     provider=k8s_provider, namespace="zenml", depends_on=[minikube_start]
 )
+pipeline_namespace = create_namespace(
+    provider=k8s_provider, namespace="pipeline", depends_on=[minikube_start]
+)
 # Deploy MySQL
+# Todo: Use the zenml namespace created above
 mysql_service = deploy_mysql(
     provider=k8s_provider,
     namespace="zenml",
@@ -33,4 +36,9 @@ deploy_zenml(
     depends_on=[minikube_start, zenml_namespace, mysql_service],
     k8s_provider=k8s_provider,
     namespace="zenml",
+)
+create_aws_secret(
+    provider=k8s_provider,
+    namespace="pipeline",
+    depends_on=[minikube_start, pipeline_namespace],
 )
