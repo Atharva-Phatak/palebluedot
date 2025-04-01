@@ -12,19 +12,26 @@ pod_settings = KubernetesPodSettings(resources ={
                 "memory": "2Gi"
             }
         },
-        env = [
+        env_from=[
             {
-                "name": "AWS_ACCESS_KEY_ID",
-                "value" : "minio@1234"
-            },
-            {
-                "name" : "AWS_SECRET_ACCESS_KEY",
-                "value" : "minio@local1234"
-            },
-            {
-                "name" : "AWS_REGION",
-                "value" : "us-east-1"
+                "secretRef": {
+                    "name": "aws-credentials"
+                }
             }
+        #env = [
+        #    {
+        #        "name": "AWS_ACCESS_KEY_ID",
+        #        "value" : "minio@1234"
+        #    },
+        #    {
+        #        "name" : "AWS_SECRET_ACCESS_KEY",
+        #        "value" : "minio@local1234"
+        #    },
+        #    {
+        #        "name" : "AWS_REGION",
+        #        "value" : "us-east-1"
+        #    }
+
         ])
 
 k8s_operator_settings = KubernetesOrchestratorSettings(
