@@ -71,6 +71,9 @@ jobs:
         run: |
           echo "repo_owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
+      - name: Copy Helper Directory to Pipeline Folder
+        run: cp -r pbd/helper pbd/pipelines/${{ matrix.folder }}/helper
+
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
