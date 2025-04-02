@@ -16,6 +16,8 @@ FROM python:3.12-slim AS final
 WORKDIR /app
 # Copy the dependencies from the build stage
 COPY --from=build /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+#COPY helper
+COPY ../../helper /app/helper
 # Copy the entire data_processing folder
 COPY . .
 # Optional: Set environment variables if needed

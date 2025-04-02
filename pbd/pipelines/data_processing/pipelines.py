@@ -10,8 +10,10 @@ from pbd.pipelines.data_processing.setting import docker_settings, k8s_operator_
         "orchestrator": k8s_operator_settings,
     },
 )
-def collect_audio_data(url: str):
-    download_youtube_audio(url=url)
+def collect_audio_data(
+    url: str, bucket_name: str = "data-bucket", endpoint: str = "fsml-minio.info"
+):
+    download_youtube_audio(url=url, bucket_name=bucket_name, endpoint=endpoint)
 
 
 if __name__ == "__main__":
