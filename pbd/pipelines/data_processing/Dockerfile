@@ -17,10 +17,12 @@ WORKDIR /app
 # Copy the dependencies from the build stage
 COPY --from=build /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 #COPY helper
-COPY helper /app/helper
+COPY helper /app/pbd/helper
 # Copy the entire data_processing folder
-COPY . .
+COPY pipelines/data_processing /app/pbd/pipelines/data_processing
 # Optional: Set environment variables if needed
 ENV PYTHONUNBUFFERED=1
+# Ensure Python can find 'pbd.helper'
+ENV PYTHONPATH="/app"
 # Command to run bash interactively
 CMD ["/bin/bash"]
