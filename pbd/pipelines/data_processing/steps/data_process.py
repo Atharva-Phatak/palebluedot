@@ -13,7 +13,7 @@ logger = setup_logger(__name__)
 @step()
 def download_youtube_audio(url: str, bucket_name: str, endpoint: str):
     # Get configuration from environment variables if not provided
-    access_key = os.environ.get("AWS_ACCESS_KEY")
+    access_key = os.environ.get("AWS_ACCESS_KEY_ID")
     secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
     if not access_key or not secret_key:
         raise ValueError("AWS credentials not found in environment variables.")
