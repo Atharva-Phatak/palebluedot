@@ -7,7 +7,7 @@ Pulumi.zenml.yaml
 pbd/data_collection
 # C extensions
 *.so
-
+pbd/notebooks
 # Distribution / packaging
 .Python
 build/
