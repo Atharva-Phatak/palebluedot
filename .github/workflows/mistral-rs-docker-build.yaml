@@ -1,0 +1,63 @@
+name: Build and Push Mistral.rs Docker Images
+
+on:
+  workflow_dispatch:  # Manual trigger
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sundays at midnight UTC
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/docker-build.yml'
+      - 'Dockerfile.python-app'
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout EricLBuehler/mistral.rs repository
+        uses: actions/checkout@v4
+        with:
+          repository: EricLBuehler/mistral.rs
+          ref: master
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build and push mistral.rs base image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.cuda.all
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/mistralrs:latest
+            ghcr.io/${{ github.repository_owner }}/mistralrs:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-python-application:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Login to GitHub Container Registry
