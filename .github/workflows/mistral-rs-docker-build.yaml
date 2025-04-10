@@ -45,8 +45,6 @@ jobs:
           context: .
           file: ./Dockerfile.cuda.all
           push: true
-          tags: |
-            ghcr.io/${{ steps.repo_owner.outputs.repo_owner }}/mistralrs:latest
-            ghcr.io/${{ steps.repo_owner.outputs.repo_owner }}/mistralrs:${{ github.sha }}
+          tags: ghcr.io/${{ steps.repo-owner.outputs.repo_owner }}/mistralrs:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
