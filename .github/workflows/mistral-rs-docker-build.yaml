@@ -34,6 +34,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Prepare Lowercase Repository Owner
+        id: repo-owner
+        run: |
+          echo "repo_owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Build and push mistral.rs base image
         uses: docker/build-push-action@v5
         with:
@@ -41,7 +46,7 @@ jobs:
           file: ./Dockerfile.cuda.all
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/mistralrs:latest
-            ghcr.io/${{ github.repository_owner }}/mistralrs:${{ github.sha }}
+            ghcr.io/${{ steps.repo_owner.output.repo_owner }}/mistralrs:latest
+            ghcr.io/${{ steps.repo_owner.output.repo_owner }}/mistralrs:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
