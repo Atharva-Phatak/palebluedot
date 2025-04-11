@@ -15,7 +15,7 @@ def deploy_mysql(
         spec={
             "storageClassName": "manual",
             "accessModes": ["ReadWriteOnce"],
-            "capacity": {"storage": "1Gi"},
+            "capacity": {"storage": "5Gi"},
             "volumeMode": "Filesystem",
             "hostPath": {"path": "/home/atharva/Desktop/minikube_path/mysql"},
         },

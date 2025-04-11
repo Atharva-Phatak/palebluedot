@@ -27,7 +27,7 @@ def deploy_zenml(
     depends_on: list = None,
     k8s_provider: k8s.Provider = None,
     namespace: str = "zenml",
-) -> k8s.core.v1.Service:
+) -> k8s.helm.v3.Chart:
     chart_path = download_zenml_helm_chart()
     helm_chart = k8s.helm.v3.Chart(
         "zenml-server",
@@ -91,3 +91,4 @@ def deploy_zenml(
         ),
     )
     pulumi.export("zenml_service", helm_chart.ready)
+    return helm_chart

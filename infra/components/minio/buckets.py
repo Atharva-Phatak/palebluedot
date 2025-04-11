@@ -1,20 +1,19 @@
 import pulumi_minio as pm
-import pulumi_kubernetes as k8s
 import pulumi
-
+from components.minio.minio import get_minio_secret
+from helper.constant import Constants
 
 def deploy_minio_buckets(
-    depends_on: list, minio_ingress: k8s.networking.v1beta1.Ingress
+    depends_on: list,
 ):
-    minio_access_key = "minio@1234"
-    minio_secret_key = "minio@local1234"
-    minio_ingress_host = "fsml-minio.info"
+    minio_access_key, minio_secret_key = get_minio_secret()
     # Create a bucket
     minio_provider = pm.Provider(
         "minio-provider",
-        minio_server=minio_ingress_host,
+        minio_server=Constants.minio_ingress_host,
         minio_user=minio_access_key,
         minio_password=minio_secret_key,
+
     )
     data_bucket = pm.S3Bucket(
         "data-bucket",

@@ -1,16 +1,27 @@
 import pulumi
 import pulumi_kubernetes as k8s
+from components.secret_manager.utils import get_infiscal_sdk
+from helper.constant import Constants
 
-# Constants (hardcoded from the variables in the Terraform code)
-minio_pv_name = "minio-pv"
-minio_pvc_name = "minio-pvc"
-minio_storage = "10Gi"
-minio_storage_path = "/home/atharvaphatak/Desktop/minikube_path/minio"
 minio_deployment_name = "minio"
 minio_service_name = "minio"
-minio_access_key = "minio@1234"
-minio_secret_key = "minio@local1234"
-minio_ingress_host = "fsml-minio.info"
+
+
+def get_minio_secret():
+    client = get_infiscal_sdk()
+    minio_access_key = client.secrets.get_secret_by_name(
+        secret_name = "minio_access_key",
+        project_id=Constants.infiscal_project_id,
+        environment_slug="dev",
+        secret_path="/"
+    )
+    minio_secret_key = client.secrets.get_secret_by_name(
+        secret_name = "minio_secret_key",
+        project_id=Constants.infiscal_project_id,
+        environment_slug="dev",
+        secret_path="/"
+    )
+    return minio_access_key.secretValue, minio_secret_key.secretValue
 
 
 def deploy_minio(
@@ -19,46 +30,7 @@ def deploy_minio(
     if depends_on is None:
         depends_on = []
 
-    # Create a Persistent Volume
-    minio_pv = k8s.core.v1.PersistentVolume(
-        "minio-pv",
-        metadata=k8s.meta.v1.ObjectMetaArgs(
-            name=minio_pv_name,
-            namespace=namespace.metadata["name"],
-        ),
-        spec=k8s.core.v1.PersistentVolumeSpecArgs(
-            capacity={"storage": minio_storage},
-            access_modes=["ReadWriteOnce"],
-            persistent_volume_reclaim_policy="Retain",
-            storage_class_name="manual",
-            volume_mode="Filesystem",
-            # Fixed: Use host_path directly instead of persistent_volume_source
-            host_path=k8s.core.v1.HostPathVolumeSourceArgs(path=minio_storage_path),
-        ),
-        opts=pulumi.ResourceOptions(provider=provider, depends_on=depends_on),
-    )
-
-    # Create a Persistent Volume Claim
-    minio_pvc = k8s.core.v1.PersistentVolumeClaim(
-        "minio-pvc",
-        metadata=k8s.meta.v1.ObjectMetaArgs(
-            name=minio_pvc_name,
-            namespace=namespace.metadata["name"],
-        ),
-        spec=k8s.core.v1.PersistentVolumeClaimSpecArgs(
-            access_modes=["ReadWriteOnce"],
-            resources=k8s.core.v1.ResourceRequirementsArgs(
-                requests={"storage": minio_storage}
-            ),
-            storage_class_name="manual",
-            volume_mode="Filesystem",
-            volume_name=minio_pv_name,
-        ),
-        opts=pulumi.ResourceOptions(
-            provider=provider, depends_on=[minio_pv] + depends_on
-        ),
-    )
-
+    minio_access_key, minio_secret_key = get_minio_secret()
     # Create a Deployment
     minio_deployment = k8s.apps.v1.Deployment(
         "minio-deployment",
@@ -82,7 +54,7 @@ def deploy_minio(
                         k8s.core.v1.VolumeArgs(
                             name="storage",
                             persistent_volume_claim=k8s.core.v1.PersistentVolumeClaimVolumeSourceArgs(
-                                claim_name=minio_pvc_name
+                                claim_name=Constants.pvc_name
                             ),
                         )
                     ],
@@ -112,7 +84,7 @@ def deploy_minio(
             ),
         ),
         opts=pulumi.ResourceOptions(
-            provider=provider, depends_on=[minio_pvc] + depends_on
+            provider=provider, depends_on=depends_on
         ),
     )
 
@@ -149,12 +121,13 @@ def deploy_minio(
                 "nginx.ingress.kubernetes.io/proxy-connect-timeout": "300",
                 "nginx.ingress.kubernetes.io/proxy-send-timeout": "300",
                 "nginx.ingress.kubernetes.io/proxy-read-timeout": "300",
+                "cert-manager.io/cluster-issuer": "letsencrypt-prod"
             },
         ),
         spec=k8s.networking.v1.IngressSpecArgs(
             rules=[
                 k8s.networking.v1.IngressRuleArgs(
-                    host=minio_ingress_host,
+                    host=Constants.minio_ingress_host,
                     http=k8s.networking.v1.HTTPIngressRuleValueArgs(
                         paths=[
                             k8s.networking.v1.HTTPIngressPathArgs(
