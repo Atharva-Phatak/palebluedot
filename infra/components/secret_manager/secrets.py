@@ -1,7 +1,7 @@
 import pulumi
 import pulumi_kubernetes as k8s
 from components.minio.minio import get_minio_secret
-import base64
+
 
 def create_aws_secret(
     provider: k8s.Provider,
