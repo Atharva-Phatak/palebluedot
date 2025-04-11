@@ -10,16 +10,16 @@ minio_service_name = "minio"
 def get_minio_secret():
     client = get_infiscal_sdk()
     minio_access_key = client.secrets.get_secret_by_name(
-        secret_name = "minio_access_key",
+        secret_name="minio_access_key",
         project_id=Constants.infiscal_project_id,
         environment_slug="dev",
-        secret_path="/"
+        secret_path="/",
     )
     minio_secret_key = client.secrets.get_secret_by_name(
-        secret_name = "minio_secret_key",
+        secret_name="minio_secret_key",
         project_id=Constants.infiscal_project_id,
         environment_slug="dev",
-        secret_path="/"
+        secret_path="/",
     )
     return minio_access_key.secretValue, minio_secret_key.secretValue
 
@@ -83,9 +83,7 @@ def deploy_minio(
                 ),
             ),
         ),
-        opts=pulumi.ResourceOptions(
-            provider=provider, depends_on=depends_on
-        ),
+        opts=pulumi.ResourceOptions(provider=provider, depends_on=depends_on),
     )
 
     # Create a Service
@@ -121,7 +119,7 @@ def deploy_minio(
                 "nginx.ingress.kubernetes.io/proxy-connect-timeout": "300",
                 "nginx.ingress.kubernetes.io/proxy-send-timeout": "300",
                 "nginx.ingress.kubernetes.io/proxy-read-timeout": "300",
-                "cert-manager.io/cluster-issuer": "letsencrypt-prod"
+                "cert-manager.io/cluster-issuer": "letsencrypt-prod",
             },
         ),
         spec=k8s.networking.v1.IngressSpecArgs(

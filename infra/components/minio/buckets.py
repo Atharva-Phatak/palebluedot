@@ -3,6 +3,7 @@ import pulumi
 from components.minio.minio import get_minio_secret
 from helper.constant import Constants
 
+
 def deploy_minio_buckets(
     depends_on: list,
 ):
@@ -13,7 +14,6 @@ def deploy_minio_buckets(
         minio_server=Constants.minio_ingress_host,
         minio_user=minio_access_key,
         minio_password=minio_secret_key,
-
     )
     data_bucket = pm.S3Bucket(
         "data-bucket",
