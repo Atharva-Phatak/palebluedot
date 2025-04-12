@@ -21,7 +21,7 @@ RUN python3.12 -m venv /venv
 ENV PATH="/venv/bin:$PATH"
 
 # Copy requirements and install
-COPY pbd/pipelines/data_extraction/requirements.txt .
+COPY pipelines/data_extraction/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Final runtime image
@@ -44,15 +44,13 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 # Copy the virtualenv from build
 COPY --from=build /venv /venv
-
+WORKDIR /app
+COPY helper /app/pbd/helper
+COPY pipelines/data_extraction /app/pbd/pipelines/data_extraction
 # Set environment to use virtualenv Python and pip
 ENV PATH="/venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH="/app"
 
-# Copy application code (uncomment if needed)
-WORKDIR /app
-# COPY helper /app/pbd/helper
-# COPY pipelines/data_extraction /app/pbd/pipelines/data_extraction
 
 CMD ["/bin/bash"]
