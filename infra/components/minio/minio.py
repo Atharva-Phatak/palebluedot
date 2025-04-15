@@ -63,6 +63,10 @@ def deploy_minio(
                             name="minio",
                             image="minio/minio:latest",
                             args=["server", "/data"],
+                            resources=k8s.core.v1.ResourceRequirementsArgs(
+                                limits={"cpu": "100m", "memory": "256Mi"},
+                                requests={"cpu": "10m", "memory": "128Mi"},
+                            ),
                             env=[
                                 k8s.core.v1.EnvVarArgs(
                                     name="MINIO_ACCESS_KEY", value=minio_access_key

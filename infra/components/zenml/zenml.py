@@ -80,7 +80,17 @@ def deploy_zenml(
                             "nginx.ingress.kubernetes.io/proxy-read-timeout": "300",
                         },
                     },
-                }
+                },
+                "resources": {
+                    "limits": {
+                        "cpu": "300m",
+                        "memory": "1Gi",
+                    },
+                    "requests": {
+                        "cpu": "200m",
+                        "memory": "512Mi",
+                    },
+                },
             },
             namespace=namespace,
         ),

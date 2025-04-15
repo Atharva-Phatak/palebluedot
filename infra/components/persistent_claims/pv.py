@@ -1,6 +1,5 @@
 import pulumi
 import pulumi_kubernetes as k8s
-from helper.constant import Constants
 
 
 def deploy_persistent_volume_claims(
@@ -10,13 +9,14 @@ def deploy_persistent_volume_claims(
     provider: k8s.Provider,
     storage_capacity: str,
     storage_path: str,
+    storage_class_name: str = "standard",
     depends_on: list = None,
 ):
     # Create a Persistent Volume
     pv = k8s.core.v1.PersistentVolume(
         pv_name,
         metadata=k8s.meta.v1.ObjectMetaArgs(
-            name=Constants.pv_name,
+            name=pv_name,
             namespace=namespace.metadata["name"],
         ),
         spec=k8s.core.v1.PersistentVolumeSpecArgs(
@@ -24,6 +24,7 @@ def deploy_persistent_volume_claims(
             access_modes=["ReadWriteOnce"],
             persistent_volume_reclaim_policy="Retain",
             volume_mode="Filesystem",
+            storage_class_name=storage_class_name,
             # Fixed: Use host_path directly instead of persistent_volume_source
             host_path=k8s.core.v1.HostPathVolumeSourceArgs(path=storage_path),
         ),
@@ -42,6 +43,7 @@ def deploy_persistent_volume_claims(
             resources=k8s.core.v1.VolumeResourceRequirementsArgs(
                 requests={"storage": storage_capacity}
             ),
+            storage_class_name=storage_class_name,
             volume_mode="Filesystem",
             volume_name=pv.metadata.name,
         ),

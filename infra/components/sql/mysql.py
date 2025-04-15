@@ -29,7 +29,7 @@ def deploy_mysql(
         metadata={"name": "mysql-pvc", "namespace": namespace},
         spec={
             "accessModes": ["ReadWriteOnce"],
-            "resources": {"requests": {"storage": "1Gi"}},
+            "resources": {"requests": {"storage": "3Gi"}},
             "storageClassName": "manual",
             "volumeName": pv.metadata["name"],
         },
@@ -107,7 +107,7 @@ def deploy_mysql(
                                 }
                             ],
                             "resources": {
-                                "requests": {"cpu": "10m", "memory": "128Mi"},
+                                "requests": {"cpu": "10m", "memory": "256Mi"},
                                 "limits": {"cpu": "100m", "memory": "512Mi"},
                             },
                             "readinessProbe": {
