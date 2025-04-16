@@ -10,7 +10,7 @@ dependencies = [
     "ipython==8.35.0",
     "kubernetes>=32.0.1",
     "minio>=7.2.15",
-    "mistralrs-cuda>=0.5.0",
     "s3fs>=0.4.2",
+    "transformers>=4.51.3",
     "zenml>=0.80.2",
 ]

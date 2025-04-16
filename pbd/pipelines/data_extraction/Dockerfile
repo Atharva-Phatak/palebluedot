@@ -1,5 +1,5 @@
 # Stage 1: Build dependencies with Python
-FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04 AS build
+FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime AS build
 
 # Install Python 3.12 and venv
 RUN apt-get update && \
@@ -25,8 +25,7 @@ COPY pipelines/data_extraction/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Final runtime image
-FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
-
+FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime
 
 # Install Python 3.12 again (needed to use the venv)
 RUN apt-get update && \
@@ -42,15 +41,18 @@ RUN apt-get update && \
     ln -s /usr/bin/python3.12 /usr/bin/python && \
     ln -s /usr/local/bin/pip /usr/bin/pip && \
     rm -rf /var/lib/apt/lists/*
+
 # Copy the virtualenv from build
 COPY --from=build /venv /venv
+
+# Set up workdir and app files
 WORKDIR /app
 COPY helper /app/pbd/helper
 COPY pipelines/data_extraction /app/pbd/pipelines/data_extraction
-# Set environment to use virtualenv Python and pip
+
+# Use virtualenv
 ENV PATH="/venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH="/app"
-
 
 CMD ["/bin/bash"]

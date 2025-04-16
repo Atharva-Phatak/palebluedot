@@ -21,11 +21,13 @@ distro==1.9.0
 docker==7.1.0
 durationpy==0.9
 executing==2.2.0
+filelock==3.18.0
 fsspec==2025.3.2
 gitdb==4.0.12
 gitpython==3.1.44
 google-auth==2.38.0
 greenlet==3.1.1 ; (python_full_version < '3.14' and platform_machine == 'AMD64') or (python_full_version < '3.14' and platform_machine == 'WIN32') or (python_full_version < '3.14' and platform_machine == 'aarch64') or (python_full_version < '3.14' and platform_machine == 'amd64') or (python_full_version < '3.14' and platform_machine == 'ppc64le') or (python_full_version < '3.14' and platform_machine == 'win32') or (python_full_version < '3.14' and platform_machine == 'x86_64')
+huggingface-hub==0.30.2
 idna==3.10
 ipython==8.35.0
 ipywidgets==8.1.6
@@ -39,7 +41,7 @@ markupsafe==3.0.2
 matplotlib-inline==0.1.7
 mdurl==0.1.2
 minio==7.2.15
-mistralrs-cuda==0.5.0
+numpy==2.2.4
 oauthlib==3.2.2
 packaging==24.2
 parso==0.8.4
@@ -62,12 +64,14 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.1.0
 pywin32==310 ; sys_platform == 'win32'
 pyyaml==6.0.2
+regex==2024.11.6
 requests==2.32.3
 requests-oauthlib==2.0.0
 rich==14.0.0
 rsa==4.9
 s3fs==0.4.2
 s3transfer==0.11.4
+safetensors==0.5.3
 setuptools==78.1.0
 six==1.17.0
 smmap==5.0.2
@@ -75,7 +79,10 @@ sqlalchemy==2.0.40
 sqlalchemy-utils==0.41.2
 sqlmodel==0.0.18
 stack-data==0.6.3
+tokenizers==0.21.1
+tqdm==4.67.1
 traitlets==5.14.3
+transformers==4.51.3
 typing-extensions==4.13.2
 typing-inspection==0.4.0
 urllib3==2.4.0
