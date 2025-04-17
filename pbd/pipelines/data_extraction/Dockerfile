@@ -18,8 +18,7 @@ FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime
 
 
 # Copy the virtualenv from build
-COPY --from=build /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
-COPY --from=build /usr/local/bin /usr/local/bin
+COPY --from=build /opt/conda /opt/conda
 
 # Set up workdir and app files
 WORKDIR /app
