@@ -23,6 +23,7 @@ ENV PATH="/venv/bin:$PATH"
 # Copy requirements and install
 COPY pipelines/data_extraction/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir torch  --index-url https://download.pytorch.org/whl/cu124
 
 # Stage 2: Final runtime image
 FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime
