@@ -1,5 +1,5 @@
 from zenml import pipeline
-from pbd.pipelines.data_processing.steps.data_process import download_youtube_audio
+from pbd.pipelines.data_processing.steps.data_process import split_and_upload_pdfs
 from pbd.pipelines.data_processing.setting import docker_settings, k8s_operator_settings
 
 
@@ -10,11 +10,17 @@ from pbd.pipelines.data_processing.setting import docker_settings, k8s_operator_
         "orchestrator": k8s_operator_settings,
     },
 )
-def collect_audio_data(
-    url: str, bucket_name: str = "data-bucket", endpoint: str = "fsml-minio.info"
+def process_pdfs(
+    input_prefix: str,
+    bucket_name: str = "data-bucket",
+    endpoint: str = "fsml-minio.info",
 ):
-    download_youtube_audio(url=url, bucket_name=bucket_name, endpoint=endpoint)
+    split_and_upload_pdfs(input_prefix, bucket_name=bucket_name, endpoint=endpoint)
 
 
 if __name__ == "__main__":
-    collect_audio_data(url="https://www.youtube.com/watch?v=wupToqz1e2g")
+    process_pdfs(
+        input_prefix="raw_data/input_pdfs/",
+        bucket_name="data-bucket",
+        endpoint="fsml-minio.info",
+    )

@@ -4,7 +4,7 @@ from zenml.integrations.kubernetes.pod_settings import KubernetesPodSettings
 
 step_pod_settings = KubernetesPodSettings(
     resources={
-        "requests": {"cpu": "2", "memory": "512Mi"},
+        "requests": {"cpu": "2", "memory": "128Mi"},
         "limits": {"cpu": "4", "memory": "2Gi"},
     },
     env_from=[{"secretRef": {"name": "aws-credentials"}}],
@@ -24,7 +24,6 @@ orchestrator_pod_settings = KubernetesPodSettings(
 k8s_operator_settings = KubernetesOrchestratorSettings(
     pod_settings=step_pod_settings,
     orchestrator_pod_settings=orchestrator_pod_settings,
-    kubernetes_namespace="pipeline",
 )
 docker_settings = DockerSettings(
     parent_image="ghcr.io/atharva-phatak/pbd-data_processing:latest", skip_build=True
