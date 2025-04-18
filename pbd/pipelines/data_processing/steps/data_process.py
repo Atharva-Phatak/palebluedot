@@ -3,10 +3,10 @@ import os
 from minio import Minio
 from pdf2image import convert_from_path
 from pbd.helper.logger import setup_logger
-from pbd.helper.file_upload import upload_image
 from multiprocessing import Pool, cpu_count
 import tempfile
 import shutil
+import zipfile
 
 logger = setup_logger(__name__)
 
@@ -17,6 +17,15 @@ def download_pdf(s3_client, bucket: str, key: str, download_dir: str) -> str:
     with open(local_path, "wb") as file_data:
         shutil.copyfileobj(response, file_data)
     return local_path
+
+
+def zip_images(image_dir: str, output_zip_path: str):
+    with zipfile.ZipFile(output_zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+        for root, _, files in os.walk(image_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, image_dir)
+                zipf.write(file_path, arcname)
 
 
 def convert_and_upload(args):
@@ -40,12 +49,24 @@ def convert_and_upload(args):
         pages = convert_from_path(pdf_path, dpi=300)
         pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
 
+        image_output_dir = os.path.join(tmpdir, pdf_name)
         for i, page in enumerate(pages):
             with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp_img:
                 page.save(tmp_img.name, "JPEG")
-                jpg_key = f"{base_key_prefix}/{pdf_name}/page_{i + 1}.jpg"
-                upload_image(client, bucket, jpg_key, tmp_img.name)
-                os.remove(tmp_img.name)
+
+        # Create zip
+        zip_path = os.path.join(tmpdir, f"{pdf_name}.zip")
+        zip_images(image_output_dir, zip_path)
+
+        # Upload to MinIO
+        zip_key = f"{base_key_prefix}{pdf_name}.zip"
+        client.fput_object(
+            bucket_name=bucket,
+            object_name=zip_key,
+            file_path=zip_path,
+            content_type="application/zip",
+        )
+        logger.info(f"Uploaded zip for {pdf_name} to MinIO at {zip_key}")
 
 
 @step()
@@ -64,7 +85,7 @@ def split_and_upload_pdfs(input_prefix: str, bucket_name: str, endpoint: str):
 
     pdf_objects = client.list_objects(bucket_name, prefix=input_prefix, recursive=True)
     pdfs = [obj.object_name for obj in pdf_objects if obj.object_name.endswith(".pdf")]
-    logger.debug(f"PDFs found: {pdfs}")
+    logger.info(f"PDFs found: {pdfs}")
 
     # Prepare argument tuples for multiprocessing
     args_list = [(pdf_key, bucket_name, endpoint, input_prefix) for pdf_key in pdfs]
