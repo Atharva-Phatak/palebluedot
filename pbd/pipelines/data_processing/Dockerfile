@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Stage 2: Final image
 FROM python:3.12-slim AS final
 # Set the working directory in the container
+RUN apt install poppler-utils
 WORKDIR /app
 # Copy the dependencies from the build stage
 COPY --from=build /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
