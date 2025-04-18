@@ -49,14 +49,21 @@ def convert_and_upload(args):
         pages = convert_from_path(pdf_path, dpi=300)
         pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
 
+        # Create a directory to store image files
         image_output_dir = os.path.join(tmpdir, pdf_name)
+        os.makedirs(image_output_dir, exist_ok=True)
+
         for i, page in enumerate(pages):
-            with tempfile.NamedTemporaryFile(suffix=".jpg", delete=False) as tmp_img:
-                page.save(tmp_img.name, "JPEG")
+            img_path = os.path.join(image_output_dir, f"page_{i + 1}.jpg")
+            page.save(img_path, "JPEG")
+            logger.debug(f"Saved page {i + 1} to {img_path}")
+
+        logger.debug(f"Image dir content before zip: {os.listdir(image_output_dir)}")
 
         # Create zip
         zip_path = os.path.join(tmpdir, f"{pdf_name}.zip")
         zip_images(image_output_dir, zip_path)
+        logger.debug(f"Created zip at {zip_path}")
 
         # Upload to MinIO
         zip_key = f"{base_key_prefix}{pdf_name}.zip"
@@ -67,9 +74,12 @@ def convert_and_upload(args):
             content_type="application/zip",
         )
         logger.info(f"Uploaded zip for {pdf_name} to MinIO at {zip_key}")
+        # Remove the zip file from local after uploading
+        os.remove(zip_path)
+        logger.info(f"Removed local zip file at {zip_path}")
 
 
-@step()
+@step(enable_step_logs=True)
 def split_and_upload_pdfs(input_prefix: str, bucket_name: str, endpoint: str):
     access_key = os.environ.get("AWS_ACCESS_KEY_ID")
     secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
