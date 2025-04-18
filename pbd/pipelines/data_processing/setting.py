@@ -4,8 +4,8 @@ from zenml.integrations.kubernetes.pod_settings import KubernetesPodSettings
 
 step_pod_settings = KubernetesPodSettings(
     resources={
-        "requests": {"cpu": "2", "memory": "128Mi"},
-        "limits": {"cpu": "4", "memory": "2Gi"},
+        "requests": {"cpu": "4", "memory": "2Mi"},
+        "limits": {"cpu": "6", "memory": "3Gi"},
     },
     env_from=[{"secretRef": {"name": "aws-credentials"}}],
     labels={"app": "youtube-scraper-pipeline", "component": "step"},

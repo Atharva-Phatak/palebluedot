@@ -48,7 +48,7 @@ def convert_and_upload(args):
         pdf_path = download_pdf(client, bucket, key, tmpdir)
         pages = convert_from_path(pdf_path, dpi=300)
         pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
-
+        logger.info(f"Converted {pdf_name} to {len(pages)} pages.")
         # Create a directory to store image files
         image_output_dir = os.path.join(tmpdir, pdf_name)
         os.makedirs(image_output_dir, exist_ok=True)
@@ -56,7 +56,7 @@ def convert_and_upload(args):
         for i, page in enumerate(pages):
             img_path = os.path.join(image_output_dir, f"page_{i + 1}.jpg")
             page.save(img_path, "JPEG")
-            logger.debug(f"Saved page {i + 1} to {img_path}")
+            logger.info(f"Saved page {i + 1} to {img_path}")
 
         logger.debug(f"Image dir content before zip: {os.listdir(image_output_dir)}")
 
