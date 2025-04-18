@@ -11,19 +11,28 @@ COPY pipelines/data_processing/requirements.txt .
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 # Stage 2: Final image
+# Stage 2: Final image
 FROM python:3.12-slim AS final
-# Set the working directory in the container
-RUN apt install poppler-utils
+
+# Install poppler-utils
+RUN apt-get update && apt-get install -y poppler-utils && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory
 WORKDIR /app
+
 # Copy the dependencies from the build stage
 COPY --from=build /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-#COPY helper
+
+# Copy helper
 COPY helper /app/pbd/helper
+
 # Copy the entire data_processing folder
 COPY pipelines/data_processing /app/pbd/pipelines/data_processing
-# Optional: Set environment variables if needed
+
+# Set environment variables
 ENV PYTHONUNBUFFERED=1
-# Ensure Python can find 'pbd.helper'
 ENV PYTHONPATH="/app"
-# Command to run bash interactively
+
+# Default command
 CMD ["/bin/bash"]
+
