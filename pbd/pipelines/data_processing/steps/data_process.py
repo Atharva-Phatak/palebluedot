@@ -95,10 +95,21 @@ def split_and_upload_pdfs(input_prefix: str, bucket_name: str, endpoint: str):
 
     pdf_objects = client.list_objects(bucket_name, prefix=input_prefix, recursive=True)
     pdfs = [obj.object_name for obj in pdf_objects if obj.object_name.endswith(".pdf")]
-    logger.info(f"PDFs found: {pdfs}")
+    zips = [obj.object_name for obj in pdf_objects if obj.object_name.endswith(".zip")]
+    zip_prefixes = [zip[:-4] for zip in zips if zip.endswith(".zip")]
+
+    pdfs_to_process = [
+        pdf
+        for pdf in pdfs
+        if not any(pdf.startswith(prefix) for prefix in zip_prefixes)
+    ]
+
+    logger.info(f"PDFs found: {pdfs_to_process}")
 
     # Prepare argument tuples for multiprocessing
-    args_list = [(pdf_key, bucket_name, endpoint, input_prefix) for pdf_key in pdfs]
+    args_list = [
+        (pdf_key, bucket_name, endpoint, input_prefix) for pdf_key in pdfs_to_process
+    ]
 
     with Pool(processes=(cpu_count() // 2)) as pool:
         pool.map(convert_and_upload, args_list)
