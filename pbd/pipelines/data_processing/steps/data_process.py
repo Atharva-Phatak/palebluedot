@@ -1,12 +1,12 @@
 from zenml import step
 import os
 from minio import Minio
-from pdf2image import convert_from_path
 from pbd.helper.logger import setup_logger
 from multiprocessing import Pool, cpu_count
 import tempfile
 import shutil
 import zipfile
+import pymupdf
 
 logger = setup_logger(__name__)
 
@@ -46,14 +46,17 @@ def convert_and_upload(args):
 
     with tempfile.TemporaryDirectory() as tmpdir:
         pdf_path = download_pdf(client, bucket, key, tmpdir)
-        pages = convert_from_path(pdf_path, dpi=300)
+        logger.info(f"Downloaded {key} to {pdf_path}")
+        pdf = pymupdf.open(pdf_path)
         pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
-        logger.info(f"Converted {pdf_name} to {len(pages)} pages.")
+        logger.info(f"Converted {pdf_name} to {len(pdf)} pages.")
         # Create a directory to store image files
         image_output_dir = os.path.join(tmpdir, pdf_name)
         os.makedirs(image_output_dir, exist_ok=True)
 
-        for i, page in enumerate(pages):
+        for i in range(len(pdf)):
+            page = pdf[i]
+            page = page.get_pixmap(dpi=300)
             img_path = os.path.join(image_output_dir, f"page_{i + 1}.jpg")
             page.save(img_path, "JPEG")
             logger.info(f"Saved page {i + 1} to {img_path}")

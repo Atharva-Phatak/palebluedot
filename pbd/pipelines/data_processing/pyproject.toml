@@ -10,6 +10,7 @@ dependencies = [
     "kubernetes>=32.0.1",
     "minio>=7.2.15",
     "pdf2image>=1.17.0",
+    "pymupdf>=1.25.5",
     "s3fs>=0.4.2",
     "zenml==0.80.0",
 ]
