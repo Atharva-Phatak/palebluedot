@@ -59,14 +59,11 @@ def convert_and_upload(args):
             page = page.get_pixmap(dpi=300)
             img_path = os.path.join(image_output_dir, f"page_{i + 1}.jpg")
             page.save(img_path, "JPEG")
-            logger.info(f"Saved page {i + 1} to {img_path}")
-
-        logger.debug(f"Image dir content before zip: {os.listdir(image_output_dir)}")
-
+        logger.info(f"Saved {len(pdf)} images for {pdf_name}.")
         # Create zip
         zip_path = os.path.join(tmpdir, f"{pdf_name}.zip")
         zip_images(image_output_dir, zip_path)
-        logger.debug(f"Created zip at {zip_path}")
+        logger.info(f"Created zip at {zip_path}")
 
         # Upload to MinIO
         zip_key = f"{base_key_prefix}{pdf_name}.zip"

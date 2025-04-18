@@ -10,10 +10,10 @@ class Constants:
     mk_storage_capacity: str = "200Gi"
     model_storage_capacity: str = "100Gi"
     storage_path: str = "/home/atharvaphatak/Desktop/minikube_path/minio"
-    model_storage_path: str = "/home/atharvaphatak/Desktop/minikube_path/models"
+    model_storage_path: str = "/home/atharvaphatak/Desktop/models"
     sql_host_path: str = "/home/atharva/Desktop/minikube_path/mysql"
-    minikube_cpus: int = 8
-    minikube_memory: str = "20g"
+    minikube_cpus: int = 10
+    minikube_memory: str = "25g"
     minikube_disk_size: str = "500GB"
     minikube_addons: str = "ingress,metrics-server"
     minikube_gpu: str = "all"
