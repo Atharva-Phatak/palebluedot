@@ -5,6 +5,14 @@ __pycache__/
 Pulumi.zenml.yaml
 .idea/
 pbd/data_collection
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints/
+.jupyter/
+.env/
+.venv/
+env/
+venv/
 # C extensions
 *.so
 pbd/notebooks

@@ -1,0 +1,25 @@
+from zenml import step
+from minio import Minio
+from pathlib import Path
+
+@step
+def download_from_minio(
+    endpoint: str,
+    access_key: str,
+    secret_key: str,
+    bucket: str,
+    object_key: str,
+    local_path: str
+) -> str:
+    client = Minio(
+        endpoint=endpoint,
+        access_key=access_key,
+        secret_key=secret_key,
+        secure=False,
+    )
+
+    local_path = Path(local_path)
+    local_path.parent.mkdir(parents=True, exist_ok=True)
+    client.fget_object(bucket, object_key, str(local_path))
+
+    return str(local_path)
