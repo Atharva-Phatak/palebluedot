@@ -1,0 +1,59 @@
+pipeline:
+  name: ocr_pipeline
+  enable_cache: false
+  settings:
+    docker:
+      parent_image: "ghcr.io/atharva-phatak/pbd-data_processing:latest"
+      skip_build: true
+    kubernetes_orchestrator:
+      pod_settings:
+        resources:
+          requests:
+            cpu: "4"
+            memory: "2Mi"
+          limits:
+            cpu: "6"
+            memory: "3Gi"
+        env_from:
+          - secretRef:
+              name: "aws-credentials"
+        labels:
+          app: "youtube-scraper-pipeline"
+          component: "step"
+      orchestrator_pod_settings:
+        resources:
+          requests:
+            cpu: "2"
+            memory: "70Mi"
+          limits:
+            cpu: "4"
+            memory: "256Mi"
+        env_from:
+          - secretRef:
+              name: "aws-credentials"
+        labels:
+          app: "zenml-orchestrator"
+          component: "orchestrator"
+
+  steps:
+    download_from_minio:
+      parameters:
+        endpoint: "minio-service:9000"
+        access_key: "minioadmin"
+        secret_key: "minioadmin"
+        bucket: "images-bucket"
+        object_key: "ocr/test.zip"
+        local_path: "/tmp/images.zip"
+
+    extract_zip:
+      parameters:
+        extract_to: "/tmp/images"
+
+    ocr_images:
+      parameters:
+        model_config:
+          path: "/models/idefics3.gguf"
+        generation_config:
+          temperature: 0.7
+          max_tokens: 512
+        prompt: "Describe this image in detail."

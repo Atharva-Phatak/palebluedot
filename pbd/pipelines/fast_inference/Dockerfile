@@ -38,7 +38,7 @@ RUN pip install maturin[patchelf]
 
 # Build Python bindings with CUDA and cuDNN support
 WORKDIR /build/mistral.rs/mistralrs-pyo3
-RUN RUSTFLAGS="-Z threads=4" maturin build --release --features "cuda flash-attn"
+RUN RUSTFLAGS="-Z threads=4" maturin build --release --features "cuda"
 
 # Create lightweight runtime image
 FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04
