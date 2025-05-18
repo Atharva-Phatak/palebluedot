@@ -15,13 +15,7 @@ k8s_provider = get_k8s_provider(depends_on=[minikube_start])
 zenml_namespace = create_namespace(
     provider=k8s_provider, namespace="zenml", depends_on=[minikube_start]
 )
-# nvidia_namespace = create_namespace(
-#    provider=k8s_provider, namespace="nvidia-gpu-operator", depends_on=[minikube_start]
-# )
 
-
-# Deploy MySQL
-# Todo: Use the zenml namespace created above
 mysql_service = deploy_mysql(
     provider=k8s_provider,
     namespace="zenml",
@@ -64,15 +58,3 @@ zenml_resource = deploy_zenml(
     k8s_provider=k8s_provider,
     namespace="zenml",
 )
-# Deploy NVIDIA GPU Operator after ZenML
-# nvidia_gpu_operator = deploy_nvidia_gpu_operator(
-#    namespace=nvidia_namespace,
-#    provider=k8s_provider,
-#    depends_on=[
-#        minikube_start,
-#        pv_claims,
-#        minio_ingress,
-#        mysql_service,
-#        zenml_resource,
-#    ],
-# )
