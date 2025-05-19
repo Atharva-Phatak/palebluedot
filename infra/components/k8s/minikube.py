@@ -1,13 +1,16 @@
 import pulumi
 import pulumi_command as command
-from helper.constant import Constants
 
 
-def start_minikube():
+def start_minikube(n_cpus:str,
+                memory:str,
+                addons:str,
+                gpus:str,
+                disk_size:str) -> command.local.Command:
     # Start Minikube with required settings
     minikube_start = command.local.Command(
         "start-minikube",
-        create=f"minikube start --cpus {Constants.minikube_cpus} --memory {Constants.minikube_memory} --gpus {Constants.minikube_gpu} --addons={Constants.minikube_addons} --disk-size={Constants.minikube_disk_size}",
+        create=f"minikube start --cpus {n_cpus} --memory {memory} --gpus {gpus} --addons={addons} --disk-size={disk_size}",
         delete="minikube delete",
         opts=pulumi.ResourceOptions(delete_before_replace=True),
     )

@@ -1,31 +1,38 @@
 import pulumi
 import pulumi_kubernetes as k8s
 from components.secret_manager.utils import get_infiscal_sdk
-from helper.constant import Constants
-
-minio_deployment_name = "minio"
-minio_service_name = "minio"
 
 
-def get_minio_secret():
+
+def get_minio_secret(access_key_identifier:str,
+                    secret_key_identifier:str,
+                    project_id:str,
+                    environment_slug:str,
+                    ):
     client = get_infiscal_sdk()
     minio_access_key = client.secrets.get_secret_by_name(
-        secret_name="minio_access_key",
-        project_id=Constants.infiscal_project_id,
-        environment_slug="dev",
+        secret_name=access_key_identifier,
+        project_id=project_id,
+        environment_slug=environment_slug,
         secret_path="/",
     )
     minio_secret_key = client.secrets.get_secret_by_name(
-        secret_name="minio_secret_key",
-        project_id=Constants.infiscal_project_id,
-        environment_slug="dev",
+        secret_name=secret_key_identifier,
+        project_id=project_id,
+        environment_slug=environment_slug,
         secret_path="/",
     )
     return minio_access_key.secretValue, minio_secret_key.secretValue
 
 
 def deploy_minio(
-    namespace: k8s.core.v1.Namespace, provider: k8s.Provider, depends_on: list = None
+    namespace: k8s.core.v1.Namespace, 
+    provider: k8s.Provider, 
+    deployment_name: str,
+    service_name: str,
+    ingress_host:str,
+    pvc_name:str,
+    depends_on: list = None
 ):
     if depends_on is None:
         depends_on = []
@@ -35,7 +42,7 @@ def deploy_minio(
     minio_deployment = k8s.apps.v1.Deployment(
         "minio-deployment",
         metadata=k8s.meta.v1.ObjectMetaArgs(
-            name=minio_deployment_name,
+            name=deployment_name,
             namespace=namespace.metadata["name"],
         ),
         spec=k8s.apps.v1.DeploymentSpecArgs(
@@ -54,7 +61,7 @@ def deploy_minio(
                         k8s.core.v1.VolumeArgs(
                             name="storage",
                             persistent_volume_claim=k8s.core.v1.PersistentVolumeClaimVolumeSourceArgs(
-                                claim_name=Constants.pvc_name
+                                claim_name=pvc_name
                             ),
                         )
                     ],
@@ -94,7 +101,7 @@ def deploy_minio(
     minio_service = k8s.core.v1.Service(
         "minio-service",
         metadata=k8s.meta.v1.ObjectMetaArgs(
-            name=minio_service_name,
+            name=service_name,
             namespace=namespace.metadata["name"],
             labels={"app.kubernetes.io/name": "minio"},
         ),
@@ -129,7 +136,7 @@ def deploy_minio(
         spec=k8s.networking.v1.IngressSpecArgs(
             rules=[
                 k8s.networking.v1.IngressRuleArgs(
-                    host=Constants.minio_ingress_host,
+                    host=ingress_host,
                     http=k8s.networking.v1.HTTPIngressRuleValueArgs(
                         paths=[
                             k8s.networking.v1.HTTPIngressPathArgs(
@@ -137,7 +144,7 @@ def deploy_minio(
                                 path_type="Prefix",
                                 backend=k8s.networking.v1.IngressBackendArgs(
                                     service=k8s.networking.v1.IngressServiceBackendArgs(
-                                        name=minio_service_name,
+                                        name=service_name,
                                         port=k8s.networking.v1.ServiceBackendPortArgs(
                                             number=9000
                                         ),

@@ -1,12 +1,12 @@
 import pulumi_kubernetes as k8s
 import pulumi
 import base64
-from helper.constant import Constants
 
 
 def deploy_mysql(
     provider: k8s.Provider,
     namespace: str,
+    sql_host_path:str,
     depends_on: list = None,
 ) -> k8s.core.v1.Service:
     # Persistent Volume
@@ -18,7 +18,7 @@ def deploy_mysql(
             "accessModes": ["ReadWriteOnce"],
             "capacity": {"storage": "5Gi"},
             "volumeMode": "Filesystem",
-            "hostPath": {"path": Constants.sql_host_path},
+            "hostPath": {"path": sql_host_path},
         },
         opts=pulumi.ResourceOptions(provider=provider, depends_on=depends_on),
     )
