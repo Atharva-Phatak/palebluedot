@@ -32,12 +32,27 @@ jobs:
           if [ -n "${{ inputs.folder }}" ]; then
             CHANGED='["${{ inputs.folder }}"]'
           elif [ $(git rev-list --count HEAD) -eq 1 ]; then
+            # Initial commit: build everything
             CHANGED=$(find pbd/pipelines -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n")[:-1]')
           else
-            CHANGED=$(git diff --name-only HEAD^ HEAD | grep '^pbd/pipelines/' | cut -d '/' -f 3 | sort -u | jq -R -s -c 'split("\n")[:-1]')
+            # Get all folders that were touched in this commit
+            FOLDERS=$(git diff --name-status HEAD^ HEAD | grep '^pbd/pipelines/' | cut -f2 | cut -d '/' -f3 | sort -u)
+
+            # Filter only existing ones
+            EXISTING=()
+            for folder in $FOLDERS; do
+              if [ -d "pbd/pipelines/$folder" ]; then
+                EXISTING+=("\"$folder\"")
+              fi
+            done
+
+            # Join the valid folder names into a JSON array
+            CHANGED=$(printf "[%s]" "$(IFS=,; echo "${EXISTING[*]}")")
           fi
+
           echo "folders=$CHANGED" >> $GITHUB_OUTPUT
           echo "Detected folders for build: $CHANGED"
+
 
   build-and-push:
     needs: detect-changes
