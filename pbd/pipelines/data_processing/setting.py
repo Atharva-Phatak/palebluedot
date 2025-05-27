@@ -4,7 +4,7 @@ from zenml.integrations.kubernetes.pod_settings import KubernetesPodSettings
 
 step_pod_settings = KubernetesPodSettings(
     resources={
-        "requests": {"cpu": "4", "memory": "2Mi"},
+        "requests": {"cpu": "4", "memory": "2Gi"},
         "limits": {"cpu": "6", "memory": "3Gi"},
     },
     env_from=[{"secretRef": {"name": "aws-credentials"}}],
