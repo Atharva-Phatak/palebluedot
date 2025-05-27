@@ -29,7 +29,7 @@ def zip_images(image_dir: str, output_zip_path: str):
 
 
 def convert_and_upload(args):
-    key, bucket, endpoint, base_key_prefix = args
+    key, bucket, endpoint, input_key_prefix, output_key_prefix = args
 
     access_key = os.environ.get("AWS_ACCESS_KEY_ID")
     secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
@@ -66,7 +66,7 @@ def convert_and_upload(args):
         logger.info(f"Created zip at {zip_path}")
 
         # Upload to MinIO
-        zip_key = f"{base_key_prefix}{pdf_name}.zip"
+        zip_key = f"{output_key_prefix}{pdf_name}.zip"
         client.fput_object(
             bucket_name=bucket,
             object_name=zip_key,
@@ -79,8 +79,10 @@ def convert_and_upload(args):
         logger.info(f"Removed local zip file at {zip_path}")
 
 
-@step(enable_step_logs=True)
-def split_and_upload_pdfs(input_prefix: str, bucket_name: str, endpoint: str):
+@step(enable_step_logs=True, enable_cache=False)
+def split_and_upload_pdfs(
+    input_prefix: str, output_prefix: str, bucket_name: str, endpoint: str
+):
     access_key = os.environ.get("AWS_ACCESS_KEY_ID")
     secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
     if not access_key or not secret_key:
@@ -108,7 +110,8 @@ def split_and_upload_pdfs(input_prefix: str, bucket_name: str, endpoint: str):
 
     # Prepare argument tuples for multiprocessing
     args_list = [
-        (pdf_key, bucket_name, endpoint, input_prefix) for pdf_key in pdfs_to_process
+        (pdf_key, bucket_name, endpoint, input_prefix, output_prefix)
+        for pdf_key in pdfs_to_process
     ]
 
     with Pool(processes=(cpu_count() // 2)) as pool:

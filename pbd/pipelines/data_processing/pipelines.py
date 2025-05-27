@@ -12,15 +12,22 @@ from pbd.pipelines.data_processing.setting import docker_settings, k8s_operator_
 )
 def process_pdfs(
     input_prefix: str,
+    output_prefix: str,
     bucket_name: str = "data-bucket",
     endpoint: str = "fsml-minio.info",
 ):
-    split_and_upload_pdfs(input_prefix, bucket_name=bucket_name, endpoint=endpoint)
+    split_and_upload_pdfs(
+        input_prefix=input_prefix,
+        output_prefix=output_prefix,
+        bucket_name=bucket_name,
+        endpoint=endpoint,
+    )
 
 
 if __name__ == "__main__":
     process_pdfs(
         input_prefix="raw_data/input_pdfs/",
+        output_prefix="processed_data/pdfs/",
         bucket_name="data-bucket",
         endpoint="fsml-minio.info",
     )
