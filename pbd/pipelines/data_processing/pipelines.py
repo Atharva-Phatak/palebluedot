@@ -4,7 +4,7 @@ from pbd.pipelines.data_processing.setting import docker_settings, k8s_operator_
 
 
 @pipeline(
-    name="collect_audio_data",
+    name="process_pdfs_for_extraction",
     settings={
         "docker": docker_settings,
         "orchestrator": k8s_operator_settings,

@@ -3,12 +3,12 @@ import pulumi_kubernetes as k8s
 from components.secret_manager.utils import get_infiscal_sdk
 
 
-
-def get_minio_secret(access_key_identifier:str,
-                    secret_key_identifier:str,
-                    project_id:str,
-                    environment_slug:str,
-                    ):
+def get_minio_secret(
+    access_key_identifier: str,
+    secret_key_identifier: str,
+    project_id: str,
+    environment_slug: str,
+):
     client = get_infiscal_sdk()
     minio_access_key = client.secrets.get_secret_by_name(
         secret_name=access_key_identifier,
@@ -26,18 +26,27 @@ def get_minio_secret(access_key_identifier:str,
 
 
 def deploy_minio(
-    namespace: k8s.core.v1.Namespace, 
-    provider: k8s.Provider, 
+    namespace: k8s.core.v1.Namespace,
+    provider: k8s.Provider,
     deployment_name: str,
     service_name: str,
-    ingress_host:str,
-    pvc_name:str,
-    depends_on: list = None
+    ingress_host: str,
+    pvc_name: str,
+    access_key_identifier: str,
+    secret_key_identifier: str,
+    project_id: str,
+    environment_slug: str,
+    depends_on: list = None,
 ):
     if depends_on is None:
         depends_on = []
 
-    minio_access_key, minio_secret_key = get_minio_secret()
+    minio_access_key, minio_secret_key = get_minio_secret(
+        access_key_identifier=access_key_identifier,
+        secret_key_identifier=secret_key_identifier,
+        project_id=project_id,
+        environment_slug=environment_slug,
+    )
     # Create a Deployment
     minio_deployment = k8s.apps.v1.Deployment(
         "minio-deployment",

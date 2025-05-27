@@ -48,4 +48,9 @@ def upload_single_file(client, file_path, bucket_name, object_name=None, prefix=
 
 
 def upload_image(minio_client: Minio, bucket: str, key: str, image_path: str):
-    minio_client.fput_object(image_path, bucket, key)
+    minio_client.fput_object(
+        bucket_name=bucket,
+        object_name=key,
+        file_path=image_path,
+        content_type="image/jpeg",
+    )
