@@ -1,23 +1,22 @@
+import pathlib
+
 from transformers import AutoModelForImageTextToText, AutoProcessor
 import torch
 from PIL import Image
+from zenml import step
 
 
-def pixmap_to_pil(pix):
-    mode = "RGB" if pix.alpha == 0 else "RGBA"
-    img = Image.frombytes(mode, [pix.width, pix.height], pix.samples)
-    return img
-
-
-def load_model_and_processor(model_path):
+def load_model_and_processor(model_path, min_pixels: int, max_pixels: int):
     model = AutoModelForImageTextToText.from_pretrained(
         model_path, torch_dtype=torch.float16, device_map="auto"
     )
-    processor = AutoProcessor.from_pretrained(model_path)
+    processor = AutoProcessor.from_pretrained(
+        model_path, min_pixels=min_pixels, max_pixels=max_pixels
+    )
     return model, processor
 
 
-def build_prompt(images: list[Image]):
+def build_prompt(images: list[str]):
     # Create a list of image content items
     image_content = [{"type": "image", "image": image} for image in images]
 
@@ -78,12 +77,16 @@ def process_template(images: list[Image], processor: AutoProcessor):
     return inputs
 
 
-def do_inference(inputs, model: AutoModelForImageTextToText, processor: AutoProcessor):
+def do_inference(
+    image,
+    model: AutoModelForImageTextToText,
+    processor: AutoProcessor,
+    max_new_tokens: int,
+):
+    inputs = process_template(images=[image], processor=processor)
     with torch.no_grad():
-        generated_ids = model.generate(
-            **inputs,
-            max_new_tokens=4096,
-        )
+        inputs = inputs.to("cuda")
+        generated_ids = model.generate(**inputs, max_new_tokens=max_new_tokens)
     generated_ids_trimmed = [
         out_ids[len(in_ids) :]
         for in_ids, out_ids in zip(inputs.input_ids, generated_ids)
@@ -94,3 +97,27 @@ def do_inference(inputs, model: AutoModelForImageTextToText, processor: AutoProc
         clean_up_tokenization_spaces=False,
     )
     return output_text[0]
+
+
+@step
+def ocr_images(
+    image_dir: str,
+    model_path: dict,
+    max_new_tokens: int,
+    min_pixels: int = 512,
+    max_pixels: int = 512,
+) -> list[str]:
+    model, processor = load_model_and_processor(
+        model_path=model_path, min_pixels=min_pixels, max_pixels=max_pixels
+    )
+    image_paths = list(pathlib.Path(image_dir).glob("*.png"))
+    outputs = []
+    for image_path in image_paths:
+        op = do_inference(
+            image=image_path,
+            model=model,
+            processor=processor,
+            max_new_tokens=max_new_tokens,
+        )
+        outputs.append(op)
+    return outputs

@@ -3,7 +3,7 @@ pipeline:
   enable_cache: false
   settings:
     docker:
-      parent_image: "ghcr.io/atharva-phatak/pbd-fast_inference:latest"
+      parent_image: "ghcr.io/atharva-phatak/pbd-data_extraction:latest"
       skip_build: true
     kubernetes_orchestrator:
       pod_settings:
@@ -40,7 +40,7 @@ pipeline:
   steps:
     download_from_minio:
       parameters:
-        endpoint: "minio-service:9000"
+        endpoint: "fsml.minio.info"
         bucket: "images-bucket"
         object_key: "ocr/test.zip"
         local_path: "/tmp/images.zip"
@@ -50,13 +50,8 @@ pipeline:
         extract_to: "/tmp/images"
 
     ocr_images:
-      parameters:
-        model_config:
-          tok_model_id="HuggingFaceTB/SmolVLM2-256M-Video-Instruct",
-          quantized_model_id="ggml-org/SmolVLM2-256M-Video-Instruct-GGUF",
-          quantized_filename="SmolVLM2-256M-Video-Instruct-Q8_0.gguf",
-        generation_config:
-          temperature: 0.7
-          top_p: 0.1
-          max_tokens: 512
-        prompt: "Describe this image in detail."
+      image_dir: "/tmp/images"
+      model_path: "/models/"
+      max_new_tokens: 4096
+      min_pixels: 512
+      max_pixels: 512
