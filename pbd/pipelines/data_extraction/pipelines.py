@@ -16,6 +16,7 @@ from pbd.pipelines.data_extraction.settings import (
         "docker": docker_settings,
         "orchestrator": k8s_operator_settings,
     },
+    name="ocr_pipeline",
 )
 def ocr_pipeline(
     endpoint: str,
@@ -51,6 +52,14 @@ def ocr_pipeline(
 
 
 if __name__ == "__main__":
-    ocr_pipeline.with_options(
-        config_path="pbd/pipelines/data_extraction/config/config.yaml"
-    )()
+    ocr_pipeline(
+        endpoint="fsml.minio.info",
+        bucket="data-bucket",
+        object_key="processed_data/dc_mechanics.zip",
+        local_path="/tmp/images.zip",
+        extract_to="/tmp/images",
+        model_path="/models/Qwen2.5-VL-7B-Instruct-bnb-4bit/",
+        max_new_tokens=4096,
+        min_pixels=512,
+        max_pixels=512,
+    )

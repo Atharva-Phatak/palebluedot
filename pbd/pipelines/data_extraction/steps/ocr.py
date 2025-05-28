@@ -97,7 +97,7 @@ def do_inference(
     return output_text[0]
 
 
-@step
+@step(enable_step_logs=True, enable_cache=False)
 def ocr_images(
     image_paths: list[str],
     model_path: dict,
