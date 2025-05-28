@@ -1,7 +1,7 @@
 name: ocr_pipeline
 enable_cache: False
 enable_step_logs: True
-args:
+parameters:
   endpoint: "fsml.minio.info"
   bucket: "data-bucket"
   object_key: "processed_data/dc_mechanics.zip"
