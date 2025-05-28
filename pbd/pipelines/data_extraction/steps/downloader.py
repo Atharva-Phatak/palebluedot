@@ -2,17 +2,20 @@ from zenml import step
 from minio import Minio
 from pathlib import Path
 from zipfile import ZipFile
+import os
 
 
 @step(enable_step_logs=True, enable_cache=False)
 def download_from_minio(
     endpoint: str,
-    access_key: str,
-    secret_key: str,
     bucket: str,
     object_key: str,
     local_path: str,
 ) -> str:
+    access_key = os.environ.get("AWS_ACCESS_KEY_ID")
+    secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
+    if not access_key or not secret_key:
+        raise ValueError("AWS credentials not found in environment variables.")
     client = Minio(
         endpoint=endpoint,
         access_key=access_key,
