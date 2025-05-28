@@ -42,4 +42,6 @@ def ocr_pipeline(
 
 
 if __name__ == "__main__":
-    ocr_pipeline.with_options(config_path="./config/config.yaml")()
+    ocr_pipeline.with_options(
+        config_path="pbd/pipelines/data_extraction/config/config.yaml"
+    )()
