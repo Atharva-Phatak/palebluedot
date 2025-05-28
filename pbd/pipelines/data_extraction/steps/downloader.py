@@ -1,11 +1,9 @@
-from zenml import step
 from minio import Minio
 from pathlib import Path
 from zipfile import ZipFile
 import os
 
 
-@step(enable_step_logs=True, enable_cache=False)
 def download_from_minio(
     endpoint: str,
     bucket: str,
@@ -30,7 +28,6 @@ def download_from_minio(
     return str(local_path)
 
 
-@step(enable_step_logs=True, enable_cache=False)
 def extract_zip(zip_path: str, extract_to: str) -> list[str]:
     zip_path = Path(zip_path)
     extract_to = Path(extract_to)

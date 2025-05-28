@@ -3,6 +3,10 @@ import torch
 from PIL import Image
 from zenml import step
 from pbd.helper.logger import setup_logger
+from pbd.pipelines.data_extraction.steps.downloader import (
+    download_from_minio,
+    extract_zip,
+)
 
 logger = setup_logger(__name__)
 
@@ -102,13 +106,24 @@ def do_inference(
 
 @step(enable_step_logs=True, enable_cache=False)
 def ocr_images(
-    image_paths: list[str],
+    endpoint: str,
+    bucket: str,
+    object_key: str,
+    local_path: str,
     model_path: str,
+    extract_to: str,
     max_new_tokens: int,
     min_pixels: int = 512,
     max_pixels: int = 512,
 ) -> list[str]:
     outputs = []
+    zip_path = download_from_minio(
+        endpoint=endpoint,
+        bucket=bucket,
+        object_key=object_key,
+        local_path=local_path,
+    )
+    image_paths = extract_zip(zip_path=zip_path, extract_to=extract_to)
     model, processor = load_model_and_processor(
         model_path=model_path, min_pixels=min_pixels, max_pixels=max_pixels
     )

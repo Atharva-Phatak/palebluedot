@@ -1,8 +1,4 @@
 from zenml import pipeline
-from pbd.pipelines.data_extraction.steps.downloader import (
-    download_from_minio,
-    extract_zip,
-)
 from pbd.pipelines.data_extraction.steps.ocr import ocr_images
 from pbd.pipelines.data_extraction.settings import (
     docker_settings,
@@ -28,15 +24,12 @@ def ocr_pipeline(
     min_pixels: int = 512,
     max_pixels: int = 512,
 ):
-    zip_path = download_from_minio(
+    ocr_images(
         endpoint=endpoint,
         bucket=bucket,
         object_key=object_key,
         local_path=local_path,
-    )
-    image_paths = extract_zip(zip_path=zip_path, extract_to=extract_to)
-    ocr_images(
-        image_paths=image_paths,
+        extract_to=extract_to,
         model_path=model_path,
         max_new_tokens=max_new_tokens,
         min_pixels=min_pixels,
