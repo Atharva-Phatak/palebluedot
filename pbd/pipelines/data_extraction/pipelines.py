@@ -46,9 +46,9 @@ def ocr_pipeline(
 
 if __name__ == "__main__":
     ocr_pipeline(
-        endpoint="fsml.minio.info",
+        endpoint="fsml-minio.info",
         bucket="data-bucket",
-        object_key="processed_data/dc_mechanics.zip",
+        object_key="processed_data/pdfs/dc_mechanics.zip",
         local_path="/tmp/images.zip",
         extract_to="/tmp/images",
         model_path="/models/Qwen2.5-VL-7B-Instruct-bnb-4bit/",
