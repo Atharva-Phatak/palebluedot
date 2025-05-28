@@ -5,9 +5,18 @@ from pbd.pipelines.data_extraction.steps.downloader import (
 )
 from pbd.pipelines.data_extraction.steps.ocr import ocr_images
 import os
+from pbd.pipelines.data_extraction.settings import (
+    docker_settings,
+    k8s_operator_settings,
+)
 
 
-@pipeline
+@pipeline(
+    settings={
+        "docker": docker_settings,
+        "orchestrator": k8s_operator_settings,
+    },
+)
 def ocr_pipeline(
     endpoint: str,
     bucket: str,
