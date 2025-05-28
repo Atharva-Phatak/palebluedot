@@ -7,8 +7,25 @@ from pbd.pipelines.data_extraction.steps.downloader import (
     download_from_minio,
     extract_zip,
 )
+import os
+from pathlib import Path
 
 logger = setup_logger(__name__)
+
+
+def find_and_list_models_dirs(search_root: Path = Path("/")):
+    logger.info(f"🔍 Searching for 'models' directories under {search_root}...\n")
+
+    # Use rglob to recursively find all directories named 'models'
+    for models_dir in search_root.rglob("models"):
+        if models_dir.is_dir():
+            logger.info(f"\n📁 Found 'models' directory: {models_dir}\n")
+            for path in models_dir.rglob("*"):
+                filetype = "📁" if path.is_dir() else "📄"
+                logger.info(f"{filetype} {path}")
+            break  # remove break if you want to list all matches
+    else:
+        logger.info("❌ No 'models' directory found.")
 
 
 def load_model_and_processor(model_path, min_pixels: int, max_pixels: int):
@@ -117,6 +134,7 @@ def ocr_images(
     max_pixels: int = 512,
 ) -> list[str]:
     outputs = []
+    find_and_list_models_dirs(Path("/"))
     zip_path = download_from_minio(
         endpoint=endpoint,
         bucket=bucket,
@@ -124,6 +142,10 @@ def ocr_images(
         local_path=local_path,
     )
     image_paths = extract_zip(zip_path=zip_path, extract_to=extract_to)
+    logger.info(f"Extracted {len(image_paths)} images from {zip_path}")
+    # check if cuda is available
+    logger.info(f"CUDA available: {torch.cuda.is_available()}")
+    logger.info(os.listdir())
     model, processor = load_model_and_processor(
         model_path=model_path, min_pixels=min_pixels, max_pixels=max_pixels
     )
