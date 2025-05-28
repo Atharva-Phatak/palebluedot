@@ -1,60 +1,59 @@
-pipeline:
-  name: ocr_pipeline
-  enable_cache: false
+name: ocr_pipeline
+enable_cache: false
 
-  parameters:
-    endpoint: "fsml.minio.info"
-    bucket: "data-bucket"
-    object_key: "processed_data/dc_mechanics.zip"
-    local_path: "/tmp/images.zip"
-    extract_to: "/tmp/images"
-    image_dir: "/tmp/images"
-    model_path: "/models/Qwen2.5-VL-7B-Instruct-bnb-4bit/"
-    max_new_tokens: 4096
-    min_pixels: 512
-    max_pixels: 512
+args:
+  endpoint: "fsml.minio.info"
+  bucket: "data-bucket"
+  object_key: "processed_data/dc_mechanics.zip"
+  local_path: "/tmp/images.zip"
+  extract_to: "/tmp/images"
+  image_dir: "/tmp/images"
+  model_path: "/models/Qwen2.5-VL-7B-Instruct-bnb-4bit/"
+  max_new_tokens: 4096
+  min_pixels: 512
+  max_pixels: 512
 
-  settings:
-    docker:
-      parent_image: "ghcr.io/atharva-phatak/pbd-data_extraction:latest"
-      skip_build: true
+settings:
+  docker:
+    parent_image: "ghcr.io/atharva-phatak/pbd-data_extraction:latest"
+    skip_build: true
 
-    kubernetes_orchestrator:
-      pod_settings:
-        resources:
-          requests:
-            cpu: "4"
-            memory: "8Gi"
-            nvidia.com/gpu: "1"
-          limits:
-            cpu: "6"
-            memory: "14Gi"
-            nvidia.com/gpu: "1"
-        env_from:
-          - secretRef:
-              name: "aws-credentials"
-        labels:
-          app: "ocr-pipeline"
-          component: "step"
-        volumes:
-          - name: "models-volume"
-            persistentVolumeClaim:
-              claimName: "mk-model-pvc"
-        volume_mounts:
-          - name: "models-volume"
-            mountPath: "/models"
+  kubernetes_orchestrator:
+    pod_settings:
+      resources:
+        requests:
+          cpu: "4"
+          memory: "8Gi"
+          nvidia.com/gpu: "1"
+        limits:
+          cpu: "6"
+          memory: "14Gi"
+          nvidia.com/gpu: "1"
+      env_from:
+        - secretRef:
+            name: "aws-credentials"
+      labels:
+        app: "ocr-pipeline"
+        component: "step"
+      volumes:
+        - name: "models-volume"
+          persistentVolumeClaim:
+            claimName: "mk-model-pvc"
+      volume_mounts:
+        - name: "models-volume"
+          mountPath: "/models"
 
-      orchestrator_pod_settings:
-        resources:
-          requests:
-            cpu: "2"
-            memory: "70Mi"
-          limits:
-            cpu: "4"
-            memory: "256Mi"
-        env_from:
-          - secretRef:
-              name: "aws-credentials"
-        labels:
-          app: "zenml-orchestrator"
-          component: "orchestrator"
+    orchestrator_pod_settings:
+      resources:
+        requests:
+          cpu: "2"
+          memory: "70Mi"
+        limits:
+          cpu: "4"
+          memory: "256Mi"
+      env_from:
+        - secretRef:
+            name: "aws-credentials"
+      labels:
+        app: "zenml-orchestrator"
+        component: "orchestrator"
