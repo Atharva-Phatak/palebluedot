@@ -2,6 +2,9 @@ from transformers import AutoModelForImageTextToText, AutoProcessor
 import torch
 from PIL import Image
 from zenml import step
+from pbd.helper.logger import setup_logger
+
+logger = setup_logger(__name__)
 
 
 def load_model_and_processor(model_path, min_pixels: int, max_pixels: int):
@@ -100,7 +103,7 @@ def do_inference(
 @step(enable_step_logs=True, enable_cache=False)
 def ocr_images(
     image_paths: list[str],
-    model_path: dict,
+    model_path: str,
     max_new_tokens: int,
     min_pixels: int = 512,
     max_pixels: int = 512,
@@ -117,4 +120,5 @@ def ocr_images(
             max_new_tokens=max_new_tokens,
         )
         outputs.append(op)
+    logger.info(outputs)
     return outputs
