@@ -14,17 +14,27 @@ logger = setup_logger(__name__)
 
 
 def find_and_list_models_dirs(search_root: Path = Path("/")):
-    logger.info(f"🔍 Searching for 'models' directories under {search_root}...\n")
+    logger.info(f"🔍 Searching for 'models' directories under {search_root}...")
 
-    # Use rglob to recursively find all directories named 'models'
+    found_any = False
+
     for models_dir in search_root.rglob("models"):
         if models_dir.is_dir():
-            logger.info(f"\n📁 Found 'models' directory: {models_dir}\n")
-            for path in models_dir.rglob("*"):
-                filetype = "📁" if path.is_dir() else "📄"
-                logger.info(f"{filetype} {path}")
-            break  # remove break if you want to list all matches
-    else:
+            found_any = True
+            logger.info(f"📁 Found 'models' directory at: {models_dir}")
+            contents = list(models_dir.iterdir())
+
+            if not contents:
+                logger.info(f"📂 The directory {models_dir} is empty.")
+            else:
+                logger.info(f"📦 Contents of {models_dir}:")
+                for item in contents:
+                    symbol = "📁" if item.is_dir() else "📄"
+                    logger.info(f"  {symbol} {item.name}")
+
+            break  # Remove this if you want to list multiple models dirs
+
+    if not found_any:
         logger.info("❌ No 'models' directory found.")
 
 
