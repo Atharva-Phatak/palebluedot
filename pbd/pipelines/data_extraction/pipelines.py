@@ -14,9 +14,10 @@ def ocr_pipeline(
     object_key: str,
     local_path: str,
     extract_to: str,
-    model_config: dict,
-    generation_config: dict,
-    prompt: str,
+    model_path: str,
+    max_new_tokens: int,
+    min_pixels: int = 512,
+    max_pixels: int = 512,
 ):
     access_key = os.environ.get("AWS_ACCESS_KEY_ID")
     secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
@@ -33,9 +34,10 @@ def ocr_pipeline(
     image_paths = extract_zip(zip_path=zip_path, extract_to=extract_to)
     ocr_images(
         image_paths=image_paths,
-        model_config=model_config,
-        generation_config=generation_config,
-        prompt=prompt,
+        model_path=model_path,
+        max_new_tokens=max_new_tokens,
+        min_pixels=min_pixels,
+        max_pixels=max_pixels,
     )
 
 

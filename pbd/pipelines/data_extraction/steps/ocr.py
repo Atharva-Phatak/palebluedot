@@ -1,5 +1,3 @@
-import pathlib
-
 from transformers import AutoModelForImageTextToText, AutoProcessor
 import torch
 from PIL import Image
@@ -101,18 +99,17 @@ def do_inference(
 
 @step
 def ocr_images(
-    image_dir: str,
+    image_paths: list[str],
     model_path: dict,
     max_new_tokens: int,
     min_pixels: int = 512,
     max_pixels: int = 512,
 ) -> list[str]:
+    outputs = []
     model, processor = load_model_and_processor(
         model_path=model_path, min_pixels=min_pixels, max_pixels=max_pixels
     )
-    image_paths = list(pathlib.Path(image_dir).glob("*.png"))
-    outputs = []
-    for image_path in image_paths:
+    for image_path in image_paths[300]:
         op = do_inference(
             image=image_path,
             model=model,
