@@ -13,29 +13,13 @@ from pathlib import Path
 logger = setup_logger(__name__)
 
 
-def find_and_list_models_dirs(search_root: Path = Path("/")):
-    logger.info(f"🔍 Searching for 'models' directories under {search_root}...")
-
-    found_any = False
-
-    for models_dir in search_root.rglob("models"):
-        if models_dir.is_dir():
-            found_any = True
-            logger.info(f"📁 Found 'models' directory at: {models_dir}")
-            contents = list(models_dir.iterdir())
-
-            if not contents:
-                logger.info(f"📂 The directory {models_dir} is empty.")
-            else:
-                logger.info(f"📦 Contents of {models_dir}:")
-                for item in contents:
-                    symbol = "📁" if item.is_dir() else "📄"
-                    logger.info(f"  {symbol} {item.name}")
-
-            break  # Remove this if you want to list multiple models dirs
-
-    if not found_any:
-        logger.info("❌ No 'models' directory found.")
+def find_and_list_models_dirs():
+    models_root = Path("/models")
+    if models_root.exists():
+        logger.info(f"✅ Found models at: {models_root}")
+        logger.info("📦 Available models:", list(p.name for p in models_root.iterdir()))
+    else:
+        logger.info("❌ /models directory not found")
 
 
 def load_model_and_processor(model_path, min_pixels: int, max_pixels: int):
