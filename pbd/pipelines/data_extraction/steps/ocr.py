@@ -128,7 +128,7 @@ def ocr_images(
     logger.info(f"Extracted {len(image_paths)} images from {zip_path}")
     # check if cuda is available
     logger.info(f"CUDA available: {torch.cuda.is_available()}")
-    logger.info(os.listdir("/models"))
+    logger.info(os.listdir(model_path))
     model, processor = load_model_and_processor(
         model_path=model_path, min_pixels=min_pixels, max_pixels=max_pixels
     )
