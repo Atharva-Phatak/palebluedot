@@ -5,9 +5,6 @@ FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime AS build
 # Upgrade pip
 RUN pip install --upgrade pip
 
-# Optional: Reinstall torch to ensure it's consistent with your project setup
-RUN pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
-
 # Copy and install project requirements
 COPY pipelines/data_extraction/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
