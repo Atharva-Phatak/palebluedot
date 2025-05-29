@@ -128,7 +128,7 @@ def ocr_images(
     max_pixels: int = 512,
 ) -> list[str]:
     outputs = []
-    find_and_list_models_dirs(Path("/"))
+    find_and_list_models_dirs()
     zip_path = download_from_minio(
         endpoint=endpoint,
         bucket=bucket,
