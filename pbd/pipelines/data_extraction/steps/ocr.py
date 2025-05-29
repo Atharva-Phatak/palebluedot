@@ -8,18 +8,8 @@ from pbd.pipelines.data_extraction.steps.downloader import (
     extract_zip,
 )
 import os
-from pathlib import Path
 
 logger = setup_logger(__name__)
-
-
-def find_and_list_models_dirs():
-    models_root = Path("/models")
-    if models_root.exists():
-        logger.info(f"✅ Found models at: {models_root}")
-        logger.info("📦 Available models:", list(p.name for p in models_root.iterdir()))
-    else:
-        logger.info("❌ /models directory not found")
 
 
 def load_model_and_processor(model_path, min_pixels: int, max_pixels: int):
@@ -128,7 +118,6 @@ def ocr_images(
     max_pixels: int = 512,
 ) -> list[str]:
     outputs = []
-    find_and_list_models_dirs()
     zip_path = download_from_minio(
         endpoint=endpoint,
         bucket=bucket,
@@ -139,7 +128,7 @@ def ocr_images(
     logger.info(f"Extracted {len(image_paths)} images from {zip_path}")
     # check if cuda is available
     logger.info(f"CUDA available: {torch.cuda.is_available()}")
-    logger.info(os.listdir())
+    logger.info(os.listdir("/models"))
     model, processor = load_model_and_processor(
         model_path=model_path, min_pixels=min_pixels, max_pixels=max_pixels
     )
