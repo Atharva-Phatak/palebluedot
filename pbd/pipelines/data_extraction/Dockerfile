@@ -1,5 +1,5 @@
 # Stage 1: Build dependencies with Python
-FROM nvidia/cuda:12.9.0-cudnn-runtime-ubuntu24.04
+FROM nvidia/cuda:12.9.0-cudnn-runtime-ubuntu24.04 AS build
 
 # Install Python 3.12 and venv
 # Upgrade pip
