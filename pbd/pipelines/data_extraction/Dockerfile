@@ -1,5 +1,5 @@
 # Stage 1: Build dependencies with Python
-FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime AS build
+FROM nvidia/cuda:12.9.0-cudnn-runtime-ubuntu24.04
 
 # Install Python 3.12 and venv
 # Upgrade pip
@@ -11,7 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 
 # Stage 2: Final runtime image
-FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime
+FROM nvidia/cuda:12.9.0-cudnn-runtime-ubuntu24.04
 
 
 # Copy the virtualenv from build
