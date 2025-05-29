@@ -1,23 +1,31 @@
-# Stage 1: Build dependencies with Python
-FROM nvidia/cuda:12.9.0-cudnn-runtime-ubuntu24.04 AS build
+# -----------------------------
+# Stage 1: Build dependencies
+# -----------------------------
+FROM python:3.12-slim as build
 
-# Install Python 3.12 and venv
-# Upgrade pip
+WORKDIR /build
+RUN apt-get update && apt-get install -y build-essential
 RUN pip install --upgrade pip
-
-# Copy and install project requirements
 COPY pipelines/data_extraction/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
+# -----------------------------
+# Stage 2: Runtime with CUDA
+# -----------------------------
+FROM nvidia/cuda:12.9.0-cudnn-runtime-ubuntu22.04
 
-# Stage 2: Final runtime image
-FROM nvidia/cuda:12.9.0-cudnn-runtime-ubuntu24.04
+# Install Python (Ubuntu 22.04 has apt support)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-venv \
+    python3-distutils \
+    curl \
+ && ln -s /usr/bin/python3 /usr/bin/python \
+ && curl -sS https://bootstrap.pypa.io/get-pip.py | python \
+ && rm -rf /var/lib/apt/lists/*
 
+COPY --from=build /install /usr/local
 
-# Copy the virtualenv from build
-COPY --from=build /opt/conda /opt/conda
-
-# Set up workdir and app files
 WORKDIR /app
 COPY helper /app/pbd/helper
 COPY pipelines/data_extraction /app/pbd/pipelines/data_extraction
