@@ -22,16 +22,15 @@ wheels = [
 
 [[package]]
 name = "alembic"
-version = "1.15.2"
+version = "1.8.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mako" },
     { name = "sqlalchemy" },
-    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e6/57/e314c31b261d1e8a5a5f1908065b4ff98270a778ce7579bd4254477209a7/alembic-1.15.2.tar.gz", hash = "sha256:1c72391bbdeffccfe317eefba686cb9a3c078005478885413b95c3b26c57a8a7", size = 1925573 }
+sdist = { url = "https://files.pythonhosted.org/packages/37/ab/80e6d86ca81235ea1a7104089dddf74de4b45f8af0a05d4b265be44d6ff9/alembic-1.8.1.tar.gz", hash = "sha256:cd0b5e45b14b706426b833f06369b9a6d5ee03f826ec3238723ce8caaf6e5ffa", size = 1255927 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/41/18/d89a443ed1ab9bcda16264716f809c663866d4ca8de218aa78fd50b38ead/alembic-1.15.2-py3-none-any.whl", hash = "sha256:2e76bd916d547f6900ec4bb5a90aeac1485d2c92536923d0b138c02b126edc53", size = 231911 },
+    { url = "https://files.pythonhosted.org/packages/b3/c8/69600a8138a56794713ecdb8b75b14fbe32a410bc444683f27dbab93c0ca/alembic-1.8.1-py3-none-any.whl", hash = "sha256:0a024d7f2de88d738d7395ff866997314c837be6104e90c5724350313dee4da4", size = 209845 },
 ]
 
 [[package]]
@@ -288,7 +287,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=11.2.1" },
     { name = "s3fs", specifier = ">=0.4.2" },
     { name = "transformers", specifier = ">=4.51.3" },
-    { name = "zenml", specifier = ">=0.80.2" },
+    { name = "zenml", specifier = "==0.80.2" },
 ]
 
 [[package]]
@@ -1642,7 +1641,7 @@ wheels = [
 
 [[package]]
 name = "zenml"
-version = "0.83.0"
+version = "0.80.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
@@ -1666,7 +1665,7 @@ dependencies = [
     { name = "sqlalchemy-utils" },
     { name = "sqlmodel" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2d/ab/2333f6e7678f9614185786cfb1f70dc6e86b7c3eb496e451a077c0bb3309/zenml-0.83.0.tar.gz", hash = "sha256:4b9782ccfe7586a13f22bf99ae1e54cff78031c4e5f8906b67c4b9e8e38d0d9c", size = 3172596 }
+sdist = { url = "https://files.pythonhosted.org/packages/19/e9/d774c499b34f0e50f157b5d76526ceb40867dca04e71c86931aa941f4619/zenml-0.80.2.tar.gz", hash = "sha256:6cb32a83c9928d4b6ee4b30be347295cd8123a5641f3560b6b9b607829a0943d", size = 3130706 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/26/f6/fa10995f20d2fbaf18822963433c6f9f9a97fc379a92a3cfe86a2cf21052/zenml-0.83.0-py3-none-any.whl", hash = "sha256:a71e9f312bf2024901a7bf8f700aff0ae1ae3077f8cafd92d765b1eb601f0701", size = 4048251 },
+    { url = "https://files.pythonhosted.org/packages/2c/24/d5984500df755a427136798c910420d5dc1bbef6a47dda8c951a42c1e940/zenml-0.80.2-py3-none-any.whl", hash = "sha256:fd4875842181fe91fe722709b15efe8efc26e6b86c2258584c6d7add1132da63", size = 3994391 },
 ]

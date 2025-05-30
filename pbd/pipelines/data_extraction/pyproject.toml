@@ -14,5 +14,5 @@ dependencies = [
     "pillow>=11.2.1",
     "s3fs>=0.4.2",
     "transformers>=4.51.3",
-    "zenml>=0.80.2",
+    "zenml==0.80.2",
 ]
