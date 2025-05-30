@@ -20,7 +20,7 @@ RUN pip install --upgrade pip
 COPY pipelines/data_extraction/requirements.txt /tmp/requirements.txt
 
 # Install remaining requirements (e.g., accelerate, transformers, etc.)
-RUN pip install --no-cache-dir -r /tmp/stripped-requirements.txt
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 # Set up your codebase
 WORKDIR /app
