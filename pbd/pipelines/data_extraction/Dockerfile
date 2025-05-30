@@ -9,6 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.11-venv \
     python3.11-distutils \
     curl \
+    gcc \
+    g++ \
+    make \
+    build-essential \
  && ln -s /usr/bin/python3.11 /usr/bin/python \
  && curl -sS https://bootstrap.pypa.io/get-pip.py | python \
  && rm -rf /var/lib/apt/lists/*
