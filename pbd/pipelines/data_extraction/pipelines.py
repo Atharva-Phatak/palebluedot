@@ -24,6 +24,7 @@ def ocr_pipeline(
     min_pixels: int = 512,
     max_pixels: int = 512,
 ):
+    """Pipeline for performing OCR on images extracted from a zip file."""
     ocr_images(
         endpoint=endpoint,
         bucket=bucket,
