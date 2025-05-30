@@ -1,31 +1,28 @@
 # -----------------------------
-# Stage 1: Build dependencies
+# Stage 1: Base CUDA Runtime
 # -----------------------------
-FROM python:3.12-slim as build
+FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu22.04
 
-WORKDIR /build
-RUN apt-get update && apt-get install -y build-essential
-RUN pip install --upgrade pip
-COPY pipelines/data_extraction/requirements.txt .
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
-
-# -----------------------------
-# Stage 2: Runtime with CUDA
-# -----------------------------
-FROM nvidia/cuda:12.7.0-cudnn-runtime-ubuntu22.04
-
-# Install Python (Ubuntu 22.04 has apt support)
+# Install Python 3.12 and system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    python3-venv \
-    python3-distutils \
+    python3.12 \
+    python3.12-venv \
+    python3.12-distutils \
     curl \
- && ln -s /usr/bin/python3 /usr/bin/python \
+ && ln -s /usr/bin/python3.12 /usr/bin/python \
  && curl -sS https://bootstrap.pypa.io/get-pip.py | python \
  && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /install /usr/local
+# Upgrade pip
+RUN pip install --upgrade pip
 
+# Copy requirements.txt and remove any torch version to avoid overwrite
+COPY pipelines/data_extraction/requirements.txt /tmp/requirements.txt
+
+# Install remaining requirements (e.g., accelerate, transformers, etc.)
+RUN pip install --no-cache-dir -r /tmp/stripped-requirements.txt
+
+# Set up your codebase
 WORKDIR /app
 COPY helper /app/pbd/helper
 COPY pipelines/data_extraction /app/pbd/pipelines/data_extraction
