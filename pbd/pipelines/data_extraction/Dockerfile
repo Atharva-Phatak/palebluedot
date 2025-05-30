@@ -12,7 +12,7 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 # -----------------------------
 # Stage 2: Runtime with CUDA
 # -----------------------------
-FROM nvidia/cuda:12.9.0-cudnn-runtime-ubuntu22.04
+FROM nvidia/cuda:12.7.0-cudnn-runtime-ubuntu22.04
 
 # Install Python (Ubuntu 22.04 has apt support)
 RUN apt-get update && apt-get install -y --no-install-recommends \
