@@ -1,16 +1,16 @@
-name: Build and Push Changed Pipelines
-
+name: Build and Push Docker Images
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'pbd/pipelines/**'
   workflow_dispatch:
     inputs:
       folder:
-        description: 'Specific folder to build (inside pbd/pipelines/)'
+        description: 'Folder to build (optional - overrides change detection)'
         required: false
         type: string
+  push:
+    branches:
+      - main
+    paths:
+      - 'pbd/pipelines/**'  # ✅ ADDED: trigger only when something inside pbd/pipelines changes
 
 permissions:
   contents: read
@@ -19,73 +19,78 @@ permissions:
   id-token: write
 
 jobs:
-  detect-changed:
+  detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      folders: ${{ steps.detect.outputs.changed }}
+      changed_folders: ${{ steps.filter.outputs.folders }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Detect changed folders
-        id: detect
+      - name: Get Changed Folders
+        id: filter
         run: |
-          echo "Detected manually dispatched folder: '${{ github.event.inputs.folder }}'"
+          if [ -n "${{ inputs.folder }}" ]; then
+            CHANGED='["${{ inputs.folder }}"]'
+          elif [ $(git rev-list --count HEAD) -eq 1 ]; then
+            # Initial commit: build everything
+            CHANGED=$(find pbd/pipelines -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n")[:-1]')
+          else
+            # Get all folders that were touched in this commit
+            FOLDERS=$(git diff --name-status HEAD^ HEAD | grep '^pbd/pipelines/' | cut -f2 | cut -d '/' -f3 | sort -u)
 
-          if [ -n "${{ github.event.inputs.folder }}" ]; then
-            echo "changed=[\"${{ github.event.inputs.folder }}\"]" >> $GITHUB_OUTPUT
-            exit 0
+            # Filter only existing ones
+            EXISTING=()
+            for folder in $FOLDERS; do
+              if [ -d "pbd/pipelines/$folder" ]; then
+                EXISTING+=("\"$folder\"")
+              fi
+            done
+
+            # Join the valid folder names into a JSON array
+            CHANGED=$(printf "[%s]" "$(IFS=,; echo "${EXISTING[*]}")")
           fi
 
-          # Fallback if no previous commit exists (e.g., force-push or shallow clone)
-          PREV_COMMIT=$(git rev-parse HEAD^ 2>/dev/null || echo HEAD~1)
+          echo "folders=$CHANGED" >> $GITHUB_OUTPUT
+          echo "Detected folders for build: $CHANGED"
 
-          # Get changed folders under pbd/pipelines
-          CHANGED=$(git diff --name-only $PREV_COMMIT HEAD | grep '^pbd/pipelines/' | cut -d '/' -f3 | sort -u)
-
-          # Filter for folders that actually still exist
-          VALID_CHANGED=()
-          for f in $CHANGED; do
-            if [ -d "pbd/pipelines/$f" ]; then
-              VALID_CHANGED+=("\"$f\"")
-            fi
-          done
-
-          if [ ${#VALID_CHANGED[@]} -eq 0 ]; then
-            echo "No valid folders to build. Exiting."
-            echo "changed=[]" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          CHANGED_JSON=$(printf "[%s]" "$(IFS=,; echo "${VALID_CHANGED[*]}")")
-          echo "changed=$CHANGED_JSON" >> $GITHUB_OUTPUT
-          echo "Detected folders: $CHANGED_JSON"
-
-  build:
-    needs: detect-changed
-    if: ${{ needs.detect-changed.outputs.folders != '[]' && needs.detect-changed.outputs.folders != '' }}
+  build-and-push:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.changed_folders != '[]' && needs.detect-changes.outputs.changed_folders != '' }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        folder: ${{ fromJson(needs.detect-changed.outputs.folders) }}
+        folder: ${{ fromJson(needs.detect-changes.outputs.changed_folders) }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Prepare Lowercase Repository Name
+        id: repo-details
+        run: |
+          LOWERCASE_REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          echo "repo_name=$LOWERCASE_REPO_NAME" >> $GITHUB_OUTPUT
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Log in to GHCR
+      - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Push ${{ matrix.folder }} Docker Image
+      - name: Prepare Lowercase Repository Owner
+        id: repo-owner
+        run: |
+          echo "repo_owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
           context: pbd/
           file: pbd/pipelines/${{ matrix.folder }}/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/pbd-${{ matrix.folder }}:latest
+          tags: ghcr.io/${{ steps.repo-owner.outputs.repo_owner }}/pbd-${{ matrix.folder }}:latest
