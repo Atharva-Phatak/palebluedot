@@ -3,13 +3,13 @@
 # -----------------------------
 FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu22.04
 
-# Install Python 3.12 and system dependencies
+# Install Python 3.10 and system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.12 \
-    python3.12-venv \
-    python3.12-distutils \
+    python3.10 \
+    python3.10-venv \
+    python3.10-distutils \
     curl \
- && ln -s /usr/bin/python3.12 /usr/bin/python \
+ && ln -s /usr/bin/python3.10 /usr/bin/python \
  && curl -sS https://bootstrap.pypa.io/get-pip.py | python \
  && rm -rf /var/lib/apt/lists/*
 
