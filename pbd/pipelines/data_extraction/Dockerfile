@@ -1,7 +1,7 @@
 # -----------------------------
 # Stage 1: Base CUDA Runtime
 # -----------------------------
-FROM nvidia/cuda:12.8-cudnn-runtime-ubuntu22.04
+FROM nvidia/cuda:12.8.0-cudnn-runtime-ubuntu22.04
 
 # Install Python 3.11 and system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
