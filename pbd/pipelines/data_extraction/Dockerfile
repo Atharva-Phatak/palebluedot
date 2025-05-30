@@ -1,22 +1,22 @@
 # -----------------------------
 # Stage 1: Base CUDA Runtime
 # -----------------------------
-FROM nvidia/cuda:12.6.3-cudnn-runtime-ubuntu22.04
+FROM nvidia/cuda:12.8-cudnn-runtime-ubuntu22.04
 
-# Install Python 3.10 and system dependencies
+# Install Python 3.11 and system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.10 \
-    python3.10-venv \
-    python3.10-distutils \
+    python3.11 \
+    python3.11-venv \
+    python3.11-distutils \
     curl \
- && ln -s /usr/bin/python3.10 /usr/bin/python \
+ && ln -s /usr/bin/python3.11 /usr/bin/python \
  && curl -sS https://bootstrap.pypa.io/get-pip.py | python \
  && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip
 RUN pip install --upgrade pip
 
-# Copy requirements.txt and remove any torch version to avoid overwrite
+# Copy requirements.txt
 COPY pipelines/data_extraction/requirements.txt /tmp/requirements.txt
 
 # Install remaining requirements (e.g., accelerate, transformers, etc.)
