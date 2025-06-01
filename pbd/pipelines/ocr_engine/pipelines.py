@@ -51,7 +51,7 @@ def ocr_pipeline(
 
 
 if __name__ == "__main__":
-    config = load_config(config="configs/config.yaml")
+    config = load_config(config_path="configs/config.yaml")
     ocr_pipeline(
         endpoint=config.parameters.endpoint,
         bucket=config.parameters.bucket,
