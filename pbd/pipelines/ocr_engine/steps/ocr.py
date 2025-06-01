@@ -1,15 +1,17 @@
+from dataclasses import asdict
+
+import torch
+from datasets import Dataset
 from PIL import Image
 from vllm import LLM, EngineArgs, SamplingParams
-from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
 from zenml import step
+
 from pbd.helper.logger import setup_logger
 from pbd.pipelines.ocr_engine.steps.downloader import (
     download_from_minio,
     extract_zip,
 )
-import torch
-from dataclasses import asdict
-from datasets import Dataset
+from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
 
 logger = setup_logger(__name__)
 
@@ -19,7 +21,6 @@ def do_inference(
 ) -> list[dict]:
     engine_args = EngineArgs(
         model=model_path,
-        max_model_len=4096,
         max_num_seqs=1,
         limit_mm_per_prompt={"image": 2, "video": 0},
         mm_processor_kwargs={"min_pixels": 28 * 28, "max_pixels": 1280 * 80 * 80},

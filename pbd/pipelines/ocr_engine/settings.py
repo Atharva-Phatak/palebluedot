@@ -1,11 +1,11 @@
-from zenml.integrations.kubernetes.flavors import KubernetesOrchestratorSettings
 from zenml.config import DockerSettings
+from zenml.integrations.kubernetes.flavors import KubernetesOrchestratorSettings
 from zenml.integrations.kubernetes.pod_settings import KubernetesPodSettings
 
 step_pod_settings = KubernetesPodSettings(
     resources={
-        "requests": {"cpu": "4", "memory": "8Gi", "nvidia.com/gpu": "1"},
-        "limits": {"cpu": "6", "memory": "14Gi", "nvidia.com/gpu": "1"},
+        "requests": {"cpu": "4", "memory": "10Gi", "nvidia.com/gpu": "1"},
+        "limits": {"cpu": "6", "memory": "18Gi", "nvidia.com/gpu": "1"},
     },
     volumes=[
         {"name": "model-volume", "persistentVolumeClaim": {"claimName": "mk-model-pvc"}}
@@ -33,7 +33,8 @@ orchestrator_pod_settings = KubernetesPodSettings(
 k8s_operator_settings = KubernetesOrchestratorSettings(
     pod_settings=step_pod_settings,
     orchestrator_pod_settings=orchestrator_pod_settings,
+    pod_startup_timeout=1200,  # 20 minutes
 )
 docker_settings = DockerSettings(
-    parent_image="ghcr.io/atharva-phatak/pbd-data_extraction:latest", skip_build=True
+    parent_image="ghcr.io/atharva-phatak/pbd-ocr_engine:latest", skip_build=True
 )

@@ -24,8 +24,6 @@ def store_extracted_texts_to_minio(
         dataset: List of dicts with keys 'image_path', 'extracted_text'
         bucket_name: MinIO bucket name
         minio_endpoint: MinIO server endpoint (e.g., "localhost:9000")
-        access_key: MinIO access key
-        secret_key: MinIO secret key
         secure: Use HTTPS if True
 
     Returns:

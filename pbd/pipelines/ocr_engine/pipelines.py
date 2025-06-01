@@ -28,8 +28,6 @@ def ocr_pipeline(
     extract_to: str,
     model_path: str,
     max_new_tokens: int,
-    min_pixels: int = 512,
-    max_pixels: int = 512,
 ):
     """Pipeline for performing OCR on images extracted from a zip file."""
     data = ocr_images(
@@ -40,26 +38,23 @@ def ocr_pipeline(
         extract_to=extract_to,
         model_path=model_path,
         max_new_tokens=max_new_tokens,
-        min_pixels=min_pixels,
-        max_pixels=max_pixels,
     )
     store_extracted_texts_to_minio(
-        extraction_results=data,
+        dataset=data,
         bucket_name=bucket,
         minio_endpoint=endpoint,
     )
 
 
 if __name__ == "__main__":
-    config = load_config(config_path="configs/config.yaml")
+    # config_dir = get_pipeline_config_dir(pipeline_name="ocr_engine")
+    # config = load_config(config_path=str(config_dir / "config.yaml"))
     ocr_pipeline(
-        endpoint=config.parameters.endpoint,
-        bucket=config.parameters.bucket,
-        object_key=config.parameters.object_key,
-        local_path=config.parameters.local_path,
-        extract_to=config.parameters.extract_to,
-        model_path=config.parameters.model_path,
+        endpoint="fsml-minio.info",
+        bucket="data-bucket",
+        object_key="processed_data/pdfs/dc_mechanics.zip",
+        local_path="/tmp/images.zip",
+        extract_to="/tmp/images",
+        model_path="/models/Qwen2.5-VL-7B-Instruct-unsloth-bnb-4bit",
         max_new_tokens=4096,
-        min_pixels=512,
-        max_pixels=512,
     )
