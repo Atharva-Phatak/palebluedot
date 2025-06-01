@@ -85,4 +85,4 @@ urllib3==2.4.0
 wcwidth==0.2.13
 websocket-client==1.8.0
 widgetsnbextension==4.0.14
-zenml==0.80.0
+zenml==0.83.0

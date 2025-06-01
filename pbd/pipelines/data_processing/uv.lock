@@ -269,7 +269,7 @@ requires-dist = [
     { name = "pdf2image", specifier = ">=1.17.0" },
     { name = "pymupdf", specifier = ">=1.25.5" },
     { name = "s3fs", specifier = ">=0.4.2" },
-    { name = "zenml", specifier = "==0.80.0" },
+    { name = "zenml", specifier = "==0.83.0" },
 ]
 
 [[package]]
@@ -1213,7 +1213,7 @@ wheels = [
 
 [[package]]
 name = "zenml"
-version = "0.80.0"
+version = "0.83.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
@@ -1237,7 +1237,7 @@ dependencies = [
     { name = "sqlalchemy-utils" },
     { name = "sqlmodel" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/00/f1/9e7e322e60044a06ea0dbbe273f6c96b63a8f9539480f23a136e70dfa33b/zenml-0.80.0.tar.gz", hash = "sha256:a8cdf3ccc376b0ba96a6fed70ec15f2bea6a77c6f62e9049441ccc5efe40e107", size = 3124553 }
+sdist = { url = "https://files.pythonhosted.org/packages/2d/ab/2333f6e7678f9614185786cfb1f70dc6e86b7c3eb496e451a077c0bb3309/zenml-0.83.0.tar.gz", hash = "sha256:4b9782ccfe7586a13f22bf99ae1e54cff78031c4e5f8906b67c4b9e8e38d0d9c", size = 3172596 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4b/61/ba6f095a951211faffa3ce4573886e7a7a2f0346fa75919f8ffe50ea6051/zenml-0.80.0-py3-none-any.whl", hash = "sha256:ab5f99bd4b9600754899b6d5dcecf2c6c1bc57665d8252d1ae05179ae9038092", size = 3987824 },
+    { url = "https://files.pythonhosted.org/packages/26/f6/fa10995f20d2fbaf18822963433c6f9f9a97fc379a92a3cfe86a2cf21052/zenml-0.83.0-py3-none-any.whl", hash = "sha256:a71e9f312bf2024901a7bf8f700aff0ae1ae3077f8cafd92d765b1eb601f0701", size = 4048251 },
 ]
