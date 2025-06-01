@@ -24,6 +24,7 @@ minikube_start = start_minikube(
     addons=cfg.minikube_addons,
     gpus=cfg.minikube_gpus,
     disk_size=cfg.minikube_disk_size,
+    models_mount_path=cfg.model_storage_path,
 )
 
 k8s_provider = get_k8s_provider(depends_on=[minikube_start])

@@ -7,7 +7,7 @@ from pulumi_kubernetes.helm.v3 import LocalChartOpts
 
 def download_zenml_helm_chart():
     # Download the chart directly from GitHub
-    chart_version = "0.80.0"  # Replace with your desired version
+    chart_version = "0.83.0"  # Replace with your desired version
     chart_url = (
         f"https://github.com/zenml-io/zenml/archive/refs/tags/{chart_version}.zip"
     )
