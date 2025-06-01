@@ -1,19 +1,17 @@
 [project]
-name = "data-extraction"
+name = "ocr-engine"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "accelerate>=1.7.0",
     "bitsandbytes>=0.46.0",
-    "boto3>=1.37.33",
-    "botocore>=1.37.33",
-    "ipython==8.35.0",
+    "boto3>=1.38.27",
     "kubernetes>=32.0.1",
     "minio>=7.2.15",
+    "omegaconf>=2.3.0",
     "pillow>=11.2.1",
     "s3fs>=0.4.2",
-    "transformers>=4.51.3",
-    "zenml==0.80.2",
+    "vllm==0.9.0.1",
+    "zenml==0.83.0",
 ]

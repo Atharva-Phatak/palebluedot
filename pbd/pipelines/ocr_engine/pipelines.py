@@ -1,9 +1,16 @@
+from omegaconf import OmegaConf
 from zenml import pipeline
-from pbd.pipelines.data_extraction.steps.ocr import ocr_images
-from pbd.pipelines.data_extraction.settings import (
+
+from pbd.pipelines.ocr_engine.settings import (
     docker_settings,
     k8s_operator_settings,
 )
+from pbd.pipelines.ocr_engine.steps.data import store_extracted_texts_to_minio
+from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
+
+
+def load_config(config_path: str):
+    return OmegaConf.load(config_path)
 
 
 @pipeline(
@@ -25,7 +32,7 @@ def ocr_pipeline(
     max_pixels: int = 512,
 ):
     """Pipeline for performing OCR on images extracted from a zip file."""
-    ocr_images(
+    data = ocr_images(
         endpoint=endpoint,
         bucket=bucket,
         object_key=object_key,
@@ -36,16 +43,22 @@ def ocr_pipeline(
         min_pixels=min_pixels,
         max_pixels=max_pixels,
     )
+    store_extracted_texts_to_minio(
+        extraction_results=data,
+        bucket_name=bucket,
+        minio_endpoint=endpoint,
+    )
 
 
 if __name__ == "__main__":
+    config = load_config(config="configs/config.yaml")
     ocr_pipeline(
-        endpoint="fsml-minio.info",
-        bucket="data-bucket",
-        object_key="processed_data/pdfs/dc_mechanics.zip",
-        local_path="/tmp/images.zip",
-        extract_to="/tmp/images",
-        model_path="/models/Qwen2.5-VL-7B-Instruct-unsloth-bnb-4bit",
+        endpoint=config.parameters.endpoint,
+        bucket=config.parameters.bucket,
+        object_key=config.parameters.object_key,
+        local_path=config.parameters.local_path,
+        extract_to=config.parameters.extract_to,
+        model_path=config.parameters.model_path,
         max_new_tokens=4096,
         min_pixels=512,
         max_pixels=512,
