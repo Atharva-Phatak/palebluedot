@@ -1,11 +1,11 @@
 import os
 import tempfile
-from datetime import datetime
 
 from datasets import Dataset
 from minio import Minio
-from pbd.helper.logger import setup_logger
 from zenml import step
+
+from pbd.helper.logger import setup_logger
 
 logger = setup_logger(__name__)
 
@@ -15,6 +15,7 @@ def store_extracted_texts_to_minio(
     dataset: Dataset,
     bucket_name: str,
     minio_endpoint: str,
+    filename: str,
     secure=False,
 ):
     """
@@ -39,8 +40,7 @@ def store_extracted_texts_to_minio(
 
     # Create a temporary directory to store the Parquet file
     with tempfile.TemporaryDirectory() as temp_dir:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        parquet_filename = f"physics_ocr_{timestamp}.parquet"
+        parquet_filename = f"{filename}.parquet"
         parquet_path = os.path.join(temp_dir, parquet_filename)
 
         # Save to Parquet

@@ -28,6 +28,7 @@ def ocr_pipeline(
     extract_to: str,
     model_path: str,
     max_new_tokens: int,
+    filename: str,
 ):
     """Pipeline for performing OCR on images extracted from a zip file."""
     data = ocr_images(
@@ -40,9 +41,7 @@ def ocr_pipeline(
         max_new_tokens=max_new_tokens,
     )
     store_extracted_texts_to_minio(
-        dataset=data,
-        bucket_name=bucket,
-        minio_endpoint=endpoint,
+        dataset=data, bucket_name=bucket, minio_endpoint=endpoint, filename=filename
     )
 
 
@@ -57,4 +56,5 @@ if __name__ == "__main__":
         extract_to="/tmp/images",
         model_path="/models/Qwen2.5-VL-7B-Instruct-unsloth-bnb-4bit",
         max_new_tokens=4096,
+        filename="dc_mechanics",
     )
