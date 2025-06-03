@@ -26,6 +26,7 @@ def store_extracted_texts_to_minio(
         bucket_name: MinIO bucket name
         minio_endpoint: MinIO server endpoint (e.g., "localhost:9000")
         secure: Use HTTPS if True
+        filename: Filename to store the extracted texts
 
     Returns:
         The full MinIO path (bucket/object) to the uploaded file
