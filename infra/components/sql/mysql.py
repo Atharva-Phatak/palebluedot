@@ -1,12 +1,13 @@
-import pulumi_kubernetes as k8s
-import pulumi
 import base64
+
+import pulumi
+import pulumi_kubernetes as k8s
 
 
 def deploy_mysql(
     provider: k8s.Provider,
     namespace: str,
-    sql_host_path:str,
+    sql_host_path: str,
     depends_on: list = None,
 ) -> k8s.core.v1.Service:
     # Persistent Volume
@@ -107,8 +108,8 @@ def deploy_mysql(
                                 }
                             ],
                             "resources": {
-                                "requests": {"cpu": "10m", "memory": "256Mi"},
-                                "limits": {"cpu": "100m", "memory": "512Mi"},
+                                "requests": {"cpu": "10m", "memory": "512Mi"},
+                                "limits": {"cpu": "100m", "memory": "1Gi"},
                             },
                             "readinessProbe": {
                                 "exec": {

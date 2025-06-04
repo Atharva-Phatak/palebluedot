@@ -80,8 +80,8 @@ def deploy_minio(
                             image="minio/minio:latest",
                             args=["server", "/data"],
                             resources=k8s.core.v1.ResourceRequirementsArgs(
-                                limits={"cpu": "100m", "memory": "256Mi"},
-                                requests={"cpu": "10m", "memory": "128Mi"},
+                                limits={"cpu": "100m", "memory": "1Gi"},
+                                requests={"cpu": "10m", "memory": "512Mi"},
                             ),
                             env=[
                                 k8s.core.v1.EnvVarArgs(

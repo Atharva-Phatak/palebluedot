@@ -55,6 +55,6 @@ if __name__ == "__main__":
         local_path="/tmp/images.zip",
         extract_to="/tmp/images",
         model_path="/models/Qwen2.5-VL-7B-Instruct-unsloth-bnb-4bit",
-        max_new_tokens=4096,
+        max_new_tokens=10404,
         filename="dc_mechanics",
     )
