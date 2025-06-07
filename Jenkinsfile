@@ -1,13 +1,8 @@
 pipeline {
-  agent {
-    kubernetes {
-      label 'docker-builder' // This should match the label in your pod template
-      defaultContainer 'jnlp' // This is where the Jenkins agent runs
-    }
-  }
+  agent any  // runs on the main Jenkins node (your machine)
 
   environment {
-    GHCR_PAT = credentials('ghcr-token') // From Jenkins Credentials
+    GHCR_PAT = credentials('ghcr-token')
   }
 
   triggers {
@@ -42,20 +37,11 @@ pipeline {
     }
 
     stage('Build & Push Docker Image') {
-      agent {
-        // Run this stage inside the DinD-enabled pod
-        kubernetes {
-          label 'docker-builder'
-          defaultContainer 'docker' // This is the DinD container
-        }
-      }
       steps {
-        container('docker') {
-          sh '''
-            chmod +x scripts/jenkins_build.sh
-            PIPELINE_NAME=$PIPELINE_NAME ./scripts/jenkins_docker_build.sh
-          '''
-        }
+        sh '''
+          chmod +x scripts/jenkins_docker_build.sh
+          PIPELINE_NAME=$PIPELINE_NAME ./scripts/jenkins_docker_build.sh
+        '''
       }
     }
   }
