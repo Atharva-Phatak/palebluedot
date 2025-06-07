@@ -5,14 +5,16 @@ on:
 
 jobs:
   test:
-    runs-on: [self-hosted]
+    # This must exactly match your runner scale set name
+    runs-on: pbd-runner-scale-set
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Print environment info
         run: |
-          echo "Hello from ARC!"
+          echo "✅ Hello from ARC!"
           uname -a
           whoami
-          docker --version || echo "Docker not installed"
+          docker --version || echo "🐳 Docker not installed"
