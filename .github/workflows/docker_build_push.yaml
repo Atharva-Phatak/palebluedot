@@ -1,16 +1,17 @@
 name: Build and Push Docker Images
+
 on:
   workflow_dispatch:
     inputs:
       folder:
-        description: 'Folder to build (optional - overrides change detection)'
+        description: "Folder to build (optional - overrides change detection)"
         required: false
         type: string
   push:
     branches:
       - main
     paths:
-      - 'pbd/pipelines/**'  # ✅ ADDED: trigger only when something inside pbd/pipelines changes
+      - "pbd/pipelines/**"
 
 permissions:
   contents: read
@@ -20,27 +21,26 @@ permissions:
 
 jobs:
   detect-changes:
-    runs-on: ubuntu-latest
+    runs-on: pbd-runner-scale-set # ✅ ARC runner
     outputs:
       changed_folders: ${{ steps.filter.outputs.folders }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Needed for full git history
+
       - name: Get Changed Folders
         id: filter
         run: |
-          if [ -n "${{ inputs.folder }}" ]; then
-            CHANGED='["${{ inputs.folder }}"]'
+          if [ -n "${{ github.event.inputs.folder }}" ]; then
+            CHANGED='["${{ github.event.inputs.folder }}"]'
           elif [ $(git rev-list --count HEAD) -eq 1 ]; then
-            # Initial commit: build everything
             CHANGED=$(find pbd/pipelines -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n")[:-1]')
           else
-            # Get all folders that were touched in this commit
-            FOLDERS=$(git diff --name-status HEAD^ HEAD | grep '^pbd/pipelines/' | cut -f2 | cut -d '/' -f3 | sort -u)
+            # Get folders with changes in pbd/pipelines/*
+            FOLDERS=$(git diff --name-only origin/main...HEAD | grep '^pbd/pipelines/' | cut -d '/' -f3 | sort -u)
 
-            # Filter only existing ones
             EXISTING=()
             for folder in $FOLDERS; do
               if [ -d "pbd/pipelines/$folder" ]; then
@@ -48,7 +48,6 @@ jobs:
               fi
             done
 
-            # Join the valid folder names into a JSON array
             CHANGED=$(printf "[%s]" "$(IFS=,; echo "${EXISTING[*]}")")
           fi
 
@@ -58,7 +57,7 @@ jobs:
   build-and-push:
     needs: detect-changes
     if: ${{ needs.detect-changes.outputs.changed_folders != '[]' && needs.detect-changes.outputs.changed_folders != '' }}
-    runs-on: ubuntu-latest
+    runs-on: pbd-runner-scale-set # ✅ ARC runner
     strategy:
       matrix:
         folder: ${{ fromJson(needs.detect-changes.outputs.changed_folders) }}
