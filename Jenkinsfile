@@ -52,9 +52,8 @@ pipeline {
       steps {
         container('docker') {
           sh '''
-            echo $GHCR_PAT | docker login ghcr.io -u your-gh-username --password-stdin
             chmod +x scripts/jenkins_build.sh
-            PIPELINE_NAME=$PIPELINE_NAME ./scripts/jenkins_build.sh
+            PIPELINE_NAME=$PIPELINE_NAME ./scripts/jenkins_docker_build.sh
           '''
         }
       }
