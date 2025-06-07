@@ -1,8 +1,13 @@
 pipeline {
-  agent any
+  agent {
+    kubernetes {
+      label 'docker-builder' // This should match the label in your pod template
+      defaultContainer 'jnlp' // This is where the Jenkins agent runs
+    }
+  }
 
   environment {
-    GHCR_PAT = credentials('ghcr-token') // Jenkins Secret Text credential
+    GHCR_PAT = credentials('ghcr-token') // From Jenkins Credentials
   }
 
   triggers {
@@ -16,7 +21,6 @@ pipeline {
       }
     }
 
-  stages {
     stage('Detect Changed Pipeline') {
       steps {
         script {
@@ -30,7 +34,6 @@ pipeline {
             error("No relevant pipeline changes.")
           }
 
-          // Extract pipeline name from path like pbd/pipelines/ocr_engine/Dockerfile
           def parts = pipelineChanged.split("/")
           env.PIPELINE_NAME = parts[2]
           echo "Pipeline detected: ${env.PIPELINE_NAME}"
@@ -39,18 +42,21 @@ pipeline {
     }
 
     stage('Build & Push Docker Image') {
-      steps {
-        sh '''
-          chmod +x scripts/jenkins_build.sh
-          PIPELINE_NAME=$PIPELINE_NAME ./scripts/jenkins_build.sh
-        '''
+      agent {
+        // Run this stage inside the DinD-enabled pod
+        kubernetes {
+          label 'docker-builder'
+          defaultContainer 'docker' // This is the DinD container
+        }
       }
-    }
-
-    stage('Trigger ZenML') {
       steps {
-        echo "Triggering ZenML pipeline for $PIPELINE_NAME"
-        // You could do: sh "zenml pipeline run --name $PIPELINE_NAME" or a REST API call here
+        container('docker') {
+          sh '''
+            echo $GHCR_PAT | docker login ghcr.io -u your-gh-username --password-stdin
+            chmod +x scripts/jenkins_build.sh
+            PIPELINE_NAME=$PIPELINE_NAME ./scripts/jenkins_build.sh
+          '''
+        }
       }
     }
   }
