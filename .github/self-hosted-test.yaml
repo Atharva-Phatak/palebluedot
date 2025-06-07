@@ -1,0 +1,18 @@
+name: ARC Test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: [self-hosted]
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Print environment info
+        run: |
+          echo "Hello from ARC!"
+          uname -a
+          whoami
+          docker --version || echo "Docker not installed"
