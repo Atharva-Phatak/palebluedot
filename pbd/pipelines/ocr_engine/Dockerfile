@@ -4,8 +4,8 @@ FROM pytorch/pytorch:2.7.0-cuda12.6-cudnn9-devel
 WORKDIR /app
 
 # Copy only your source code
-COPY pbd/helper /app/pbd/helper
-COPY pbd/pipelines/ocr_engine /app/pbd/pipelines/ocr_engine
+COPY helper /app/pbd/helper
+COPY pipelines/ocr_engine /app/pbd/pipelines/ocr_engine
 
 # Install from the copied location
 RUN pip install --no-cache-dir -r /app/pbd/pipelines/ocr_engine/requirements.txt
