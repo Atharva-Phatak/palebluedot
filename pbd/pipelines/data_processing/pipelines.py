@@ -27,10 +27,7 @@ from zenml.integrations.slack.steps.slack_alerter_post_step import (
     },
 )
 def process_pdfs(
-    input_prefix: str,
-    output_prefix: str,
-    bucket_name: str = "data-bucket",
-    endpoint: str = "fsml-minio.info",
+    input_prefix: str, output_prefix: str, bucket_name: str, endpoint: str
 ):
     """
     ZenML pipeline to process PDFs:
