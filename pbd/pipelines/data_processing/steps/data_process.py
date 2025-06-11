@@ -171,14 +171,13 @@ def split_and_upload_pdfs(
     )
 
     pdf_objects = client.list_objects(bucket_name, prefix=input_prefix, recursive=True)
+    zip_objects = client.list_objects(bucket_name, prefix=output_prefix, recursive=True)
     pdfs = [obj.object_name for obj in pdf_objects if obj.object_name.endswith(".pdf")]
-    zips = [obj.object_name for obj in pdf_objects if obj.object_name.endswith(".zip")]
-    zip_prefixes = [zip[:-4] for zip in zips if zip.endswith(".zip")]
+    zips = [obj.object_name for obj in zip_objects if obj.object_name.endswith(".zip")]
+    zip_prefixes = [zip.split("/")[-1][:-4] for zip in zips if zip.endswith(".zip")]
 
     pdfs_to_process = [
-        pdf
-        for pdf in pdfs
-        if not any(pdf.startswith(prefix) for prefix in zip_prefixes)
+        pdf for pdf in pdfs if not any(prefix in pdf for prefix in zip_prefixes)
     ]
 
     logger.info(f"PDFs found: {pdfs_to_process}")
