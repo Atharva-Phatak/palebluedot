@@ -108,8 +108,8 @@ def deploy_mysql(
                                 }
                             ],
                             "resources": {
-                                "requests": {"cpu": "10m", "memory": "512Mi"},
-                                "limits": {"cpu": "100m", "memory": "1Gi"},
+                                "requests": {"cpu": "80m", "memory": "512Mi"},
+                                "limits": {"cpu": "200m", "memory": "2Gi"},
                             },
                             "readinessProbe": {
                                 "exec": {

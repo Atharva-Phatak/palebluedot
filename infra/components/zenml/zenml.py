@@ -1,7 +1,8 @@
-import pulumi_kubernetes as k8s
-import pulumi
 import os
 import subprocess
+
+import pulumi
+import pulumi_kubernetes as k8s
 from pulumi_kubernetes.helm.v3 import LocalChartOpts
 
 
@@ -84,7 +85,7 @@ def deploy_zenml(
                 "resources": {
                     "limits": {
                         "cpu": "300m",
-                        "memory": "1Gi",
+                        "memory": "2Gi",
                     },
                     "requests": {
                         "cpu": "200m",
@@ -96,7 +97,7 @@ def deploy_zenml(
         ),
         opts=pulumi.ResourceOptions(
             provider=k8s_provider,
-            custom_timeouts=pulumi.CustomTimeouts(create="10m"),
+            custom_timeouts=pulumi.CustomTimeouts(create="20m"),
             depends_on=depends_on,
         ),
     )

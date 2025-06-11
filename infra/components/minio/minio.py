@@ -167,7 +167,7 @@ def deploy_minio(
         ),
         opts=pulumi.ResourceOptions(
             provider=provider,
-            custom_timeouts=pulumi.CustomTimeouts(create="10m"),
+            custom_timeouts=pulumi.CustomTimeouts(create="20m"),
             depends_on=[minio_service],
         ),
     )

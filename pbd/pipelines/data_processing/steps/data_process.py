@@ -1,3 +1,28 @@
+"""
+Data Processing Steps for PDF to Image Conversion and Upload
+
+This module provides steps and utility functions for:
+- Downloading PDFs from MinIO
+- Converting PDF pages to images
+- Zipping images
+- Uploading zipped images back to MinIO
+- Parallel processing of multiple PDFs
+
+Functions:
+    download_pdf(s3_client, bucket, key, download_dir):
+        Download a PDF file from MinIO to a local directory.
+
+    zip_images(image_dir, output_zip_path):
+        Zip all images in a directory into a single zip file.
+
+    convert_and_upload(args):
+        Convert a PDF to images, zip them, and upload the zip to MinIO.
+
+    split_and_upload_pdfs(input_prefix, output_prefix, bucket_name, endpoint):
+        ZenML step to process all PDFs in a MinIO bucket, convert to images, zip, and upload.
+
+"""
+
 from zenml import step
 import os
 from minio import Minio
@@ -12,6 +37,18 @@ logger = setup_logger(__name__)
 
 
 def download_pdf(s3_client, bucket: str, key: str, download_dir: str) -> str:
+    """
+    Download a PDF file from MinIO to a local directory.
+
+    Args:
+        s3_client (Minio): MinIO client instance.
+        bucket (str): Name of the MinIO bucket.
+        key (str): Object key (path) of the PDF in the bucket.
+        download_dir (str): Local directory to save the PDF.
+
+    Returns:
+        str: Local file path to the downloaded PDF.
+    """
     local_path = os.path.join(download_dir, os.path.basename(key))
     response = s3_client.get_object(bucket, key)
     with open(local_path, "wb") as file_data:
@@ -20,6 +57,13 @@ def download_pdf(s3_client, bucket: str, key: str, download_dir: str) -> str:
 
 
 def zip_images(image_dir: str, output_zip_path: str):
+    """
+    Zip all images in a directory into a single zip file.
+
+    Args:
+        image_dir (str): Directory containing image files to zip.
+        output_zip_path (str): Output path for the created zip file.
+    """
     with zipfile.ZipFile(output_zip_path, "w", zipfile.ZIP_DEFLATED) as zipf:
         for root, _, files in os.walk(image_dir):
             for file in files:
@@ -29,6 +73,20 @@ def zip_images(image_dir: str, output_zip_path: str):
 
 
 def convert_and_upload(args):
+    """
+    Convert a PDF to images, zip them, and upload the zip to MinIO.
+
+    Args:
+        args (tuple): (key, bucket, endpoint, input_key_prefix, output_key_prefix)
+            key (str): Object key of the PDF in MinIO.
+            bucket (str): MinIO bucket name.
+            endpoint (str): MinIO server endpoint.
+            input_key_prefix (str): Prefix for input PDFs.
+            output_key_prefix (str): Prefix for output zip files.
+
+    Raises:
+        ValueError: If AWS credentials are missing.
+    """
     key, bucket, endpoint, input_key_prefix, output_key_prefix = args
 
     access_key = os.environ.get("AWS_ACCESS_KEY_ID")
@@ -83,6 +141,22 @@ def convert_and_upload(args):
 def split_and_upload_pdfs(
     input_prefix: str, output_prefix: str, bucket_name: str, endpoint: str
 ):
+    """
+    ZenML step to process all PDFs in a MinIO bucket:
+    - Downloads each PDF
+    - Converts each page to an image
+    - Zips the images
+    - Uploads the zip file back to MinIO
+
+    Args:
+        input_prefix (str): Prefix for input PDFs in the bucket.
+        output_prefix (str): Prefix for output zip files in the bucket.
+        bucket_name (str): MinIO bucket name.
+        endpoint (str): MinIO server endpoint.
+
+    Raises:
+        ValueError: If AWS credentials are missing.
+    """
     access_key = os.environ.get("AWS_ACCESS_KEY_ID")
     secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
     if not access_key or not secret_key:

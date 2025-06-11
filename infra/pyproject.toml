@@ -11,5 +11,5 @@ dependencies = [
     "pulumi-command>=1.0.2",
     "pulumi-kubernetes>=4.22.1",
     "pulumi-minio>=0.16.3",
-    "zenml==0.80.0",
+    "zenml==0.83.0",
 ]

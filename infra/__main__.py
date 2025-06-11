@@ -1,11 +1,13 @@
 from components.datadog.datadog import deploy_datadog
+from components.gh_runners.arc_controller import deploy_arc_controller
+from components.gh_runners.arc_scale_set import deploy_arc_scale_set
 from components.k8s.minikube import start_minikube
 from components.k8s.namespace import create_namespace
 from components.k8s.provider import get_k8s_provider
 from components.minio.buckets import deploy_minio_buckets
 from components.minio.minio import deploy_minio
 from components.persistent_claims.pv import deploy_persistent_volume_claims
-from components.secret_manager.secrets import create_aws_secret
+from components.secret_manager.secrets import create_aws_secret, create_gh_secret
 from components.sql.mysql import deploy_mysql
 from components.zenml.zenml import deploy_zenml
 from omegaconf import OmegaConf
@@ -35,11 +37,19 @@ zenml_namespace = create_namespace(
 datadog_namespace = create_namespace(
     provider=k8s_provider, namespace="datadog", depends_on=[minikube_start]
 )
+arc_namespace = create_namespace(
+    provider=k8s_provider, namespace="arc-ns", depends_on=[minikube_start]
+)
 create_aws_secret(
     provider=k8s_provider,
     namespace="zenml",
     depends_on=[minikube_start, zenml_namespace],
     infiscal_project_id=cfg.infiscal_project_id,
+)
+gh_secret = create_gh_secret(
+    k8s_provider=k8s_provider,
+    depends_on=[arc_namespace, minikube_start],
+    namespace="arc-ns",
 )
 # Deploy MySQL service required for ZenML
 mysql_service = deploy_mysql(
@@ -102,4 +112,23 @@ deploy_datadog(
     depends_on=[minikube_start, datadog_namespace],
     k8s_provider=k8s_provider,
     namespace="datadog",
+)
+# Deploy ARC Controller, deploy after zenml is deployed
+arc_contoller_resource = deploy_arc_controller(
+    depends_on=[minikube_start, arc_namespace, zenml_resource],
+    namespace="arc-ns",
+    k8s_provider=k8s_provider,
+)
+# Deploy ARC Scale Set
+arc_scale_set_resource = deploy_arc_scale_set(
+    depends_on=[
+        minikube_start,
+        arc_namespace,
+        arc_contoller_resource,
+        zenml_resource,
+        gh_secret,
+    ],
+    namespace="arc-ns",
+    k8s_provider=k8s_provider,
+    github_secret=gh_secret,
 )

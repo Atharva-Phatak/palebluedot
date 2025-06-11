@@ -1,3 +1,14 @@
+"""
+Data Storage Step for OCR Engine
+
+This module provides a ZenML step for storing OCR extraction results as Parquet files in MinIO.
+It handles serialization of Hugging Face Datasets and robust upload to object storage.
+
+Functions:
+    store_extracted_texts_to_minio(dataset, bucket_name, minio_endpoint, filename, secure=False):
+        ZenML step to store OCR results in MinIO as Parquet files.
+"""
+
 import os
 import tempfile
 
@@ -19,17 +30,21 @@ def store_extracted_texts_to_minio(
     secure=False,
 ):
     """
-    Store OCR extraction results as Parquet files in MinIO using the MinIO client
+    ZenML step to store OCR extraction results as Parquet files in MinIO using the MinIO client.
 
     Args:
-        dataset: List of dicts with keys 'image_path', 'extracted_text'
-        bucket_name: MinIO bucket name
-        minio_endpoint: MinIO server endpoint (e.g., "localhost:9000")
-        secure: Use HTTPS if True
-        filename: Filename to store the extracted texts
+        dataset (Dataset): Hugging Face Dataset containing OCR results, typically with keys like 'image_path' and 'extracted_text'.
+        bucket_name (str): MinIO bucket name where the file will be stored.
+        minio_endpoint (str): MinIO server endpoint (e.g., "localhost:9000").
+        filename (str): Filename (without extension) to use for the stored Parquet file.
+        secure (bool, optional): Use HTTPS if True. Defaults to False.
 
     Returns:
-        The full MinIO path (bucket/object) to the uploaded file
+        str: The full MinIO path (bucket/object) to the uploaded file.
+
+    Raises:
+        ValueError: If the dataset is empty or required AWS credentials are missing.
+        Exception: If upload to MinIO fails.
     """
     if not dataset:
         raise ValueError("extraction_results is empty")

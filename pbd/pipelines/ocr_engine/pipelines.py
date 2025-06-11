@@ -7,6 +7,7 @@ from pbd.pipelines.ocr_engine.settings import (
 )
 from pbd.pipelines.ocr_engine.steps.data import store_extracted_texts_to_minio
 from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
+from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
 
 
 def load_config(config_path: str):
@@ -28,6 +29,7 @@ def ocr_pipeline(
     extract_to: str,
     model_path: str,
     max_new_tokens: int,
+    prompt: str,
     filename: str,
 ):
     """Pipeline for performing OCR on images extracted from a zip file."""
@@ -38,6 +40,7 @@ def ocr_pipeline(
         local_path=local_path,
         extract_to=extract_to,
         model_path=model_path,
+        prompt=prompt,
         max_new_tokens=max_new_tokens,
     )
     store_extracted_texts_to_minio(
@@ -46,15 +49,14 @@ def ocr_pipeline(
 
 
 if __name__ == "__main__":
-    # config_dir = get_pipeline_config_dir(pipeline_name="ocr_engine")
-    # config = load_config(config_path=str(config_dir / "config.yaml"))
     ocr_pipeline(
-        endpoint="fsml-minio.info",
+        endpoint="palebluedot-minio.info",
         bucket="data-bucket",
         object_key="processed_data/pdfs/dc_mechanics.zip",
         local_path="/tmp/images.zip",
         extract_to="/tmp/images",
         model_path="/models/Qwen2.5-VL-7B-Instruct-unsloth-bnb-4bit",
-        max_new_tokens=10404,
+        max_new_tokens=32768,
+        prompt=ocr_prompt,
         filename="dc_mechanics",
     )

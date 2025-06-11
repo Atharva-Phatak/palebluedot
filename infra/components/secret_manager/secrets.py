@@ -1,3 +1,5 @@
+import os
+
 import pulumi
 import pulumi_kubernetes as k8s
 from components.minio.minio import get_minio_secret
@@ -30,3 +32,17 @@ def create_aws_secret(
         opts=pulumi.ResourceOptions(parent=provider, depends_on=depends_on),
     )
     return aws_credentials_secret
+
+
+def create_gh_secret(namespace: str, depends_on: list, k8s_provider: k8s.Provider):
+    github_token = os.environ.get("GITHUB_TOKEN")
+    github_secret = k8s.core.v1.Secret(
+        "gha-rs-github-secret",
+        metadata={
+            "name": "gha-rs-github-secret",
+            "namespace": namespace,
+        },
+        string_data={"github_token": github_token},
+        opts=pulumi.ResourceOptions(provider=k8s_provider),
+    )
+    return github_secret
