@@ -32,6 +32,7 @@ import tempfile
 import shutil
 import zipfile
 import pymupdf
+from zenml.client import Client
 
 logger = setup_logger(__name__)
 
@@ -190,3 +191,4 @@ def split_and_upload_pdfs(
 
     with Pool(processes=(cpu_count() // 2)) as pool:
         pool.map(convert_and_upload, args_list)
+    Client().active_stack.alerter.post("Step finished!")

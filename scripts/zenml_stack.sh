@@ -16,7 +16,7 @@ set +o allexport
 check_component_exists() {
     local component_type="$1"
     local component_name="$2"
-    
+
     case "$component_type" in
         "secret")
             zenml secret list 2>&1 | grep -F "$component_name" >/dev/null
@@ -78,7 +78,7 @@ else
     zenml artifact-store register minio_store \
         --flavor=s3 \
         --path=s3://zenml-bucket \
-        --client_kwargs='{"endpoint_url": "http://fsml-minio.info", "region_name": "us-east-1"}'
+        --client_kwargs='{"endpoint_url": "http://palebluedot-minio.io", "region_name": "us-east-1"}'
 fi
 
 # 3. Register orchestrator
