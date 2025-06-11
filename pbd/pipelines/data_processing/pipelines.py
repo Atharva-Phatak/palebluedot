@@ -54,5 +54,5 @@ if __name__ == "__main__":
         input_prefix="raw_data/input_pdfs/",
         output_prefix="processed_data/pdfs/",
         bucket_name="data-bucket",
-        endpoint="fsml-minio.info",
+        endpoint="palebluedot-minio.io",
     )
