@@ -14,6 +14,9 @@ Functions:
 from zenml import pipeline
 from pbd.pipelines.data_processing.steps.data_process import split_and_upload_pdfs
 from pbd.pipelines.data_processing.setting import docker_settings, k8s_operator_settings
+from zenml.integrations.slack.steps.slack_alerter_post_step import (
+    slack_alerter_post_step,
+)
 
 
 @pipeline(
@@ -47,6 +50,7 @@ def process_pdfs(
         bucket_name=bucket_name,
         endpoint=endpoint,
     )
+    slack_alerter_post_step("PDF processing completed successfully!")
 
 
 if __name__ == "__main__":

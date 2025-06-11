@@ -12,5 +12,6 @@ dependencies = [
     "pdf2image>=1.17.0",
     "pymupdf>=1.25.5",
     "s3fs>=0.4.2",
+    "slack-sdk>=3.35.0",
     "zenml==0.83.0",
 ]
