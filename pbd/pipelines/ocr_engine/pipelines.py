@@ -49,38 +49,41 @@ def ocr_pipeline(
         max_new_tokens=max_new_tokens,
         run_test=run_test,
     )
-    store_extracted_texts_to_minio(
+    has_stored = store_extracted_texts_to_minio(
         dataset=data,
         bucket_name=bucket,
         minio_endpoint=endpoint,
         filename=filename,
     )
-    logger.info(
-        f"OCR results stored in MinIO bucket '{bucket}' with filename '{filename}'."
-    )
+    if has_stored:
+        logger.info(
+            f"OCR results stored in MinIO bucket '{bucket}' with filename '{filename}'."
+        )
     dataset = extract_problem_solution(
         data=data,
         model_path=post_process_model_path,
         sampling_params=post_process_sampling_params,
         batch_size=post_process_batch_size,
     )
-    store_extracted_texts_to_minio(
+    has_stored = store_extracted_texts_to_minio(
         dataset=dataset,
         bucket_name=bucket,
         minio_endpoint=endpoint,
         filename=f"{filename}_post_processed",
     )
-    logger.info(
-        f"Post-processed results stored in MinIO bucket '{bucket}' with filename '{filename}_post_processed'."
-    )
-    Client().active_stack.alerter.post(
-        f"Successfully processed OCR for {filename} and stored results in MinIO."
-    )
+
+    if has_stored:
+        logger.info(
+            f"Post-processed results stored in MinIO bucket '{bucket}' with filename '{filename}_post_processed'."
+        )
+        Client().active_stack.alerter.post(
+            f"Successfully processed OCR for {filename} and stored results in MinIO."
+        )
 
 
 if __name__ == "__main__":
     ocr_pipeline(
-        endpoint="palebluedot-minio.info",
+        endpoint="palebluedot-minio.io",
         bucket="data-bucket",
         object_key="processed_data/pdfs/dc_mechanics.zip",
         local_path="/tmp/images.zip",

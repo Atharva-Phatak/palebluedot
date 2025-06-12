@@ -87,3 +87,4 @@ def store_extracted_texts_to_minio(
             logger.exception("Failed to upload file to MinIO")
             raise
         logger.info(f"Uploaded {parquet_filename} to MinIO bucket {bucket_name}")
+        return True
