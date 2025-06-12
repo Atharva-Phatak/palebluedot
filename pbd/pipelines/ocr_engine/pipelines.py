@@ -1,16 +1,17 @@
-from zenml import pipeline
+import argparse
 
+from zenml import pipeline
+from zenml.client import Client
+
+from pbd.helper.logger import setup_logger
 from pbd.pipelines.ocr_engine.settings import (
     docker_settings,
     k8s_operator_settings,
 )
-from pbd.pipelines.ocr_engine.steps.process_text import extract_problem_solution
 from pbd.pipelines.ocr_engine.steps.data import store_extracted_texts_to_minio
 from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
+from pbd.pipelines.ocr_engine.steps.process_text import extract_problem_solution
 from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
-from zenml.client import Client
-from pbd.helper.logger import setup_logger
-import argparse
 
 logger = setup_logger(__name__)
 
@@ -64,7 +65,6 @@ def ocr_pipeline(
         model_path=post_process_model_path,
         sampling_params=post_process_sampling_params,
         batch_size=post_process_batch_size,
-        run_test=run_test,
     )
     store_extracted_texts_to_minio(
         dataset=dataset,
