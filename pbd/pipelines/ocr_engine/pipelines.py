@@ -1,5 +1,3 @@
-import argparse
-
 from zenml import pipeline
 from zenml.client import Client
 
@@ -81,14 +79,6 @@ def ocr_pipeline(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--run_test",
-        action="store_true",
-        help="Run test with limited images",
-        default=False,
-    )
-    args = parser.parse_args()
     ocr_pipeline(
         endpoint="palebluedot-minio.info",
         bucket="data-bucket",
@@ -107,5 +97,5 @@ if __name__ == "__main__":
             "max_tokens": 32768,
         },
         post_process_batch_size=5,
-        run_test=args.run_test,
+        run_test=True,
     )
