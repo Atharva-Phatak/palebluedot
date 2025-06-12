@@ -1,3 +1,31 @@
+"""
+This module provides functionality for extracting problem-solution pairs from a dataset using a large language model (LLM) with the vLLM inference engine. It includes utilities for loading models and tokenizers, generating prompts, and running batched inference with sampling parameters.
+
+Main Components:
+----------------
+- `load_model_and_tokenizer`: Loads a HuggingFace tokenizer and a vLLM model from a specified path.
+- `extract_problem_solution`: A ZenML step that processes a HuggingFace Dataset, generates prompts for each example, runs inference in batches, and returns the generated outputs alongside the original content.
+
+Dependencies:
+-------------
+- torch
+- datasets
+- transformers
+- vllm
+- zenml
+- pbd.helper.logger
+- pbd.pipelines.ocr_engine.steps.prompt
+
+Usage:
+------
+This module is intended to be used as part of a ZenML pipeline for post-processing OCR outputs or similar tasks where LLM-based extraction of structured information is required.
+
+Logging:
+--------
+A logger is set up for monitoring and debugging purposes.
+
+"""
+
 import time
 from typing import List
 
