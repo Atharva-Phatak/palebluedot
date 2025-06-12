@@ -51,3 +51,27 @@ ocr_prompt = (
     "<|im_start|>user\n<|vision_start|><|image_pad|><|vision_end|><|im_end|>\n"
     "<|im_start|>assistant\n"
 )
+
+
+def generate_post_processing_prompt(input: str):
+    return f"""
+    You are an AI physics tutor.
+
+    Your task is to analyze the following **textbook content**, which includes both a physics **problem** and its **solution**.
+
+    Output:
+    1. A clean, concise **problem statement**.
+    2. A clearly structured **solution**, broken down into logical **steps**. Each step must include:
+       - A short explanation (in markdown).
+       - Any math written in proper LaTeX, enclosed in double dollar signs ($$...$$).
+
+    Ensure:
+    - The math formatting is preserved and corrected if needed.
+    - The output is suitable for rendering on a learning platform.
+    - Do **not hallucinate** new steps or concepts — stay true to the original.
+
+    ---
+
+    Text:
+    \"\"\"{input}\"\"\"
+    """

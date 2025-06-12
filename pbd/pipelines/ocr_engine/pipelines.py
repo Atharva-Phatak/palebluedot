@@ -5,6 +5,7 @@ from pbd.pipelines.ocr_engine.settings import (
     docker_settings,
     k8s_operator_settings,
 )
+from pbd.pipelines.ocr_engine.step.process_text import extract_problem_solution
 from pbd.pipelines.ocr_engine.steps.data import store_extracted_texts_to_minio
 from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
 from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
@@ -31,6 +32,9 @@ def ocr_pipeline(
     max_new_tokens: int,
     prompt: str,
     filename: str,
+    post_process_model_path: str,
+    post_process_sampling_params: dict,
+    post_process_batch_size: int,
 ):
     """Pipeline for performing OCR on images extracted from a zip file."""
     data = ocr_images(
@@ -43,8 +47,14 @@ def ocr_pipeline(
         prompt=prompt,
         max_new_tokens=max_new_tokens,
     )
+    dataset = extract_problem_solution(
+        data=data,
+        model_path=post_process_model_path,
+        sampling_params=post_process_sampling_params,
+        batch_size=post_process_batch_size,
+    )
     store_extracted_texts_to_minio(
-        dataset=data, bucket_name=bucket, minio_endpoint=endpoint, filename=filename
+        dataset=dataset, bucket_name=bucket, minio_endpoint=endpoint, filename=filename
     )
 
 
