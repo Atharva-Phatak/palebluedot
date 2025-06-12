@@ -160,6 +160,7 @@ def ocr_images(
     extract_to: str,
     max_new_tokens: int,
     prompt: str,
+    run_test: bool,
     batch_size: int = 5,
 ) -> Dataset:
     """
@@ -188,6 +189,9 @@ def ocr_images(
     )
     image_paths = extract_zip(zip_path=zip_path, extract_to=extract_to)
     image_paths = sort_pages_by_number(pages=image_paths)
+    if run_test:
+        logger.warning(f"Running OCR inference test with {batch_size * 2} images")
+        image_paths = image_paths[: batch_size * 2]
     logger.info(f"Extracted {len(image_paths)} images from {zip_path}")
     # check if cuda is available
     logger.info(f"CUDA available: {torch.cuda.is_available()}")

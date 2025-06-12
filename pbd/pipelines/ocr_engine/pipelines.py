@@ -10,6 +10,7 @@ from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
 from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
 from zenml.client import Client
 from pbd.helper.logger import setup_logger
+import argparse
 
 logger = setup_logger(__name__)
 
@@ -34,8 +35,10 @@ def ocr_pipeline(
     post_process_model_path: str,
     post_process_sampling_params: dict,
     post_process_batch_size: int,
+    run_test: bool = False,
 ):
     """Pipeline for performing OCR on images extracted from a zip file."""
+    logger.info("Starting OCR pipeline")
     data = ocr_images(
         endpoint=endpoint,
         bucket=bucket,
@@ -45,6 +48,7 @@ def ocr_pipeline(
         model_path=model_path,
         prompt=prompt,
         max_new_tokens=max_new_tokens,
+        run_test=run_test,
     )
     store_extracted_texts_to_minio(
         dataset=data,
@@ -60,6 +64,7 @@ def ocr_pipeline(
         model_path=post_process_model_path,
         sampling_params=post_process_sampling_params,
         batch_size=post_process_batch_size,
+        run_test=run_test,
     )
     store_extracted_texts_to_minio(
         dataset=dataset,
@@ -76,6 +81,14 @@ def ocr_pipeline(
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--run_test",
+        action="store_true",
+        help="Run test with limited images",
+        default=False,
+    )
+    args = parser.parse_args()
     ocr_pipeline(
         endpoint="palebluedot-minio.info",
         bucket="data-bucket",
@@ -94,4 +107,5 @@ if __name__ == "__main__":
             "max_tokens": 32768,
         },
         post_process_batch_size=5,
+        run_test=args.run_test,
     )
