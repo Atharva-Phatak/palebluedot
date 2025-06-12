@@ -7,7 +7,6 @@ aiosignal==1.3.2
 airportsdata==20250523
 alembic==1.8.1
 annotated-types==0.7.0
-antlr4-python3-runtime==4.9.3
 anyio==4.9.0
 argon2-cffi==23.1.0
 argon2-cffi-bindings==21.2.0
@@ -113,7 +112,6 @@ nvidia-nccl-cu12==2.26.2 ; platform_machine == 'x86_64' and sys_platform == 'lin
 nvidia-nvjitlink-cu12==12.6.85 ; platform_machine == 'x86_64' and sys_platform == 'linux'
 nvidia-nvtx-cu12==12.6.77 ; platform_machine == 'x86_64' and sys_platform == 'linux'
 oauthlib==3.2.2
-omegaconf==2.3.0
 openai==1.82.1
 opencv-python-headless==4.11.0.86
 opentelemetry-api==1.33.1

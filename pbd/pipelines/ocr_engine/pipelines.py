@@ -1,18 +1,17 @@
-from omegaconf import OmegaConf
 from zenml import pipeline
 
 from pbd.pipelines.ocr_engine.settings import (
     docker_settings,
     k8s_operator_settings,
 )
-from pbd.pipelines.ocr_engine.step.process_text import extract_problem_solution
+from pbd.pipelines.ocr_engine.steps.process_text import extract_problem_solution
 from pbd.pipelines.ocr_engine.steps.data import store_extracted_texts_to_minio
 from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
 from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
+from zenml.client import Client
+from pbd.helper.logger import setup_logger
 
-
-def load_config(config_path: str):
-    return OmegaConf.load(config_path)
+logger = setup_logger(__name__)
 
 
 @pipeline(
@@ -47,6 +46,15 @@ def ocr_pipeline(
         prompt=prompt,
         max_new_tokens=max_new_tokens,
     )
+    store_extracted_texts_to_minio(
+        dataset=data,
+        bucket_name=bucket,
+        minio_endpoint=endpoint,
+        filename=filename,
+    )
+    logger.info(
+        f"OCR results stored in MinIO bucket '{bucket}' with filename '{filename}'."
+    )
     dataset = extract_problem_solution(
         data=data,
         model_path=post_process_model_path,
@@ -54,7 +62,16 @@ def ocr_pipeline(
         batch_size=post_process_batch_size,
     )
     store_extracted_texts_to_minio(
-        dataset=dataset, bucket_name=bucket, minio_endpoint=endpoint, filename=filename
+        dataset=dataset,
+        bucket_name=bucket,
+        minio_endpoint=endpoint,
+        filename=f"{filename}_post_processed",
+    )
+    logger.info(
+        f"Post-processed results stored in MinIO bucket '{bucket}' with filename '{filename}_post_processed'."
+    )
+    Client().active_stack.alerter.post(
+        f"Successfully processed OCR for {filename} and stored results in MinIO."
     )
 
 
@@ -69,4 +86,12 @@ if __name__ == "__main__":
         max_new_tokens=32768,
         prompt=ocr_prompt,
         filename="dc_mechanics",
+        post_process_model_path="/models/Qwen3-1.7B",
+        post_process_sampling_params={
+            "temperature": 0.6,
+            "top_p": 0.8,
+            "top_k": 20,
+            "max_tokens": 32768,
+        },
+        post_process_batch_size=5,
     )
