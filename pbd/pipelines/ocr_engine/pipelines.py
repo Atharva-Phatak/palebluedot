@@ -8,7 +8,6 @@ from pbd.pipelines.ocr_engine.settings import (
 )
 from pbd.pipelines.ocr_engine.steps.data import store_extracted_texts_to_minio
 from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
-from pbd.pipelines.ocr_engine.steps.process_text import extract_problem_solution
 from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
 
 logger = setup_logger(__name__)
@@ -59,18 +58,18 @@ def ocr_pipeline(
         logger.info(
             f"OCR results stored in MinIO bucket '{bucket}' with filename '{filename}'."
         )
-    dataset = extract_problem_solution(
-        data=data,
-        model_path=post_process_model_path,
-        sampling_params=post_process_sampling_params,
-        batch_size=post_process_batch_size,
-    )
-    has_stored = store_extracted_texts_to_minio(
-        dataset=dataset,
-        bucket_name=bucket,
-        minio_endpoint=endpoint,
-        filename=f"{filename}_post_processed",
-    )
+    # dataset = extract_problem_solution(
+    #    data=data,
+    #    model_path=post_process_model_path,
+    #    sampling_params=post_process_sampling_params,
+    #    batch_size=post_process_batch_size,
+    # )
+    # has_stored = store_extracted_texts_to_minio(
+    #    dataset=dataset,
+    #    bucket_name=bucket,
+    #    minio_endpoint=endpoint,
+    #    filename=f"{filename}_post_processed",
+    # )
 
     if has_stored:
         logger.info(
