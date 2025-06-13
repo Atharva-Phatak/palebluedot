@@ -7,8 +7,8 @@ from pbd.pipelines.ocr_engine.settings import (
 )
 from pbd.pipelines.ocr_engine.steps.data import store_extracted_texts_to_minio
 from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
-from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
 from pbd.pipelines.ocr_engine.steps.process_text import extract_problem_solution
+from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
 
 logger = setup_logger(__name__)
 
@@ -90,5 +90,5 @@ if __name__ == "__main__":
             "max_tokens": 32768,
         },
         post_process_batch_size=5,
-        run_test=False,
+        run_test=True,
     )

@@ -14,6 +14,6 @@ dependencies = [
     "pillow>=11.2.1",
     "s3fs>=0.4.2",
     "slack-sdk>=3.35.0",
-    "vllm==0.9.1",
+    "vllm==0.9.0.1",
     "zenml==0.83.0",
 ]

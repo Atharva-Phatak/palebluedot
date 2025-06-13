@@ -39,9 +39,9 @@ from dataclasses import asdict
 from pathlib import Path
 
 import torch
+import vllm
 from datasets import Dataset
 from PIL import Image
-from vllm import LLM, EngineArgs, SamplingParams
 from zenml import step
 
 from pbd.helper.logger import setup_logger
@@ -110,16 +110,20 @@ def do_inference(
     Returns:
         list[dict]: List of dictionaries with 'page' and 'content' keys for each image.
     """
-    engine_args = EngineArgs(
+    if torch.cuda.is_available():
+        logger.info("CUDA is available. Emptying cache")
+        torch.cuda.empty_cache()
+    logger.info(f"Using vllm version {vllm.__version__}")
+    engine_args = vllm.EngineArgs(
         model=model_path,
         max_num_seqs=1,
         limit_mm_per_prompt={"image": 5, "video": 0},
         mm_processor_kwargs={"min_pixels": 28 * 28, "max_pixels": 1280 * 80 * 80},
     )
-    sampling_params = SamplingParams(
+    sampling_params = vllm.SamplingParams(
         max_tokens=max_new_tokens,
     )
-    model = LLM(**asdict(engine_args))
+    model = vllm.LLM(**asdict(engine_args))
     generated_texts = []
     total_batches = len(image_paths) // batch_size
     start = time.time()

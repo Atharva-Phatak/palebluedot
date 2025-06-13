@@ -26,7 +26,7 @@ click==8.1.7
 cloudpickle==2.2.1
 colorama==0.4.6 ; sys_platform == 'win32'
 comm==0.2.2
-compressed-tensors==0.10.1
+compressed-tensors==0.9.4
 cupy-cuda12x==13.4.1 ; sys_platform != 'darwin'
 datasets==3.6.0
 decorator==5.2.1
@@ -202,7 +202,7 @@ tzdata==2025.2
 urllib3==2.4.0
 uvicorn==0.34.2
 uvloop==0.21.0 ; platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32'
-vllm==0.9.1
+vllm==0.9.0.1
 watchfiles==1.0.5
 wcwidth==0.2.13
 websocket-client==1.8.0
