@@ -17,6 +17,7 @@ from minio import Minio
 from zenml import step
 
 from pbd.helper.logger import setup_logger
+from zenml.client import Client
 
 logger = setup_logger(__name__)
 
@@ -87,4 +88,6 @@ def store_extracted_texts_to_minio(
             logger.exception("Failed to upload file to MinIO")
             raise
         logger.info(f"Uploaded {parquet_filename} to MinIO bucket {bucket_name}")
-        return True
+        Client().active_stack.alerter.post(
+            f"Successfully processed OCR for {filename} and stored results in MinIO."
+        )

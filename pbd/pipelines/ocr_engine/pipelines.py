@@ -1,5 +1,4 @@
 from zenml import pipeline
-from zenml.client import Client
 
 from pbd.helper.logger import setup_logger
 from pbd.pipelines.ocr_engine.settings import (
@@ -9,6 +8,7 @@ from pbd.pipelines.ocr_engine.settings import (
 from pbd.pipelines.ocr_engine.steps.data import store_extracted_texts_to_minio
 from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
 from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
+from pbd.pipelines.ocr_engine.steps.process_text import extract_problem_solution
 
 logger = setup_logger(__name__)
 
@@ -48,36 +48,27 @@ def ocr_pipeline(
         max_new_tokens=max_new_tokens,
         run_test=run_test,
     )
-    has_stored = store_extracted_texts_to_minio(
+    store_extracted_texts_to_minio(
         dataset=data,
         bucket_name=bucket,
         minio_endpoint=endpoint,
         filename=filename,
     )
-    if has_stored:
-        logger.info(
-            f"OCR results stored in MinIO bucket '{bucket}' with filename '{filename}'."
-        )
-    # dataset = extract_problem_solution(
-    #    data=data,
-    #    model_path=post_process_model_path,
-    #    sampling_params=post_process_sampling_params,
-    #    batch_size=post_process_batch_size,
-    # )
-    # has_stored = store_extracted_texts_to_minio(
-    #    dataset=dataset,
-    #    bucket_name=bucket,
-    #    minio_endpoint=endpoint,
-    #    filename=f"{filename}_post_processed",
-    # )
-
-    if has_stored:
-        logger.info(
-            f"Post-processed results stored in MinIO bucket '{bucket}' with filename '{filename}_post_processed'."
-        )
-        Client().active_stack.alerter.post(
-            f"Successfully processed OCR for {filename} and stored results in MinIO."
-        )
+    logger.info(
+        f"OCR results stored in MinIO bucket '{bucket}' with filename '{filename}'."
+    )
+    dataset = extract_problem_solution(
+        data=data,
+        model_path=post_process_model_path,
+        sampling_params=post_process_sampling_params,
+        batch_size=post_process_batch_size,
+    )
+    store_extracted_texts_to_minio(
+        dataset=dataset,
+        bucket_name=bucket,
+        minio_endpoint=endpoint,
+        filename=f"{filename}_post_processed",
+    )
 
 
 if __name__ == "__main__":
@@ -99,5 +90,5 @@ if __name__ == "__main__":
             "max_tokens": 32768,
         },
         post_process_batch_size=5,
-        run_test=True,
+        run_test=False,
     )
