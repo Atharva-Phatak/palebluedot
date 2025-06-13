@@ -112,7 +112,7 @@ def do_inference(
     """
     engine_args = EngineArgs(
         model=model_path,
-        max_num_seqs=5,
+        max_num_seqs=1,
         limit_mm_per_prompt={"image": 5, "video": 0},
         mm_processor_kwargs={"min_pixels": 28 * 28, "max_pixels": 1280 * 80 * 80},
     )
