@@ -43,7 +43,7 @@ logger = setup_logger(__name__)
 
 def load_model_and_tokenizer(model_path: str):
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    vllm_model = LLM(model=model_path)
+    vllm_model = LLM(model=model_path, max_num_seqs=5)
     return tokenizer, vllm_model
 
 

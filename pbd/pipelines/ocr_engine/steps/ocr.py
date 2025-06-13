@@ -34,6 +34,7 @@ Functions:
 """
 
 import re
+import time
 from dataclasses import asdict
 from pathlib import Path
 
@@ -48,8 +49,6 @@ from pbd.pipelines.ocr_engine.steps.downloader import (
     download_from_minio,
     extract_zip,
 )
-
-import time
 
 logger = setup_logger(__name__)
 
@@ -113,6 +112,7 @@ def do_inference(
     """
     engine_args = EngineArgs(
         model=model_path,
+        max_num_seqs=5,
         limit_mm_per_prompt={"image": 5, "video": 0},
         mm_processor_kwargs={"min_pixels": 28 * 28, "max_pixels": 1280 * 80 * 80},
     )
