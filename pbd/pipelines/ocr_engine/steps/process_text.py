@@ -60,10 +60,8 @@ def extract_problem_solution(
 
     results = []
     start = time.time()
-    data = data["train"]
     for indx in range(0, len(data), batch_size):
         batch = data[indx : indx + batch_size]
-
         prompts = []
         contents = []
         for example in batch:
