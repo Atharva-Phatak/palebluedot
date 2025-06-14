@@ -46,6 +46,7 @@ def ocr_pipeline(
         prompt=prompt,
         max_new_tokens=max_new_tokens,
         run_test=run_test,
+        filename=filename,
     )
     logger.info(
         f"OCR results stored in MinIO bucket '{bucket}' with filename '{filename}'."
