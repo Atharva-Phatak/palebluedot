@@ -15,16 +15,16 @@ import tempfile
 from datasets import Dataset
 from minio import Minio
 from zenml import step
+from zenml.client import Client
 
 from pbd.helper.logger import setup_logger
-from zenml.client import Client
 
 logger = setup_logger(__name__)
 
 
 @step(name="store_extracted_texts_to_minio", enable_step_logs=True, enable_cache=False)
 def store_extracted_texts_to_minio(
-    dataset: Dataset,
+    dataset: Dataset | list,
     bucket_name: str,
     minio_endpoint: str,
     filename: str,
@@ -50,6 +50,8 @@ def store_extracted_texts_to_minio(
     if not dataset:
         raise ValueError("extraction_results is empty")
 
+    if isinstance(dataset, list):
+        dataset = Dataset.from_list(dataset)
     access_key = os.environ.get("AWS_ACCESS_KEY_ID")
     secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
     if not access_key or not secret_key:
