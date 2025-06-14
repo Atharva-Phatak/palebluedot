@@ -29,13 +29,13 @@ A logger is set up for monitoring and debugging purposes.
 import time
 
 import torch
-from datasets import Dataset
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 from zenml import step
 
 from pbd.helper.logger import setup_logger
 from pbd.pipelines.ocr_engine.steps.prompt import generate_post_processing_prompt
+from pbd.pipelines.ocr_engine.steps.upload_data import store_extracted_texts_to_minio
 
 logger = setup_logger(__name__)
 
@@ -48,8 +48,14 @@ def load_model_and_tokenizer(model_path: str):
 
 @step(enable_step_logs=True, enable_cache=False)
 def extract_problem_solution(
-    data: list[dict], model_path: str, sampling_params: dict, batch_size: int
-) -> Dataset:
+    data: list[dict],
+    model_path: str,
+    sampling_params: dict,
+    batch_size: int,
+    bucket_name: str,
+    filename: str,
+    minio_endpoint: str,
+):
     # empty cuda cache before starting new step
     if torch.cuda.is_available():
         logger.warning("Emptying cuda cache before starting new step.")
@@ -86,5 +92,9 @@ def extract_problem_solution(
             )
 
     logger.info(f"Completed inference in {time.time() - start:.2f} seconds.")
-    results = Dataset.from_list(results)
-    return results
+    store_extracted_texts_to_minio(
+        dataset=results,
+        bucket_name=bucket_name,
+        minio_endpoint=minio_endpoint,
+        filename=filename,
+    )

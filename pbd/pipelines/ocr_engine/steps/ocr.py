@@ -48,6 +48,7 @@ from pbd.pipelines.ocr_engine.steps.downloader import (
     download_from_minio,
     extract_zip,
 )
+from pbd.pipelines.ocr_engine.steps.upload_data import store_extracted_texts_to_minio
 
 logger = setup_logger(__name__)
 
@@ -166,6 +167,7 @@ def ocr_images(
     max_new_tokens: int,
     prompt: str,
     run_test: bool,
+    filename: str,
     batch_size: int = 5,
 ) -> list:
     """
@@ -207,5 +209,10 @@ def ocr_images(
         batch_size=batch_size,
         prompt=prompt,
     )
-    # Convert list[dict] → Hugging Face Dataset
+    store_extracted_texts_to_minio(
+        dataset=outputs,
+        bucket_name=bucket,
+        minio_endpoint=endpoint,
+        filename=filename,
+    )
     return outputs

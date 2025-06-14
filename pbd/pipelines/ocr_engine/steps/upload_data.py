@@ -14,15 +14,14 @@ import tempfile
 
 from datasets import Dataset
 from minio import Minio
-from zenml import step
-from zenml.client import Client
-
+from zenml.integrations.slack.steps.slack_alerter_post_step import (
+    slack_alerter_post_step,
+)
 from pbd.helper.logger import setup_logger
 
 logger = setup_logger(__name__)
 
 
-@step(name="store_extracted_texts_to_minio", enable_step_logs=True, enable_cache=False)
 def store_extracted_texts_to_minio(
     dataset: Dataset | list,
     bucket_name: str,
@@ -90,6 +89,6 @@ def store_extracted_texts_to_minio(
             logger.exception("Failed to upload file to MinIO")
             raise
         logger.info(f"Uploaded {parquet_filename} to MinIO bucket {bucket_name}")
-        Client().active_stack.alerter.post(
-            f"Successfully processed OCR for {filename} and stored results in MinIO."
+        slack_alerter_post_step(
+            message=f"Uploaded {parquet_filename} to MinIO bucket {bucket_name}"
         )

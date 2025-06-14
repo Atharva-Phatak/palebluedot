@@ -5,7 +5,6 @@ from pbd.pipelines.ocr_engine.settings import (
     docker_settings,
     k8s_operator_settings,
 )
-from pbd.pipelines.ocr_engine.steps.data import store_extracted_texts_to_minio
 from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
 from pbd.pipelines.ocr_engine.steps.process_text import extract_problem_solution
 from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
@@ -48,26 +47,17 @@ def ocr_pipeline(
         max_new_tokens=max_new_tokens,
         run_test=run_test,
     )
-    store_extracted_texts_to_minio(
-        dataset=data,
-        bucket_name=bucket,
-        minio_endpoint=endpoint,
-        filename=filename,
-    )
     logger.info(
         f"OCR results stored in MinIO bucket '{bucket}' with filename '{filename}'."
     )
-    dataset = extract_problem_solution(
+    extract_problem_solution(
         data=data,
         model_path=post_process_model_path,
         sampling_params=post_process_sampling_params,
         batch_size=post_process_batch_size,
-    )
-    store_extracted_texts_to_minio(
-        dataset=dataset,
         bucket_name=bucket,
-        minio_endpoint=endpoint,
         filename=f"{filename}_post_processed",
+        minio_endpoint=endpoint,
     )
 
 
@@ -78,7 +68,7 @@ if __name__ == "__main__":
         object_key="processed_data/pdfs/dc_mechanics.zip",
         local_path="/tmp/images.zip",
         extract_to="/tmp/images",
-        model_path="/models/Qwen2.5-VL-7B-Instruct-unsloth-bnb-4bit",
+        model_path="/models/Nanonets-OCR-s",
         max_new_tokens=32768,
         prompt=ocr_prompt,
         filename="dc_mechanics",
@@ -90,5 +80,5 @@ if __name__ == "__main__":
             "max_tokens": 32768,
         },
         post_process_batch_size=5,
-        run_test=False,
+        run_test=True,
     )

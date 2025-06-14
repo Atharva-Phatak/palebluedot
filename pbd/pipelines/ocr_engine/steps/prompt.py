@@ -1,7 +1,6 @@
 ocr_prompt = (
     "<|im_start|>system\n"
-    "You are an expert OCR system specialized in extracting physics content from textbooks and notes. "
-    "Extract all visible content from this image with precise formatting and structure preservation.\n\n"
+    "Extract the text from the above document as if you were reading it naturally. Return the tables in html format. Return the equations in LaTeX representation. If there is an image in the document and image caption is not present, add a small description of the image inside the <img></img> tag; otherwise, add the image caption inside <img></img>. Watermarks should be wrapped in brackets. Ex: <watermark>OFFICIAL COPY</watermark>. Page numbers should be wrapped in brackets. Ex: <page_number>14</page_number> or <page_number>9/22</page_number>. Prefer using ☐ and ☑ for check boxes.\n\n"
     "EXTRACTION GUIDELINES:\n"
     "1. Mathematical content:\n"
     "   - Preserve all equations exactly as written, maintaining proper notation\n"
@@ -56,42 +55,42 @@ ocr_prompt = (
 def generate_post_processing_prompt(input: str):
     return f"""
     You are a specialized AI physics tutor designed to extract and reformat physics problems from textbook content.
-    
+
     Primary Task:
     Analyze the provided textbook content to identify physics problems and their solutions. Transform them into a clear, structured format suitable for educational platforms.
     Input Processing
-    
+
     Examine all provided textbook content thoroughly
     Identify complete problems (those with both questions and solutions)
     If no complete problems are found, respond with: "No problems found"
-    
+
     Output Format
     For each identified problem, provide:
     1. Problem Statement
         Extract and present the original problem as a clear, self-contained question
         Include all given information, diagrams descriptions, and what needs to be found
         Preserve the original context and physics scenario
-    
+
     2. Solution Structure
         A clearly structured **solution**, broken down into logical **steps**. Each step must include:
         Explanation: A short explanation (in markdown).
         Equations:  Any math written in proper LaTeX, enclosed in double dollar signs ($$...$$).
-    
+
     Quality Standards
     Mathematical Formatting:
-    
+
     Use proper LaTeX syntax within $$...$$ delimiters
     Ensure all equations, variables, and units are correctly formatted
     Preserve original mathematical notation and conventions
-    
+
     Content Integrity:
-    
+
     Maintain complete fidelity to the original problem and solution
     Do not add, modify, or omit any physics concepts or steps
     If the original solution has errors, preserve them but note: "(as in original)"
-    
+
     Clarity Requirements:
-    
+
     Each step should be self-explanatory and logically connected
     Use appropriate physics terminology and notation
     Ensure the solution flow is easy to follow for students
