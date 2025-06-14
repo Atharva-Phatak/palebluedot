@@ -41,7 +41,7 @@ from pathlib import Path
 import torch
 import vllm
 from PIL import Image
-from zenml import step
+from zenml import log_metadata, step
 
 from pbd.helper.logger import setup_logger
 from pbd.pipelines.ocr_engine.steps.downloader import (
@@ -147,8 +147,10 @@ def do_inference(
                     "content": output.outputs[0].text,
                 }
             )
-    logger.info(
-        f"Generated texts: {len(generated_texts)} in {time.time() - start:.2f} seconds"
+    total_time = (time.time() - start) // 60
+    logger.info(f"Generated texts: {len(generated_texts)} in {total_time:.2f} minutes")
+    log_metadata(
+        metadata={"total_pages": len(generated_texts), "total_time": total_time}
     )
     return generated_texts
 

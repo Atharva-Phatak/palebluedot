@@ -27,7 +27,6 @@ A logger is set up for monitoring and debugging purposes.
 """
 
 import time
-from typing import List
 
 import torch
 from datasets import Dataset
@@ -50,7 +49,7 @@ def load_model_and_tokenizer(model_path: str):
 @step(enable_step_logs=True, enable_cache=False)
 def extract_problem_solution(
     data: list[dict], model_path: str, sampling_params: dict, batch_size: int
-) -> List[dict]:
+) -> Dataset:
     # empty cuda cache before starting new step
     if torch.cuda.is_available():
         logger.warning("Emptying cuda cache before starting new step.")

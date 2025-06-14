@@ -90,5 +90,5 @@ if __name__ == "__main__":
             "max_tokens": 32768,
         },
         post_process_batch_size=5,
-        run_test=True,
+        run_test=False,
     )
