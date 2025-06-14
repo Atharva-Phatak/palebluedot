@@ -49,7 +49,7 @@ def load_model_and_tokenizer(model_path: str):
 
 @step(enable_step_logs=True, enable_cache=False)
 def extract_problem_solution(
-    data: Dataset, model_path: str, sampling_params: dict, batch_size: int
+    data: list[dict], model_path: str, sampling_params: dict, batch_size: int
 ) -> List[dict]:
     # empty cuda cache before starting new step
     if torch.cuda.is_available():
@@ -64,6 +64,7 @@ def extract_problem_solution(
         batch = data[indx : indx + batch_size]
         prompts = []
         contents = []
+        pages = []
         for example in batch:
             content = example["content"]
             prompt = generate_post_processing_prompt(content)
@@ -75,12 +76,15 @@ def extract_problem_solution(
                 enable_thinking=False,
             )
             prompts.append(text)
-            contents.append(content)  # Track original content
+            contents.append(content)
+            pages.append(example["page"])  # Track original content
 
         outputs = vllm_model.generate(prompts, params)
 
-        for content, output in zip(contents, outputs):
-            results.append({"content": content, "generated": output.outputs[0].text})
+        for content, output, page in zip(contents, outputs, pages):
+            results.append(
+                {"content": content, "generated": output.outputs[0].text, "page": page}
+            )
 
     logger.info(f"Completed inference in {time.time() - start:.2f} seconds.")
     results = Dataset.from_list(results)

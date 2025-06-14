@@ -40,7 +40,6 @@ from pathlib import Path
 
 import torch
 import vllm
-from datasets import Dataset
 from PIL import Image
 from zenml import step
 
@@ -166,10 +165,10 @@ def ocr_images(
     prompt: str,
     run_test: bool,
     batch_size: int = 5,
-) -> Dataset:
+) -> list:
     """
     ZenML step that downloads a zip of images from MinIO, extracts them, runs OCR inference,
-    and returns the results as a Hugging Face Dataset.
+    and returns the results as a list
 
     Args:
         endpoint (str): MinIO endpoint URL.
@@ -207,5 +206,4 @@ def ocr_images(
         prompt=prompt,
     )
     # Convert list[dict] → Hugging Face Dataset
-    dataset = Dataset.from_list(outputs)
-    return dataset
+    return outputs
