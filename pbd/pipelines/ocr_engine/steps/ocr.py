@@ -117,7 +117,7 @@ def do_inference(
     engine_args = vllm.EngineArgs(
         model=model_path,
         max_num_seqs=1,
-        max_model_len=80000,
+        max_model_len=60000,
         limit_mm_per_prompt={"image": 5, "video": 0},
         mm_processor_kwargs={"min_pixels": 28 * 28, "max_pixels": 1280 * 80 * 80},
     )
