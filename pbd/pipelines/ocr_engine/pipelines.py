@@ -29,6 +29,7 @@ def ocr_pipeline(
     max_new_tokens: int,
     prompt: str,
     filename: str,
+    extraction_batch_size: int,
     post_process_model_path: str,
     post_process_sampling_params: dict,
     post_process_batch_size: int,
@@ -47,6 +48,7 @@ def ocr_pipeline(
         max_new_tokens=max_new_tokens,
         run_test=run_test,
         filename=filename,
+        batch_size=extraction_batch_size,
     )
     logger.info(
         f"OCR results stored in MinIO bucket '{bucket}' with filename '{filename}'."
@@ -70,16 +72,17 @@ if __name__ == "__main__":
         local_path="/tmp/images.zip",
         extract_to="/tmp/images",
         model_path="/models/Nanonets-OCR-s",
-        max_new_tokens=32768,
+        max_new_tokens=80000,
         prompt=ocr_prompt,
         filename="dc_mechanics",
-        post_process_model_path="/models/Qwen3-1.7B",
+        extraction_batch_size=20,
+        post_process_model_path="/models/Qwen3-4B-unsloth-bnb-4bit",
         post_process_sampling_params={
-            "temperature": 0.6,
+            "temperature": 0.7,
             "top_p": 0.8,
             "top_k": 20,
-            "max_tokens": 32768,
+            "max_tokens": 80000,
         },
-        post_process_batch_size=5,
-        run_test=False,
+        post_process_batch_size=20,
+        run_test=True,
     )

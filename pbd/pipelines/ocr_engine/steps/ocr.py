@@ -116,14 +116,12 @@ def do_inference(
     logger.info(f"Using vllm version {vllm.__version__}")
     engine_args = vllm.EngineArgs(
         model=model_path,
-        max_num_seqs=1,
-        max_model_len=60000,
-        limit_mm_per_prompt={"image": 5, "video": 0},
+        max_num_seqs=10,
+        max_model_len=100000,
+        limit_mm_per_prompt={"image": 10, "video": 0},
         mm_processor_kwargs={"min_pixels": 28 * 28, "max_pixels": 1280 * 80 * 80},
     )
-    sampling_params = vllm.SamplingParams(
-        max_tokens=max_new_tokens,
-    )
+    sampling_params = vllm.SamplingParams(max_tokens=max_new_tokens, seed=42)
     model = vllm.LLM(**asdict(engine_args))
     generated_texts = []
     total_batches = len(image_paths) // batch_size

@@ -17,3 +17,8 @@ dependencies = [
     "vllm==0.9.0.1",
     "zenml==0.83.0",
 ]
+
+[dependency-groups]
+dev = [
+    "jupyterlab>=4.4.3",
+]

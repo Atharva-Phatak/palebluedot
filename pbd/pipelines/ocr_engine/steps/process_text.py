@@ -64,6 +64,7 @@ def extract_problem_solution(
     params = SamplingParams(**sampling_params)
 
     results = []
+    total_batches = len(data) // batch_size
     start = time.time()
     for indx in range(0, len(data), batch_size):
         batch = data[indx : indx + batch_size]
@@ -83,9 +84,11 @@ def extract_problem_solution(
             prompts.append(text)
             contents.append(content)
             pages.append(example["page"])  # Track original content
-
+        gen_time = time.time()
         outputs = vllm_model.generate(prompts, params)
-
+        logger.info(
+            f"Batch : {indx + 1} of {total_batches} | Time : {time.time() - gen_time:.2f} seconds"
+        )
         for content, output, page in zip(contents, outputs, pages):
             results.append(
                 {"content": content, "generated": output.outputs[0].text, "page": page}
