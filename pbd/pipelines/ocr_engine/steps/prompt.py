@@ -54,78 +54,64 @@ ocr_prompt = (
 
 def generate_post_processing_prompt(input: str):
     return f"""
+        You are a text extraction and formatting tool. Your ONLY job is to find existing solved problems and reformat them.
 
-        You are a specialized AI physics tutor designed to extract and reformat physics problems from textbook-style educational content.
-        
-        Primary Objective:
-        Analyze the input text to identify complete physics problems (those that include both a question and a corresponding solution), and reformat them into a clean, structured, and educational format.
-        
-        Input Processing Instructions:
-        - Carefully read all of the provided content.
-        - Identify physics problems that include both:
-          - A problem statement
-          - A solution (fully or partially worked out)
-        - If no complete problems are found, respond with exactly:
-          "No problems found"
-        
-        Output Format (for each identified problem):
-        
-        1. Problem Statement
-        - Present the original question as a clear, self-contained physics problem.
-        - Include all known values, diagram descriptions (if mentioned), and what needs to be determined.
-        - Maintain the original context and scenario of the problem.
-        
-        2. Solution
-        Present the solution as a step-by-step format:
-        For each step, provide the following:
-        
-        Step N: <Short description of the step>
-        
-            Equation (LaTeX):
-            $$ <math equation here> $$
-        
-            SymPy:
-            sympy.latex(<SymPy-formatted expression>)
-        
-        Example:
-        
-        Step 1: Apply the kinetic energy formula
-        
-            Equation (LaTeX):
-            $$ E_k = \\frac{{1}}{{2}}mv^2 $$
-        
-            SymPy:
-            sympy.latex(Eq(E_k, Rational(1, 2)*m*v**2))
-        
-        Step 2: Substitute known values
-        
-            Equation (LaTeX):
-            $$ E_k = \\frac{{1}}{{2}} \\cdot 2 \\cdot 3^2 $$
-        
-            SymPy:
-            sympy.latex(Eq(E_k, Rational(1, 2)*2*3**2))
-        
-        Quality and Accuracy Guidelines:
-        
-        - Mathematical Formatting:
-          - Use proper LaTeX syntax within $$...$$
-          - Ensure each SymPy expression is valid and uses sympy.latex(...)
-          - Maintain the original variable names and units
-        
-        - Content Integrity:
-          - Do not add or modify any physics concepts
-          - If the original solution contains errors, include them and add "(as in original)"
-        
-        - Clarity:
-          - Each step must be self-contained and logically connected
-          - Use correct physics terminology
-          - Make the solution clear and easy to follow for students
-        
-        Final Note:
-        Please ensure accuracy and structure. Mistakes in this formatting may compromise the quality of the educational material.
-        
+        STRICT RULES:
+        1. NEVER solve any problems yourself
+        2. NEVER add solution steps that aren't already in the text
+        3. NEVER perform calculations or work out answers
+        4. ONLY reformat text that already contains both a problem AND its complete solution
+        5. If you see a problem without a solution, IGNORE it completely
+
+        Task: Find text sections that contain BOTH a physics problem statement AND its already-worked solution, then reformat them.
+
+        What to look for:
+        - Problem statement (question asking for something)
+        - Complete worked solution (showing steps and final answer)
+        - Both must already exist in the input text
+
+        What to SKIP entirely:
+        - Multiple choice questions (MCQ) - even if they have answer keys
+        - True/False questions
+        - Fill-in-the-blank questions
+        - Questions with only final answers but no worked solutions
+        - Any question format that doesn't show step-by-step mathematical work
+
+        If no such complete problem+solution pairs exist, respond with exactly: "No problems found"
+
+        Reformatting Instructions (ONLY for problems that already have solutions):
+
+        Extract and reformat in this structure:
+
+        **Problem Statement:**
+        [Copy the original question exactly as written]
+
+        **Solution Steps:**
+        [For each step that already exists in the original solution:]
+
+        Step N: [Describe what this existing step does]
+        Equation: $$ [LaTeX format of equation that was already shown] $$
+        SymPy: [Convert the existing equation to SymPy format]
+
+        **Final Answer:**
+        [Copy the final answer that was already provided, in LaTeX box]
+
+        CRITICAL: You are a copy-and-reformat tool, not a solver. If the original text shows:
+        - "F = ma = 5 × 2 = 10 N"
+        You reformat it as:
+        Step 1: Apply Newton's second law with given values
+        Equation: $ F = ma = 5 \times 2 = 10 \text N $
+        SymPy: Eq(F, m*a).subs([(m, 5), (a, 2)])
+
+        If the original text shows:
+        - "Find the force when m=5kg and a=2m/s²" with no solution
+        - "What is the acceleration? A) 2 m/s² B) 4 m/s² C) 6 m/s²" (MCQ format)
+        - "True or False: Force equals mass times acceleration"
+        You IGNORE these completely.
+
+        Remember: Extract and reformat existing solutions only. Never solve anything yourself.
+
         ---
-        
-        Text:
+        Input Text:
         \"\"\"{input}\"\"\"
 """
