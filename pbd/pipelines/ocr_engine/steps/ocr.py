@@ -137,7 +137,9 @@ def do_inference(
             }
             for img_path in batch
         ]
-        outputs = model.generate(inputs, sampling_params=sampling_params)
+        outputs = model.generate(
+            inputs, use_tqdm=False, sampling_params=sampling_params
+        )
         logger.info(f"Processed batch {indx // batch_size}/{total_batches}")
         for img_path, output in zip(batch, outputs):
             page_no = extract_page_number(img_path)

@@ -68,7 +68,7 @@ if __name__ == "__main__":
     ocr_pipeline(
         endpoint="palebluedot-minio.io",
         bucket="data-bucket",
-        object_key="processed_data/pdfs/dc_mechanics.zip",
+        object_key="processed_data/pdfs/inpho.zip",
         local_path="/tmp/images.zip",
         extract_to="/tmp/images",
         model_path="/models/Nanonets-OCR-s",
@@ -84,5 +84,5 @@ if __name__ == "__main__":
             "max_tokens": 80000,
         },
         post_process_batch_size=20,
-        run_test=True,
+        run_test=False,
     )

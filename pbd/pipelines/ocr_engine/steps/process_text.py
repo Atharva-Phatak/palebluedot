@@ -85,7 +85,9 @@ def extract_problem_solution(
             contents.append(content)
             pages.append(example["page"])  # Track original content
         gen_time = time.time()
-        outputs = vllm_model.generate(prompts, params)
+        outputs = vllm_model.generate(
+            prompts=prompts, use_tqdm=False, sampling_params=params
+        )
         logger.info(
             f"Batch : {indx + 1} of {total_batches} | Time : {time.time() - gen_time:.2f} seconds"
         )
