@@ -44,6 +44,7 @@ from PIL import Image
 from zenml import log_metadata, step
 
 from pbd.helper.logger import setup_logger
+from pbd.helper.file_upload import read_parquet_if_exists
 from pbd.pipelines.ocr_engine.steps.downloader import (
     download_from_minio,
     extract_zip,
@@ -189,31 +190,40 @@ def ocr_images(
     Returns:
         Dataset: Hugging Face Dataset containing OCR results for each image.
     """
-    zip_path = download_from_minio(
+    data = read_parquet_if_exists(
         endpoint=endpoint,
-        bucket=bucket,
-        object_key=object_key,
-        local_path=local_path,
-    )
-    image_paths = extract_zip(zip_path=zip_path, extract_to=extract_to)
-    image_paths = sort_pages_by_number(pages=image_paths)
-    if run_test:
-        logger.warning(f"Running OCR inference test with {batch_size * 2} images")
-        image_paths = image_paths[: batch_size * 2]
-    logger.info(f"Extracted {len(image_paths)} images from {zip_path}")
-    # check if cuda is available
-    logger.info(f"CUDA available: {torch.cuda.is_available()}")
-    outputs = do_inference(
-        image_paths=image_paths,
-        model_path=model_path,
-        max_new_tokens=max_new_tokens,
-        batch_size=batch_size,
-        prompt=prompt,
-    )
-    store_extracted_texts_to_minio(
-        dataset=outputs,
         bucket_name=bucket,
-        minio_endpoint=endpoint,
-        filename=filename,
+        object_path=f"ocr_results/{filename}.parquet",
     )
-    return outputs
+    if data:
+        logger.info("Data already exists in MinIO. Returning existing data.")
+        return data
+    else:
+        zip_path = download_from_minio(
+            endpoint=endpoint,
+            bucket=bucket,
+            object_key=object_key,
+            local_path=local_path,
+        )
+        image_paths = extract_zip(zip_path=zip_path, extract_to=extract_to)
+        image_paths = sort_pages_by_number(pages=image_paths)
+        if run_test:
+            logger.warning(f"Running OCR inference test with {batch_size * 2} images")
+            image_paths = image_paths[: batch_size * 2]
+        logger.info(f"Extracted {len(image_paths)} images from {zip_path}")
+        # check if cuda is available
+        logger.info(f"CUDA available: {torch.cuda.is_available()}")
+        outputs = do_inference(
+            image_paths=image_paths,
+            model_path=model_path,
+            max_new_tokens=max_new_tokens,
+            batch_size=batch_size,
+            prompt=prompt,
+        )
+        store_extracted_texts_to_minio(
+            dataset=outputs,
+            bucket_name=bucket,
+            minio_endpoint=endpoint,
+            filename=filename,
+        )
+        return outputs

@@ -42,7 +42,7 @@ logger = setup_logger(__name__)
 
 def load_model_and_tokenizer(model_path: str):
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    vllm_model = LLM(model=model_path, max_num_seqs=10)
+    vllm_model = LLM(model=model_path, max_model_len=100000, max_num_seqs=10)
     return tokenizer, vllm_model
 
 
@@ -88,8 +88,9 @@ def extract_problem_solution(
         outputs = vllm_model.generate(
             prompts=prompts, use_tqdm=False, sampling_params=params
         )
+        current_batch = indx // batch_size
         logger.info(
-            f"Batch : {indx + 1} of {total_batches} | Time : {time.time() - gen_time:.2f} seconds"
+            f"Batch : {current_batch} of {total_batches} | Time : {time.time() - gen_time:.2f} seconds"
         )
         for content, output, page in zip(contents, outputs, pages):
             results.append(
