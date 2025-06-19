@@ -1,56 +1,55 @@
 import os
+import tempfile
+
+import pandas as pd
 from minio import Minio
-from minio.error import S3Error
+from minio.error import NoSuchKey, S3Error
+
 from pbd.helper.logger import setup_logger
 
 logger = setup_logger(__name__)
 
 
-def upload_single_file(client, file_path, bucket_name, object_name=None, prefix=""):
+def read_parquet_if_exists(
+    endpoint: str, bucket_name: str, object_path: str
+) -> pd.DataFrame | None:
     """
-    Upload a single file to MinIO
+    Check if a Parquet file exists in MinIO at the given path and read it if it does.
 
     Args:
-        client: MinIO client instance
-        file_path (str): Path to the file
-        bucket_name (str): Name of the bucket
-        object_name (str): Object name in MinIO (if None, uses filename)
-        prefix (str): Optional prefix to add to object name
-        logger (logging.Logger): Logger instance
+        minio_client (Minio): Authenticated MinIO client.
+        bucket_name (str): The name of the bucket.
+        object_path (str): Path of the Parquet file in the bucket.
 
     Returns:
-        tuple: (success, file_path, error_message)
+        pd.DataFrame or None: Returns DataFrame if file exists, else None.
     """
-
-    try:
-        # If object_name is not given, use the file name
-        if object_name is None:
-            object_name = os.path.basename(file_path)
-
-        if prefix:
-            object_name = f"{prefix}/{object_name}"
-
-        # Upload the file
-        client.fput_object(
-            bucket_name,
-            object_name,
-            file_path,
-            content_type="audio/mp4",  # Correct MIME type for M4A files
-        )
-        logger.debug(f"Successfully uploaded: {file_path} as {object_name}")
-        return (True, file_path, None)
-    except S3Error as err:
-        logger.error(f"S3Error uploading {file_path}: {err}")
-        return (False, file_path, str(err))
-    except Exception as err:
-        logger.error(f"Unexpected error uploading {file_path}: {err}")
-        return (False, file_path, str(err))
-
-
-def upload_image(minio_client: Minio, bucket: str, key: str, image_path: str):
-    minio_client.fput_object(
-        bucket_name=bucket,
-        object_name=key,
-        file_path=image_path,
-        content_type="image/jpeg",
+    access_key = os.environ.get("AWS_ACCESS_KEY_ID")
+    secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
+    if not access_key or not secret_key:
+        raise ValueError("AWS credentials not found in environment variables.")
+    client = Minio(
+        endpoint=endpoint,
+        access_key=access_key,
+        secret_key=secret_key,
+        secure=False,
     )
+    try:
+        # Check if object exists
+        client.stat_object(bucket_name, object_path)
+
+        # Download to temp file
+        with tempfile.NamedTemporaryFile(suffix=".parquet", delete=False) as tmp_file:
+            client.fget_object(bucket_name, object_path, tmp_file.name)
+            df = pd.read_parquet(tmp_file.name)
+        return df.to_dict(orient="records")
+
+    except NoSuchKey:
+        print(f"Object '{object_path}' not found in bucket '{bucket_name}'.")
+        return None
+    except S3Error as err:
+        print(f"S3 error occurred: {err}")
+        return None
+    finally:
+        if "tmp_file" in locals() and os.path.exists(tmp_file.name):
+            os.remove(tmp_file.name)
