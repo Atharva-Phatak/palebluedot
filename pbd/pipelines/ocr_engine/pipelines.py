@@ -74,7 +74,7 @@ if __name__ == "__main__":
         model_path="/models/Nanonets-OCR-s",
         max_new_tokens=80000,
         prompt=ocr_prompt,
-        filename="dc_mechanics",
+        filename="inpho",
         extraction_batch_size=20,
         post_process_model_path="/models/Qwen3-4B-unsloth-bnb-4bit",
         post_process_sampling_params={
