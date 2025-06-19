@@ -3,7 +3,6 @@ import tempfile
 
 import pandas as pd
 from minio import Minio
-from minio.error import NoSuchKey, S3Error
 
 from pbd.helper.logger import setup_logger
 
@@ -44,10 +43,7 @@ def read_parquet_if_exists(
             df = pd.read_parquet(tmp_file.name)
         return df.to_dict(orient="records")
 
-    except NoSuchKey:
-        print(f"Object '{object_path}' not found in bucket '{bucket_name}'.")
-        return None
-    except S3Error as err:
+    except Exception as err:
         print(f"S3 error occurred: {err}")
         return None
     finally:
