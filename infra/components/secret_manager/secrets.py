@@ -3,6 +3,7 @@ import os
 import pulumi
 import pulumi_kubernetes as k8s
 from components.minio.minio import get_minio_secret
+from components.postgres.deploy_postgres import get_postgres_secret
 
 
 def create_aws_secret(
@@ -46,3 +47,31 @@ def create_gh_secret(namespace: str, depends_on: list, k8s_provider: k8s.Provide
         opts=pulumi.ResourceOptions(provider=k8s_provider),
     )
     return github_secret
+
+
+def create_postgres_secret(
+    namespace: str,
+    project_id: str,
+    environment_slug: str,
+    access_key_identifier: str,
+    k8s_provider: k8s.Provider,
+    depends_on: list = None,
+):
+    postgres_password = get_postgres_secret(
+        project_id=project_id,
+        environment_slug=environment_slug,
+        access_key_identifier=access_key_identifier,
+    )
+
+    postgres_secret = k8s.core.v1.Secret(
+        "metaflow-db-secret",
+        metadata={
+            "name": "metaflow-db-secret",
+            "namespace": namespace,  # Same namespace as the Helm chart
+        },
+        string_data={"postgres-password": postgres_password},
+        opts=pulumi.ResourceOptions(
+            provider=k8s_provider, depends_on=depends_on if depends_on else []
+        ),
+    )
+    return postgres_secret
