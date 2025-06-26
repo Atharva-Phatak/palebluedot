@@ -4,7 +4,7 @@ from components.grafana.deploy_grafana import deploy_grafana
 from components.k8s.minikube import start_minikube
 from components.k8s.namespace import create_namespace
 from components.k8s.provider import get_k8s_provider
-from components.metaflow.deploy_metaflow import deploy_metaflow
+from components.metaflow.deploy_metaflow import deploy_metaflow, create_metaflow_config
 from components.minio.buckets import deploy_minio_buckets
 from components.minio.minio import deploy_minio
 from components.persistent_claims.pv import deploy_persistent_volume_claims
@@ -122,7 +122,7 @@ deploy_minio_buckets(
     ingress_host=cfg.minio_ingress_host,
 )
 # deploy metaflow
-metaflow_chart = deploy_metaflow(
+metaflow_chart, metaflow_config = deploy_metaflow(
     k8s_provider=k8s_provider,
     namespace=metaflow_namespace,
     infiscal_project_id=cfg.infiscal_project_id,
@@ -170,7 +170,7 @@ argo_workflows_chart = deploy_argo_workflows(
     depends_on=[minikube_start, monitoring_namespace, metaflow_chart],
     namespace=metaflow_namespace,
 )
-argo_events = deploy_argo_events(
+argo_events, argo_metaflow_config = deploy_argo_events(
     k8s_provider=k8s_provider,
     depends_on=[
         minikube_start,
@@ -179,4 +179,23 @@ argo_events = deploy_argo_events(
         argo_workflows_chart,
     ],
     namespace=metaflow_namespace,
+)
+full_metaflow_config = metaflow_config | argo_metaflow_config
+create_metaflow_config(
+    config=full_metaflow_config,
+    depends_on=[
+        minikube_start,
+        metaflow_chart,
+        postgres_resource,
+        minio_ingress,
+        model_pv_claims,
+        minio_pv_claim,
+        gh_secret,
+        arc_controller_resource,
+        arc_scale_set_resource,
+        prometheus_chart,
+        grafana_chart,
+        argo_workflows_chart,
+        argo_events,
+    ],
 )

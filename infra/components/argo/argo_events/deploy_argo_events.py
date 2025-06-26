@@ -4,8 +4,11 @@ from pulumi_kubernetes.core.v1 import Namespace
 
 
 def deploy_argo_events(
-    namespace: Namespace, depends_on: list, k8s_provider: k8s.Provider
+    namespace: Namespace,
+    depends_on: list,
+    k8s_provider: k8s.Provider,
 ):
+    metaflow_argo_config = {}
     argo_events = k8s.helm.v3.Chart(
         "argo-events",
         k8s.helm.v3.ChartOpts(
@@ -198,23 +201,14 @@ def deploy_argo_events(
             },
         },
     )
-
-    # Tilt-compatible service
-    _ = k8s.core.v1.Service(
-        "argo-events-webhook-eventsource-svc-tilt",
-        metadata={
-            "name": "argo-events-webhook-eventsource-svc-tilt",
-            "namespace": namespace.metadata["name"],
-        },
-        spec={
-            "ports": [{"port": 12000, "protocol": "TCP", "targetPort": 12000}],
-            "selector": {
-                "controller": "eventsource-controller",
-                "eventsource-name": "argo-events-webhook",
-                "owner-name": "argo-events-webhook",
-            },
-            "type": "ClusterIP",
-        },
-    )
+    metaflow_argo_config = {
+        "METAFLOW_ARGO_EVENTS_EVENT": "metaflow-event",
+        "METAFLOW_ARGO_EVENTS_EVENT_BUS": "default",
+        "METAFLOW_ARGO_EVENTS_EVENT_SOURCE": "argo-events-webhook",
+        "METAFLOW_ARGO_EVENTS_SERVICE_ACCOUNT": "operate-workflow-sa",
+        "METAFLOW_ARGO_EVENTS_WEBHOOK_AUTH": "service",
+        "METAFLOW_ARGO_EVENTS_INTERNAL_WEBHOOK_URL": "http://argo-events-webhook-eventsource-svc:12000/metaflow-event",
+        "METAFLOW_ARGO_EVENTS_WEBHOOK_URL": "http://localhost:12000/metaflow-event",
+    }
     pulumi.export("argo_events_chart", argo_events.ready)
-    return argo_events
+    return argo_events, metaflow_argo_config

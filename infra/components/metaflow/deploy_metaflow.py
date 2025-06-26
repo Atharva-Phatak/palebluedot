@@ -1,10 +1,52 @@
+import json
+import typing as T
+
 import pulumi
+import pulumi_command as command
 import pulumi_kubernetes as k8s
 from components.minio.minio import get_minio_secret
 from components.postgres.deploy_postgres import get_postgres_secret
 from pulumi import ResourceTransformationResult
 from pulumi_kubernetes.core.v1 import Namespace
 from pulumi_kubernetes.helm.v3 import Chart, ChartOpts, FetchOpts
+
+
+def create_metaflow_config(
+    config: T.Dict[str, T.Any],
+    config_name: str = "metaflow-config",
+    depends_on: T.Optional[list] = None,
+) -> command.local.Command:
+    """
+    Create a Pulumi Command resource to write Metaflow configuration file.
+
+    Args:
+        config: Dictionary containing Metaflow configuration
+        config_name: Name for the Pulumi resource
+        depends_on: List of resources this command depends on
+
+    Returns:
+        pulumi_command.local.Command resource
+    """
+
+    # Convert config to JSON string for the command
+    config_json = json.dumps(config, indent=2)
+
+    # Create the command to write config file
+    config_writer = command.local.Command(
+        config_name,
+        create=pulumi.Output.concat(
+            "mkdir -p ~/.metaflowconfig && ",
+            "cat > ~/.metaflowconfig/config.json << 'EOF'\n",
+            config_json,
+            "\nEOF",
+            " && echo '✅ Wrote Metaflow config to ~/.metaflowconfig/config.json'",
+        ),
+        # Optional: Define what to do on delete
+        delete="echo '🗑️ Metaflow config cleanup (if needed)'",
+        opts=pulumi.ResourceOptions(depends_on=depends_on or []),
+    )
+
+    return config_writer
 
 
 def deploy_metaflow(
@@ -28,7 +70,6 @@ def deploy_metaflow(
         project_id=infiscal_project_id,
         environment_slug=environment_slug,
     )
-
     metaflow_service = Chart(
         "metaflow-service",
         ChartOpts(
@@ -45,6 +86,27 @@ def deploy_metaflow(
                 "image": {
                     "repository": "public.ecr.aws/outerbounds/metaflow_metadata_service",
                     "tag": "2.4.13-2-g70af4ed",
+                },
+                "ingress": {
+                    "enabled": True,
+                    "className": "nginx",
+                    "annotations": {
+                        "nginx.ingress.kubernetes.io/ssl-redirect": "false",
+                        "nginx.ingress.kubernetes.io/rewrite-target": "/",
+                        "nginx.ingress.kubernetes.io/proxy-body-size": "64m",
+                        "nginx.ingress.kubernetes.io/proxy-connect-timeout": "300",
+                        "nginx.ingress.kubernetes.io/proxy-send-timeout": "300",
+                        "nginx.ingress.kubernetes.io/proxy-read-timeout": "300",
+                    },
+                    "hosts": [
+                        {
+                            "host": "svc.mflow.palebluedot.io",
+                            "paths": [
+                                {"path": "/", "pathType": "ImplementationSpecific"}
+                            ],
+                        }
+                    ],
+                    "tls": [],
                 },
                 "resources": {
                     "requests": {"cpu": "25m", "memory": "64Mi"},
@@ -90,7 +152,7 @@ def deploy_metaflow(
                     "resources": {"requests": {"cpu": "100m", "memory": "256Mi"}},
                 },
                 "uiStatic": {
-                    "metaflowUIBackendURL": "http://metaflow-palebluedot.io/api",
+                    "metaflowUIBackendURL": "http://ui.mflow.palebluedot.io/api",
                     "image": {
                         "name": "public.ecr.aws/outerbounds/metaflow_ui",
                         "tag": "v1.3.13-5-g5dd049e",
@@ -112,7 +174,7 @@ def deploy_metaflow(
                     },
                     "hosts": [
                         {
-                            "host": "metaflow-palebluedot.io",
+                            "host": "ui.mflow.palebluedot.io",
                             "paths": [
                                 {"path": "/api", "pathType": "Prefix"},
                                 {"path": "/static", "pathType": "Prefix"},
@@ -145,4 +207,14 @@ def deploy_metaflow(
     )
     pulumi.export("metaflow-service-status", metaflow_service.ready)
     pulumi.export("metaflow-ui-status", metaflow_ui.ready)
-    return metaflow_ui
+    metaflow_config = {
+        "METAFLOW_KUBERNETES_NAMESPACE": "metaflow",
+        "METAFLOW_DEFAULT_DATASTORE": "s3",
+        "METAFLOW_S3_ENDPOINT_URL": "http://minio-palebluedot.io",
+        "METAFLOW_DATASTORE_SYSROOT_S3": "s3://metaflow",
+        "METAFLOW_DEFAULT_METADATA": "service",
+        "METAFLOW_SERVICE_URL": "http://svc.mflow.palebluedot.io",
+        "METAFLOW_SERVICE_INTERNAL_URL": "http://metaflow-service.metaflow.svc.cluster.local:8080",
+        "METAFLOW_UI_URL": "http://ui.mflow.palebluedot.io",
+    }
+    return metaflow_ui, metaflow_config
