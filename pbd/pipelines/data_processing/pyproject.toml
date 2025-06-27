@@ -7,11 +7,11 @@ requires-python = ">=3.12"
 dependencies = [
     "boto3>=1.37.18",
     "botocore>=1.37.18",
-    "kubernetes>=32.0.1",
+    "kubernetes>=33.1.0",
+    "metaflow>=2.15.18",
     "minio>=7.2.15",
     "pdf2image>=1.17.0",
     "pymupdf>=1.25.5",
     "s3fs>=0.4.2",
     "slack-sdk>=3.35.0",
-    "zenml==0.83.0",
 ]
