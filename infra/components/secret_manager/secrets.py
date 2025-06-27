@@ -75,3 +75,21 @@ def create_postgres_secret(
         ),
     )
     return postgres_secret
+
+
+def create_slack_secret(
+    namespace: str,
+    depends_on: list,
+    k8s_provider: k8s.Provider,
+):
+    slack_token = os.environ.get("SLACK_TOKEN")
+    slack_secret = k8s.core.v1.Secret(
+        "slack-secret",
+        metadata={
+            "name": "slack-secret",
+            "namespace": namespace,
+        },
+        string_data={"SLACK_TOKEN": slack_token},
+        opts=pulumi.ResourceOptions(provider=k8s_provider, depends_on=depends_on),
+    )
+    return slack_secret

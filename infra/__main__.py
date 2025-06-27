@@ -17,6 +17,7 @@ from components.secret_manager.secrets import (
     create_aws_secret,
     create_gh_secret,
     create_postgres_secret,
+    create_slack_secret,
 )
 from omegaconf import OmegaConf
 from components.argo.argo_workflows.deploy_argo_workflows import deploy_argo_workflows
@@ -68,6 +69,11 @@ gh_secret = create_gh_secret(
     k8s_provider=k8s_provider,
     depends_on=[arc_namespace, minikube_start],
     namespace="arc-ns",
+)
+slack_secret = create_slack_secret(
+    namespace="metaflow",
+    depends_on=[metaflow_namespace, minikube_start],
+    k8s_provider=k8s_provider,
 )
 # Deploy postgres
 postgres_resource = deploy_postgres(
