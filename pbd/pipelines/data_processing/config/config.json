@@ -1,0 +1,12 @@
+{
+  "input_prefix": "raw_data/",
+  "output_prefix": "extracted_data/",
+  "bucket_name": "my-pdf-bucket",
+  "endpoint": "http://minio-palebluedot.io",
+  "slack_channel" : "zenml-pipelines",
+  "docker_image": "ghcr.io/atharva-phatak/pbd-data_processing:latest",
+  "pdf_processing": {
+    "dpi": 300,
+    "image_format": "JPEG"
+  }
+}

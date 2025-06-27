@@ -1,43 +1,87 @@
 """
-Settings for Data Processing Pipeline Orchestration
+Metaflow Kubernetes Configuration
 
-This module defines Kubernetes and Docker settings for orchestrating the data processing pipeline.
-It configures resource requests/limits, environment variables, and image settings for ZenML steps and orchestrator.
+This module provides configuration utilities for running Metaflow flows on Kubernetes.
+It defines resource settings, Docker images, and Kubernetes-specific configurations
+that mirror the ZenML settings structure.
 
-Attributes:
-    step_pod_settings (KubernetesPodSettings): Pod settings for pipeline steps.
-    orchestrator_pod_settings (KubernetesPodSettings): Pod settings for the orchestrator.
-    k8s_operator_settings (KubernetesOrchestratorSettings): Kubernetes operator settings for ZenML.
-    docker_settings (DockerSettings): Docker image settings for ZenML pipeline.
+Usage:
+    from metaflow_k8s_config import get_k8s_decorator, DOCKER_IMAGE
+
+    @get_k8s_decorator("processing")
+    @step
+    def my_step(self):
+        pass
 """
 
-from zenml.integrations.kubernetes.flavors import KubernetesOrchestratorSettings
-from zenml.config import DockerSettings
-from zenml.integrations.kubernetes.pod_settings import KubernetesPodSettings
+from typing import Callable, Dict
 
-step_pod_settings = KubernetesPodSettings(
-    resources={
-        "requests": {"cpu": "4", "memory": "2Gi"},
-        "limits": {"cpu": "6", "memory": "3Gi"},
+from metaflow import kubernetes
+
+# Docker image configuration
+DOCKER_IMAGE = "ghcr.io/atharva-phatak/pbd-data_processing:latest"
+
+# Resource configurations matching your ZenML settings
+RESOURCE_CONFIGS = {
+    "orchestrator": {
+        "cpu": 1,
+        "memory": 128,  # 256Mi in MB
+        "secrets": ["aws-credentials"],
     },
-    env_from=[{"secretRef": {"name": "aws-credentials"}}],
-    labels={"app": "youtube-scraper-pipeline", "component": "step"},
-)
-
-orchestrator_pod_settings = KubernetesPodSettings(
-    resources={
-        "requests": {"cpu": "2", "memory": "70Mi"},
-        "limits": {"cpu": "4", "memory": "256Mi"},
+    "discovery": {
+        "cpu": 2,
+        "memory": 1024,  # 1Gi in MB
+        "secrets": ["aws-credentials"],
     },
-    env_from=[{"secretRef": {"name": "aws-credentials"}}],
-    labels={"app": "zenml-orchestrator", "component": "orchestrator"},
-)
+    "processing": {
+        "cpu": 4,
+        "memory": 3072,  # 3Gi in MB
+        "secrets": ["aws-credentials"],
+    },
+    "lightweight": {
+        "cpu": 1,
+        "memory": 512,  # 512Mi in MB
+        "secrets": ["aws-credentials"],
+    },
+}
 
 
-k8s_operator_settings = KubernetesOrchestratorSettings(
-    pod_settings=step_pod_settings,
-    orchestrator_pod_settings=orchestrator_pod_settings,
-)
-docker_settings = DockerSettings(
-    parent_image="ghcr.io/atharva-phatak/pbd-data_processing:latest", skip_build=True
-)
+def get_k8s_decorator(
+    config_type: str = "processing",
+    docker_image: str = DOCKER_IMAGE,
+    additional_labels: Dict[str, str] = None,
+) -> Callable:
+    """
+    Get a Kubernetes decorator with specified resource configuration.
+
+    Args:
+        config_type: Type of resource configuration ('orchestrator', 'discovery', 'processing', 'lightweight')
+        docker_image: Docker image to use
+        additional_labels: Additional Kubernetes labels to apply
+
+    Returns:
+        Configured kubernetes decorator
+
+    Raises:
+        ValueError: If config_type is not recognized
+    """
+    if config_type not in RESOURCE_CONFIGS:
+        raise ValueError(
+            f"Unknown config_type: {config_type}. Must be one of {list(RESOURCE_CONFIGS.keys())}"
+        )
+
+    config = RESOURCE_CONFIGS[config_type].copy()
+
+    return kubernetes(
+        image=docker_image,
+        cpu=config["cpu"],
+        memory=config["memory"],
+        secrets=config["secrets"],
+    )
+
+
+# Pre-configured decorators for common use cases
+orchestrator_k8s = get_k8s_decorator("orchestrator")
+discovery_k8s = get_k8s_decorator("discovery")
+processing_k8s = get_k8s_decorator("processing")
+lightweight_k8s = get_k8s_decorator("lightweight")
