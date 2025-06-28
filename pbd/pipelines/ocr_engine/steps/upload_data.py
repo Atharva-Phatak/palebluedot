@@ -14,9 +14,6 @@ import tempfile
 
 from datasets import Dataset
 from minio import Minio
-from zenml.integrations.slack.steps.slack_alerter_post_step import (
-    slack_alerter_post_step,
-)
 from pbd.helper.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -89,6 +86,3 @@ def store_extracted_texts_to_minio(
             logger.exception("Failed to upload file to MinIO")
             raise
         logger.info(f"Uploaded {parquet_filename} to MinIO bucket {bucket_name}")
-        slack_alerter_post_step(
-            message=f"Uploaded {parquet_filename} to MinIO bucket {bucket_name}"
-        )

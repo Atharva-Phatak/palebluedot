@@ -1,88 +1,141 @@
-from zenml import pipeline
+"""
+OCR Pipeline converted to Metaflow
 
+This module provides a Metaflow pipeline for performing OCR on images using a multimodal LLM.
+It includes steps for downloading, extracting, OCR processing, and post-processing text.
+"""
+
+import os
+from metaflow import FlowSpec, step, kubernetes, environment, Config
+from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
 from pbd.helper.logger import setup_logger
-from pbd.pipelines.ocr_engine.settings import (
-    docker_settings,
-    k8s_operator_settings,
-)
 from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
 from pbd.pipelines.ocr_engine.steps.process_text import extract_problem_solution
-from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 
 logger = setup_logger(__name__)
 
 
-@pipeline(
-    settings={
-        "docker": docker_settings,
-        "orchestrator": k8s_operator_settings,
-    },
-    name="ocr_pipeline",
-)
-def ocr_pipeline(
-    endpoint: str,
-    bucket: str,
-    object_key: str,
-    local_path: str,
-    extract_to: str,
-    model_path: str,
-    max_new_tokens: int,
-    prompt: str,
-    filename: str,
-    extraction_batch_size: int,
-    post_process_model_path: str,
-    post_process_sampling_params: dict,
-    post_process_batch_size: int,
-    run_test: bool = False,
-):
-    """Pipeline for performing OCR on images extracted from a zip file."""
-    logger.info("Starting OCR pipeline")
-    data = ocr_images(
-        endpoint=endpoint,
-        bucket=bucket,
-        object_key=object_key,
-        local_path=local_path,
-        extract_to=extract_to,
-        model_path=model_path,
-        prompt=prompt,
-        max_new_tokens=max_new_tokens,
-        run_test=run_test,
-        filename=filename,
-        batch_size=extraction_batch_size,
+class OCRFlow(FlowSpec):
+    """
+    Metaflow pipeline for OCR processing of images from zip files
+    """
+
+    config = Config(
+        "config",
+        help="JSON configuration file for the pipeline",
+        default="config.json",
     )
-    logger.info(
-        f"OCR results stored in MinIO bucket '{bucket}' with filename '{filename}'."
+
+    @kubernetes(
+        image=config.image,
+        cpu=1,
+        memory=56,
+        secrets=["aws-credentials", "slack-secret"],
     )
-    extract_problem_solution(
-        data=data,
-        model_path=post_process_model_path,
-        sampling_params=post_process_sampling_params,
-        batch_size=post_process_batch_size,
-        bucket_name=bucket,
-        filename=f"{filename}_post_processed",
-        minio_endpoint=endpoint,
+    @step
+    def start(self):
+        """
+        Initialize the pipeline
+        """
+        logger.info("Starting OCR pipeline")
+
+        self.next(self.process_ocr)
+
+    @kubernetes(
+        image=config.image,
+        cpu=4,
+        memory=18000,
+        gpu=1,
+        persistent_volume_claims={"mk-model-pvc": "/models"},
+        shared_memory=1024,
+        labels={"app": "ocr_pipeline", "component": "process_ocr"},
+        secrets=["aws-credentials", "slack-secret"],
     )
+    @environment(vars={"CUDA_VISIBLE_DEVICES": "0"})
+    @step
+    def process_ocr(self):
+        """
+        Perform OCR inference on extracted images
+        """
+        self.run_test = self.config.run_test == "true"
+        self.ocr_texts = ocr_images(
+            endpoint=self.config.minio_endpoint,
+            bucket=self.config.bucket,
+            object_key=self.config.minio_object_key,
+            local_path=self.config.local_path,
+            model_path=self.config.ocr_model_path,
+            extract_to=self.config.extract_to,
+            max_new_tokens=self.ocr_config.max_new_tokens,
+            batch_size=self.config.extraction_batch_size,
+            prompt=ocr_prompt,
+            run_test=self.run_test,
+            filename=self.config.filename,
+        )
+
+        self.next(self.post_process)
+
+    @kubernetes(
+        image=config.image,
+        cpu=4,
+        memory=18000,
+        gpu=1,
+        persistent_volume_claims={"mk-model-pvc": "/models"},
+        shared_memory=1024,
+        labels={"app": "ocr_pipeline", "component": "post_process_ocr"},
+        secrets=["aws-credentials", "slack-secret"],
+    )
+    @environment(vars={"CUDA_VISIBLE_DEVICES": "0"})
+    @step
+    def post_process(self):
+        """
+        Post-process OCR results to extract problem-solution pairs
+        """
+        logger.info("Starting post-processing step")
+
+        extract_problem_solution(
+            data=self.ocr_texts,
+            model_path=self.config.post_processing_model_path,
+            sampling_params=self.config.post_processing_params,
+            batch_size=self.config.post_processing_batch_size,
+            bucket_name=self.config.bucket,
+            filename=self.config.filename,
+            minio_endpoint=self.config.minio_endpoint,
+        )
+
+        self.next(self.end)
+
+    @kubernetes(
+        cpu=1,
+        memory=56,
+        secrets=["aws-credentials", "slack-secret"],
+    )
+    @step
+    def end(self):
+        """
+        Final step of the pipeline
+        """
+        slack_token = os.environ.get("SLACK_TOKEN")
+        logger.info("OCR pipeline completed successfully!")
+        logger.info(f"Processed {len(self.ocr_results)} pages")
+        logger.info(f"Results stored in MinIO bucket '{self.bucket}'")
+
+        try:
+            client = WebClient(token=slack_token)
+            message = f"""
+                    PDF Processing Pipeline Completed!
+                    ✅ Successfully processed: {self.ocr_results} pages."""
+
+            _ = client.chat_postMessage(
+                channel=self.config.slack_channel, text=message.strip()
+            )
+            logger.info(f"Slack notification sent to {self.config.slack_channel}")
+        except SlackApiError as e:
+            logger.error(f"Error sending Slack message: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error sending Slack notification: {e}")
 
 
 if __name__ == "__main__":
-    ocr_pipeline(
-        endpoint="palebluedot-minio.io",
-        bucket="data-bucket",
-        object_key="processed_data/pdfs/inpho.zip",
-        local_path="/tmp/images.zip",
-        extract_to="/tmp/images",
-        model_path="/models/Nanonets-OCR-s",
-        max_new_tokens=80000,
-        prompt=ocr_prompt,
-        filename="inpho",
-        extraction_batch_size=20,
-        post_process_model_path="/models/Qwen3-4B-unsloth-bnb-4bit",
-        post_process_sampling_params={
-            "temperature": 0.7,
-            "top_p": 0.8,
-            "top_k": 20,
-            "max_tokens": 80000,
-        },
-        post_process_batch_size=20,
-        run_test=False,
-    )
+    OCRFlow()

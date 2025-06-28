@@ -41,7 +41,7 @@ from pathlib import Path
 import torch
 import vllm
 from PIL import Image
-from zenml import log_metadata, step
+from zenml import log_metadata
 
 from pbd.helper.logger import setup_logger
 from pbd.helper.file_upload import read_parquet_if_exists
@@ -158,7 +158,6 @@ def do_inference(
     return generated_texts
 
 
-@step(enable_step_logs=True, enable_cache=False)
 def ocr_images(
     endpoint: str,
     bucket: str,

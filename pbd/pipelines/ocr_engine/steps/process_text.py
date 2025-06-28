@@ -31,7 +31,6 @@ import time
 import torch
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
-from zenml import step
 
 from pbd.helper.logger import setup_logger
 from pbd.pipelines.ocr_engine.steps.prompt import generate_post_processing_prompt
@@ -46,7 +45,6 @@ def load_model_and_tokenizer(model_path: str):
     return tokenizer, vllm_model
 
 
-@step(enable_step_logs=True, enable_cache=False)
 def extract_problem_solution(
     data: list[dict],
     model_path: str,
