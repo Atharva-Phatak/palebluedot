@@ -110,7 +110,7 @@ class OCRFlow(FlowSpec):
             local_path=self.config.local_path,
             model_path=self.config.ocr_model_path,
             extract_to=self.config.extract_to,
-            max_new_tokens=self.ocr_config.max_new_tokens,
+            max_new_tokens=self.config.ocr_config.max_new_tokens,
             batch_size=self.config.extraction_batch_size,
             prompt=ocr_prompt,
             run_test=self.run_test,
@@ -162,7 +162,7 @@ class OCRFlow(FlowSpec):
         slack_token = os.environ.get("SLACK_TOKEN")
         logger.info("OCR pipeline completed successfully!")
         logger.info(f"Processed {len(self.ocr_results)} pages")
-        logger.info(f"Results stored in MinIO bucket '{self.bucket}'")
+        logger.info(f"Results stored in MinIO bucket '{self.config.bucket}'")
 
         try:
             client = WebClient(token=slack_token)
@@ -171,9 +171,9 @@ class OCRFlow(FlowSpec):
                     ✅ Successfully processed: {self.ocr_results} pages."""
 
             _ = client.chat_postMessage(
-                channel=self.config.slack_channel, text=message.strip()
+                channel="#zenml-pipelines", text=message.strip()
             )
-            logger.info(f"Slack notification sent to {self.config.slack_channel}")
+            logger.info("Slack notification sent to #zenml-pipelines")
         except SlackApiError as e:
             logger.error(f"Error sending Slack message: {e}")
         except Exception as e:
