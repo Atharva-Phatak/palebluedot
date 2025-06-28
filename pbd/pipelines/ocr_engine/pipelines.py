@@ -1,18 +1,61 @@
+(
+    """
+ocr_pipeline.py
+
+This module defines the OCRFlow Metaflow pipeline for performing Optical Character Recognition (OCR) on images using a multimodal Large Language Model (LLM). The pipeline is designed to automate the process of extracting text from images, post-processing the extracted text, and notifying users upon completion.
+
+Pipeline Steps:
+---------------
+1. **start**: Initializes the pipeline and logs the start of the OCR process.
+2. **process_ocr**: Performs OCR inference on images extracted from a zip file using a specified model and configuration.
+3. **post_process**: Post-processes the OCR results to extract problem-solution pairs using a post-processing model.
+4. **end**: Finalizes the pipeline, logs completion, and sends a notification to a Slack channel.
+
+Configuration:
+--------------
+- The pipeline uses a JSON configuration file to specify parameters such as model paths, batch sizes, MinIO endpoints, and Slack channel information.
+- Kubernetes resources and secrets are configured for each step to ensure secure and efficient execution.
+
+Dependencies:
+-------------
+- Metaflow: For pipeline orchestration.
+- pbd.pipelines.ocr_engine.steps: Contains the OCR and post-processing logic.
+- slack_sdk: For sending notifications to Slack.
+- pbd.helper.logger: For logging.
+
+Usage:
+------
+To run the pipeline, execute this module as the main program. Ensure that all dependencies are installed and the configuration file is properly set up.
+
+Example:
+--------
+    python ocr_pipeline.py
+
+Notes:
+------
+- This pipeline is intended for use in environments with access to Kubernetes and the required secrets for AWS and Slack.
+- Ensure that the MinIO and model paths are accessible from the execution environment.
+- For detailed documentation on each step, refer to the respective modules in `pbd.pipelines.ocr_engine.steps`.
+
 """
+    """
 OCR Pipeline converted to Metaflow
 
 This module provides a Metaflow pipeline for performing OCR on images using a multimodal LLM.
 It includes steps for downloading, extracting, OCR processing, and post-processing text.
 """
+)
 
 import os
-from metaflow import FlowSpec, step, kubernetes, environment, Config
-from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
+
+from metaflow import Config, FlowSpec, environment, kubernetes, step
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
+
 from pbd.helper.logger import setup_logger
 from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
 from pbd.pipelines.ocr_engine.steps.process_text import extract_problem_solution
-from slack_sdk import WebClient
-from slack_sdk.errors import SlackApiError
+from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
 
 logger = setup_logger(__name__)
 
