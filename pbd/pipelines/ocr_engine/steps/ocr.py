@@ -41,7 +41,6 @@ from pathlib import Path
 import torch
 import vllm
 from PIL import Image
-from zenml import log_metadata
 
 from pbd.helper.logger import setup_logger
 from pbd.helper.file_upload import read_parquet_if_exists
@@ -152,9 +151,6 @@ def do_inference(
             )
     total_time = (time.time() - start) // 60
     logger.info(f"Generated texts: {len(generated_texts)} in {total_time:.2f} minutes")
-    log_metadata(
-        metadata={"total_pages": len(generated_texts), "total_time": total_time}
-    )
     return generated_texts
 
 
