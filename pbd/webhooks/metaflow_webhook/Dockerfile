@@ -13,6 +13,10 @@ COPY helper /app/pbd/helper
 # Copy the entire data_processing folder
 COPY webhooks/metaflow_webhook /app/pbd/webhooks/metaflow_webhook
 
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH="/app"
+
 EXPOSE 8000
 
 # Run FastAPI with 4 workers using fastapi-cli
