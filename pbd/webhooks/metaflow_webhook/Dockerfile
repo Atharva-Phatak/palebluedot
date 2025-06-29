@@ -11,7 +11,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY helper /app/pbd/helper
 
 # Copy the entire data_processing folder
-COPY pipelines/webhooks/metaflow_webhook /app/pbd/pipelines/webhooks/metaflow_webhook
+COPY webhooks/metaflow_webhook /app/pbd/webhooks/metaflow_webhook
 
 EXPOSE 8000
 
