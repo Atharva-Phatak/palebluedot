@@ -1,7 +1,7 @@
-from pydantic import BaseSettings
+import pydantic
 
 
-class Settings(BaseSettings):
+class Settings(pydantic.BaseModel):
     METAFLOW_WEBHOOK_URL: str = (
         "http://metaflow-service.metaflow.svc.cluster.local:8080/events"
     )
