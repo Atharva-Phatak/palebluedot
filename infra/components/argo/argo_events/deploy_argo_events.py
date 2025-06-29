@@ -162,7 +162,7 @@ def deploy_argo_events(
         spec={
             "jetstream": {
                 "version": "2.9.15",
-                "replicas": 1,
+                "replicas": 3,
                 "containerTemplate": {
                     "resources": {
                         "limits": {"cpu": "100m", "memory": "128Mi"},
@@ -173,34 +173,6 @@ def deploy_argo_events(
         },
     )
 
-    # EventSource webhook
-    _ = k8s.apiextensions.CustomResource(
-        "event-source",
-        api_version="argoproj.io/v1alpha1",
-        kind="EventSource",
-        metadata={
-            "name": "argo-events-webhook",
-            "namespace": namespace.metadata["name"],
-        },
-        spec={
-            "template": {
-                "container": {
-                    "resources": {
-                        "requests": {"cpu": "25m", "memory": "50Mi"},
-                        "limits": {"cpu": "25m", "memory": "50Mi"},
-                    }
-                }
-            },
-            "service": {"ports": [{"port": 12000, "targetPort": 12000}]},
-            "webhook": {
-                "metaflow-event": {
-                    "port": "12000",
-                    "endpoint": "/metaflow-event",
-                    "method": "POST",
-                }
-            },
-        },
-    )
     metaflow_argo_config = {
         "METAFLOW_ARGO_EVENTS_EVENT": "metaflow-event",
         "METAFLOW_ARGO_EVENTS_EVENT_BUS": "default",

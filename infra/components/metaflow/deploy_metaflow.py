@@ -39,7 +39,6 @@ def create_metaflow_config(
             "cat > ~/.metaflowconfig/config.json << 'EOF'\n",
             config_json,
             "\nEOF",
-            " && echo '✅ Wrote Metaflow config to ~/.metaflowconfig/config.json'",
         ),
         # Optional: Define what to do on delete
         delete="echo '🗑️ Metaflow config cleanup (if needed)'",
@@ -190,18 +189,20 @@ def deploy_metaflow(
             custom_timeouts=pulumi.CustomTimeouts(create="10m"),
             depends_on=depends_on,
             transformations=[
-                lambda args: ResourceTransformationResult(
-                    props={
-                        **args.props,
-                        "metadata": {
-                            **args.props.get("metadata", {}),
-                            "namespace": namespace.metadata["name"],
+                lambda args: (
+                    ResourceTransformationResult(
+                        props={
+                            **args.props,
+                            "metadata": {
+                                **args.props.get("metadata", {}),
+                                "namespace": namespace.metadata["name"],
+                            },
                         },
-                    },
-                    opts=args.opts,
+                        opts=args.opts,
+                    )
+                    if args.type_.startswith("kubernetes:")
+                    else None
                 )
-                if args.type_.startswith("kubernetes:")
-                else None
             ],
         ),
     )

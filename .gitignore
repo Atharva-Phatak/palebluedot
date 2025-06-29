@@ -2,7 +2,11 @@
 __pycache__/
 *.py[cod]
 *$py.class
-Pulumi.zenml.yaml
+# Pulumi stack files (contain sensitive data and environment-specific config)
+Pulumi.*.yaml
+
+# Pulumi state and temporary files
+.pulumi/
 .idea/
 pbd/data_collection
 # Jupyter notebooks

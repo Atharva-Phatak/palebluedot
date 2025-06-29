@@ -22,6 +22,11 @@ from components.secret_manager.secrets import (
 from omegaconf import OmegaConf
 from components.argo.argo_workflows.deploy_argo_workflows import deploy_argo_workflows
 from components.argo.argo_events.deploy_argo_events import deploy_argo_events
+from components.argo.argo_events.event_sources.metaflow import (
+    deploy_metaflow_event_source,
+)
+from components.argo.argo_events.event_sources.minio import deploy_minio_event_source
+from components.argo.argo_events.sensors.minio_sensor import deploy_minio_sensor
 
 
 def load_config():
@@ -51,7 +56,7 @@ arc_namespace = create_namespace(
 metaflow_namespace = create_namespace(
     provider=k8s_provider, namespace="metaflow", depends_on=[minikube_start]
 )
-create_aws_secret(
+aws_secret = create_aws_secret(
     provider=k8s_provider,
     namespace="metaflow",
     depends_on=[minikube_start, metaflow_namespace],
@@ -104,7 +109,7 @@ model_pv_claims = deploy_persistent_volume_claims(
 )
 
 # Deploy MinIO
-minio_ingress = deploy_minio(
+minio_chart = deploy_minio(
     provider=k8s_provider,
     namespace=metaflow_namespace,
     ingress_host=cfg.minio_ingress_host,
@@ -123,7 +128,14 @@ deploy_minio_buckets(
     secret_key_identifier="minio_secret_key",
     infiscal_project_id=cfg.infiscal_project_id,
     environment_slug="dev",
-    depends_on=[minio_ingress, minikube_start],
+    depends_on=[
+        minio_chart,
+        minikube_start,
+        postgres_resource,
+        model_pv_claims,
+        minio_pv_claim,
+        metaflow_namespace,
+    ],
     buckets=[cfg.data_bucket, cfg.zenml_bucket],
     ingress_host=cfg.minio_ingress_host,
 )
@@ -136,7 +148,7 @@ metaflow_chart, metaflow_config = deploy_metaflow(
     access_key_identifier="postgres_password",
     aws_access_key_identifier="minio_access_key",
     aws_secret_key_identifier="minio_secret_key",
-    depends_on=[minikube_start, metaflow_namespace, postgres_resource, minio_ingress],
+    depends_on=[minikube_start, metaflow_namespace, postgres_resource, minio_chart],
 )
 
 
@@ -171,6 +183,7 @@ grafana_chart = deploy_grafana(
     depends_on=[minikube_start, monitoring_namespace, prometheus_chart, metaflow_chart],
     namespace=monitoring_namespace,
 )
+# Deploy Argo Workflows and Events
 argo_workflows_chart = deploy_argo_workflows(
     k8s_provider=k8s_provider,
     depends_on=[minikube_start, monitoring_namespace, metaflow_chart],
@@ -186,6 +199,30 @@ argo_events, argo_metaflow_config = deploy_argo_events(
     ],
     namespace=metaflow_namespace,
 )
+metaflow_event_source = deploy_metaflow_event_source(
+    provider=k8s_provider,
+    namespace=metaflow_namespace,
+    depends_on=[argo_events, argo_workflows_chart, metaflow_chart, minikube_start],
+)
+minio_event_source = deploy_minio_event_source(
+    provider=k8s_provider,
+    aws_secret=aws_secret,
+    namespace=metaflow_namespace,
+    depends_on=[argo_events, argo_workflows_chart, metaflow_chart, minikube_start],
+)
+minio_sensor = deploy_minio_sensor(
+    namespace=metaflow_namespace,
+    provider=k8s_provider,
+    depends_on=[
+        minikube_start,
+        metaflow_event_source,
+        minio_event_source,
+        argo_events,
+        argo_workflows_chart,
+        metaflow_chart,
+    ],
+)
+# Create the full Metaflow configuration
 full_metaflow_config = metaflow_config | argo_metaflow_config
 create_metaflow_config(
     config=full_metaflow_config,
@@ -193,7 +230,7 @@ create_metaflow_config(
         minikube_start,
         metaflow_chart,
         postgres_resource,
-        minio_ingress,
+        minio_chart,
         model_pv_claims,
         minio_pv_claim,
         gh_secret,

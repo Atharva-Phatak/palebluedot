@@ -25,6 +25,19 @@ def deploy_argo_workflows(
                         "requests": {"memory": "128Mi", "cpu": "50m"},
                         "limits": {"memory": "256Mi", "cpu": "100m"},
                     },
+                    "ingress": {
+                        "enabled": True,
+                        "ingressClassName": "nginx",
+                        "annotations": {
+                            "nginx.ingress.kubernetes.io/ssl-redirect": "false",
+                            "nginx.ingress.kubernetes.io/rewrite-target": "/",
+                            "nginx.ingress.kubernetes.io/proxy-body-size": "64m",
+                            "nginx.ingress.kubernetes.io/proxy-connect-timeout": "300",
+                            "nginx.ingress.kubernetes.io/proxy-send-timeout": "300",
+                            "nginx.ingress.kubernetes.io/proxy-read-timeout": "300",
+                        },
+                        "hosts": ["argoworkflows.palebluedot.io"],
+                    },
                 },
                 "controller": {
                     "resources": {
