@@ -15,4 +15,5 @@ COPY webhooks/metaflow_webhook /app/pbd/webhooks/metaflow_webhook
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run FastAPI with 4 workers using fastapi-cli
+CMD ["fastapi", "run", "--workers", "4", "pbd.webhooks.metaflow_webhook.main:app"]
