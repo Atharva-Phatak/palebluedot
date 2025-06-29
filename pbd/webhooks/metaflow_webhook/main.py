@@ -6,6 +6,17 @@ import logging
 app = FastAPI()
 
 
+# Add these to your FastAPI main.py
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
+
+@app.get("/ready")
+async def readiness_check():
+    return {"status": "ready"}
+
+
 @app.post("/argoevent", status_code=200)
 async def handle_event(request: Request):
     try:
