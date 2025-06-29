@@ -3,7 +3,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Copy only requirements first to leverage docker cache
-COPY pipelines/webhooks/metaflow_webhook/requirements.txt .
+COPY webhooks/metaflow_webhook/requirements.txt .
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
