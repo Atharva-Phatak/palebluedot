@@ -1,0 +1,104 @@
+name: Webhook CI/CD
+on:
+  workflow_dispatch:
+    inputs:
+      folder:
+        description: "Folder to build (optional - overrides change detection)"
+        required: false
+        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - "pbd/webhooks/**"
+permissions:
+  contents: read
+  packages: write
+  attestations: write
+  id-token: write
+jobs:
+  detect-changes:
+    runs-on: pbd-runner-scale-set # ✅ ARC runner
+    outputs:
+      changed_folders: ${{ steps.filter.outputs.folders }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed for full git history
+      - name: Get Changed Folders
+        id: filter
+        run: |
+          if [ -n "${{ github.event.inputs.folder }}" ]; then
+            CHANGED='["${{ github.event.inputs.folder }}"]'
+          elif [ $(git rev-list --count HEAD) -eq 1 ]; then
+            CHANGED=$(find pbd/webhooks -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n")[:-1]')
+          else
+            # Get folders with changes in pbd/pipelines/*
+            FOLDERS=$(git diff --name-only origin/main...HEAD | grep '^pbd/pipelines/' | cut -d '/' -f3 | sort -u)
+            EXISTING=()
+            for folder in $FOLDERS; do
+              if [ -d "pbd/webhooks/$folder" ]; then
+                EXISTING+=("\"$folder\"")
+              fi
+            done
+            CHANGED=$(printf "[%s]" "$(IFS=,; echo "${EXISTING[*]}")")
+          fi
+          echo "folders=$CHANGED" >> $GITHUB_OUTPUT
+          echo "Detected folders for build: $CHANGED"
+  build-and-push:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.changed_folders != '[]' && needs.detect-changes.outputs.changed_folders != '' }}
+    runs-on: pbd-runner-scale-set # ✅ ARC runner
+    strategy:
+      matrix:
+        folder: ${{ fromJson(needs.detect-changes.outputs.changed_folders) }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Prepare Lowercase Repository Name
+        id: repo-details
+        run: |
+          LOWERCASE_REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          echo "repo_name=$LOWERCASE_REPO_NAME" >> $GITHUB_OUTPUT
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare Lowercase Repository Owner
+        id: repo-owner
+        run: |
+          echo "repo_owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: pbd/
+          file: pbd/webhooks/${{ matrix.folder }}/Dockerfile
+          push: true
+          tags: ghcr.io/${{ steps.repo-owner.outputs.repo_owner }}/${{ matrix.folder }}:latest
+
+  notify-slack:
+    needs: [detect-changes, build-and-push]
+    if: always() # This ensures the job runs regardless of success/failure of previous jobs
+    runs-on: pbd-runner-scale-set
+    steps:
+      - name: Send Slack Notification
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          channel-id: 'C09115D7Z2T' # Replace with your actual channel ID
+          slack-message: |
+            🐳 *Docker Build Pipeline Complete*
+
+            📁 *Repository:* ${{ github.repository }}
+            🌿 *Branch:* ${{ github.ref_name }}
+            📝 *Commit:* `${{ github.sha }}`
+            🏗️ *Folders Built:* ${{ needs.detect-changes.outputs.changed_folders }}
+            ✅ *Status:* ${{ needs.build-and-push.result }}
+
+            🔗 <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run>
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

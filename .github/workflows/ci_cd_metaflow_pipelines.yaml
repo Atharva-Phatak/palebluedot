@@ -1,4 +1,4 @@
-name: Build and Push Docker Images
+name: Metaflow Pipelines CI/CD
 on:
   workflow_dispatch:
     inputs:
@@ -92,13 +92,13 @@ jobs:
           channel-id: 'C09115D7Z2T' # Replace with your actual channel ID
           slack-message: |
             🐳 *Docker Build Pipeline Complete*
-            
+
             📁 *Repository:* ${{ github.repository }}
             🌿 *Branch:* ${{ github.ref_name }}
             📝 *Commit:* `${{ github.sha }}`
             🏗️ *Folders Built:* ${{ needs.detect-changes.outputs.changed_folders }}
             ✅ *Status:* ${{ needs.build-and-push.result }}
-            
+
             🔗 <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Workflow Run>
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
