@@ -5,7 +5,7 @@ set -euo pipefail
 
 # Usage check
 if [[ $# -ne 2 ]]; then
-    echo "Usage: $0 <deploy|destroy> <stack-name>"
+    echo "Usage: $0 <deploy|destroy|refresh> <stack-name>"
     exit 1
 fi
 
@@ -55,8 +55,19 @@ case "$COMMAND" in
             echo "⚠️ Stack '$STACK' does not exist."
         fi
         ;;
+    refresh)
+        if pulumi stack select "$STACK" 2>/dev/null; then
+            echo "🔄 Refreshing stack '$STACK'..."
+            echo "   This will update Pulumi's state to match actual cloud resources..."
+            pulumi refresh --yes --stack "$STACK"
+            echo "✅ Stack '$STACK' refreshed successfully!"
+        else
+            echo "❌ Stack '$STACK' does not exist. Cannot refresh non-existent stack."
+            exit 1
+        fi
+        ;;
     *)
-        echo "❌ Invalid command: $COMMAND. Use 'deploy' or 'destroy'."
+        echo "❌ Invalid command: $COMMAND. Use 'deploy', 'destroy', or 'refresh'."
         exit 1
         ;;
 esac
