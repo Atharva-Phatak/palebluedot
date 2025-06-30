@@ -14,7 +14,7 @@ def publish_event(data: dict):
         "originator": data.get("originator", "argo-events"),
         "event_id": str(uuid.uuid4()),
     }
-
+    print(f"Publishing event '{event_name}' with payload: {payload}")
     logging.info(f"Publishing event '{event_name}' with payload: {payload}")
     event = ArgoEvent(
         name=event_name,
