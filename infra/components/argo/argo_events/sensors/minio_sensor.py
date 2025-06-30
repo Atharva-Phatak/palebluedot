@@ -9,9 +9,12 @@ def deploy_minio_sensor(
     depends_on: list,
 ):
     """
-    Creates a sensor that captures MinIO file upload events and logs file details.
-    The sensor will log the file name, size, bucket, and other metadata.
+    Sensor that captures MinIO file upload events and sends metadata to Metaflow webhook.
     """
+    metaflow_webhook_url = (
+        "http://metaflow-webhook-service.metaflow.svc.cluster.local:12000/argoevent"
+    )
+
     minio_sensor = k8s.apiextensions.CustomResource(
         "minio-file-sensor",
         api_version="argoproj.io/v1alpha1",
@@ -32,48 +35,42 @@ def deploy_minio_sensor(
             "triggers": [
                 {
                     "template": {
-                        "name": "log-file-info",
-                        "log": {
-                            "intervalSeconds": 1,
+                        "name": "send-metaflow-event",
+                        "http": {
+                            "url": metaflow_webhook_url,
+                            "method": "POST",
+                            "payload": [  # <-- THIS must be used, not 'parameters'
+                                {
+                                    "src": {
+                                        "dependencyName": "minio-dep",
+                                        "dataKey": "notification.0.s3.object.key",
+                                    },
+                                    "dest": "file_name",
+                                },
+                                {
+                                    "src": {
+                                        "dependencyName": "minio-dep",
+                                        "dataKey": "notification.0.s3.object.size",
+                                    },
+                                    "dest": "file_size",
+                                },
+                                {
+                                    "src": {
+                                        "dependencyName": "minio-dep",
+                                        "dataKey": "notification.0.s3.bucket.name",
+                                    },
+                                    "dest": "bucket_name",
+                                },
+                                {
+                                    "src": {
+                                        "dependencyName": "minio-dep",
+                                        "dataKey": "notification.0.eventTime",
+                                    },
+                                    "dest": "upload_time",
+                                },
+                            ],
                         },
-                    },
-                    "parameters": [
-                        {
-                            "src": {
-                                "dependencyName": "minio-dep",
-                                "dataKey": "notification.0.s3.object.key",
-                            },
-                            "dest": "file-name",
-                        },
-                        {
-                            "src": {
-                                "dependencyName": "minio-dep",
-                                "dataKey": "notification.0.s3.object.size",
-                            },
-                            "dest": "file-size",
-                        },
-                        {
-                            "src": {
-                                "dependencyName": "minio-dep",
-                                "dataKey": "notification.0.s3.bucket.name",
-                            },
-                            "dest": "bucket-name",
-                        },
-                        {
-                            "src": {
-                                "dependencyName": "minio-dep",
-                                "dataKey": "notification.0.eventTime",
-                            },
-                            "dest": "upload-time",
-                        },
-                        {
-                            "src": {
-                                "dependencyName": "minio-dep",
-                                "dataKey": "notification.0.eventName",
-                            },
-                            "dest": "event-type",
-                        },
-                    ],
+                    }
                 }
             ],
         },

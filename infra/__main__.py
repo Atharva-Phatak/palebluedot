@@ -27,6 +27,7 @@ from components.argo.argo_events.event_sources.metaflow import (
 )
 from components.argo.argo_events.event_sources.minio import deploy_minio_event_source
 from components.argo.argo_events.sensors.minio_sensor import deploy_minio_sensor
+from components.webhooks.metaflow_webhook import deploy_metaflow_webhook
 
 
 def load_config():
@@ -220,6 +221,20 @@ minio_sensor = deploy_minio_sensor(
         argo_events,
         argo_workflows_chart,
         metaflow_chart,
+    ],
+)
+metaflow_webhook_service = deploy_metaflow_webhook(
+    namespace=metaflow_namespace,
+    provider=k8s_provider,
+    depends_on=[
+        minikube_start,
+        metaflow_event_source,
+        minio_event_source,
+        minio_sensor,
+        argo_events,
+        argo_workflows_chart,
+        metaflow_chart,
+        metaflow_namespace,
     ],
 )
 # Create the full Metaflow configuration

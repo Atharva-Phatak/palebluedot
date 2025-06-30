@@ -13,7 +13,7 @@ def deploy_argo_events(
         "argo-events",
         k8s.helm.v3.ChartOpts(
             chart="argo-events",
-            version="2.3.0",  # Optional: lock to a tested version
+            version="2.4.15",  # Optional: lock to a tested version
             fetch_opts=k8s.helm.v3.FetchOpts(
                 repo="https://argoproj.github.io/argo-helm"
             ),
@@ -41,7 +41,7 @@ def deploy_argo_events(
                     "jetstream": {
                         "streamConfig": {
                             "maxAge": "72h",
-                            "replicas": 1,
+                            "replicas": 3,
                         },
                         "versions": [
                             {
@@ -152,8 +152,6 @@ def deploy_argo_events(
             }
         ],
     )
-
-    # EventBus
     _ = k8s.apiextensions.CustomResource(
         "event-bus",
         api_version="argoproj.io/v1alpha1",
@@ -169,8 +167,20 @@ def deploy_argo_events(
                         "requests": {"cpu": "100m", "memory": "128Mi"},
                     }
                 },
-            }
+                "cluster": {
+                    "enabled": True,
+                    "nodes": [
+                        f"eventbus-default-js-{i}.eventbus-default-js-svc.metaflow.svc.cluster.local."
+                        for i in range(3)
+                    ],
+                    "tls": {"enabled": False},
+                },
+            },
         },
+        opts=pulumi.ResourceOptions(
+            provider=k8s_provider,
+            depends_on=depends_on or [],
+        ),
     )
 
     metaflow_argo_config = {
