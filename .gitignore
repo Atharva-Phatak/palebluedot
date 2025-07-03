@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.vscode
 # Pulumi stack files (contain sensitive data and environment-specific config)
 Pulumi.*.yaml
 

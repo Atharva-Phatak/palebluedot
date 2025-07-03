@@ -1,0 +1,7 @@
+{
+  "output_prefix": "extracted_data/",
+  "bucket_path": "data-bucket",
+  "endpoint": "http://minio-palebluedot.io",
+  "slack_channel" : "#zenml-pipelines",
+  "image_dpi" : 300
+}
