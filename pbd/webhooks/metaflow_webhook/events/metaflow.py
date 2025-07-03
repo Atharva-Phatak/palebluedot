@@ -14,8 +14,7 @@ def get_config_uri_based_on_event(event_name: str):
 
 def publish_event(data: dict):
     event_name = data.get("event")
-    if not event_name:
-        raise ValueError("Event name is required in the data")
+    logging.info(f"Received data: {data}")
 
     config_path = get_config_uri_based_on_event(event_name=event_name)
     payload = {
