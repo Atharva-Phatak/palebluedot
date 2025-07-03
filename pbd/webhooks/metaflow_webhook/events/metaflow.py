@@ -5,8 +5,17 @@ from pbd.webhooks.metaflow_webhook.config import settings
 import pbd.helper.s3_paths as config_paths
 
 
+def get_event_name_map(event_name: str):
+    event_name_map = {
+        "s3:ObjectCreated:Put": "minio.upload",
+        "s3:ObjectRemoved:Delete": "data-delete",
+        # Add more mappings as needed
+    }
+    return event_name_map.get(event_name, event_name)
+
+
 def get_config_uri_based_on_event(event_name: str):
-    if event_name == "minio.upload":
+    if event_name == "s3:ObjectCreated:Put":
         return config_paths.data_processing_pipeline_config_path()
     else:
         raise ValueError(f"Unsupported event name: {event_name}")
