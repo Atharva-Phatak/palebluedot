@@ -49,7 +49,7 @@ class PDFToImageFlow(FlowSpec):
         """
         Initialize the flow and validate environment using JSON configuration
         """
-        logger.info("Starting PDF to Image conversion pipeline...")
+        print("Starting PDF to Image conversion pipeline...")
 
         self.access_key = os.environ.get("AWS_ACCESS_KEY_ID")
         self.secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
@@ -57,9 +57,7 @@ class PDFToImageFlow(FlowSpec):
         if not self.access_key or not self.secret_key:
             raise ValueError("AWS credentials not found in environment variables")
 
-        logger.info(
-            f"Received filename: {self.filename} with bucket: {self.bucket_name}"
-        )
+        print(f"Received filename: {self.filename} with bucket: {self.bucket_name}")
         client = Minio(
             endpoint="minio-palebluedot.io",
             access_key=self.access_key,
@@ -79,16 +77,16 @@ class PDFToImageFlow(FlowSpec):
                 "endpoint": "http://minio-palebluedot.io",
             }
             self.config = DataProcessingPipelineConfig(**pydantic_model_input)
-            logger.info(f"Loaded configuration: {self.config}")
-            logger.info(f"Successfully loaded config from {self.config_uri}")
+            print(f"Loaded configuration: {self.config}")
+            print(f"Successfully loaded config from {self.config_uri}")
 
         except Exception as e:
             logger.error(f"Failed to load config from MinIO: {e}")
             raise
 
-        logger.info(f"Processing PDFs from bucket: {self.config.bucket_name}")
-        logger.info(f"Input prefix: {self.config.filepath}")
-        logger.info(f"Output prefix: {self.config.output_path}")
+        print(f"Processing PDFs from bucket: {self.config.bucket_name}")
+        print(f"Input prefix: {self.config.filepath}")
+        print(f"Output prefix: {self.config.output_path}")
 
         self.next(self.process_pdfs)
 
@@ -111,36 +109,34 @@ class PDFToImageFlow(FlowSpec):
 
         try:
             with tempfile.TemporaryDirectory() as tmpdir:
-                logger.info(f"Using temporary directory: {tmpdir}")
+                print(f"Using temporary directory: {tmpdir}")
 
                 # Check available disk space
                 statvfs = os.statvfs(tmpdir)
                 free_space_gb = (statvfs.f_frsize * statvfs.f_bavail) / (1024**3)
-                logger.info(f"Available disk space: {free_space_gb:.2f} GB")
+                print(f"Available disk space: {free_space_gb:.2f} GB")
 
                 # Download PDF
                 pdf_path = self._download_pdf(client, self.filename, tmpdir)
-                logger.info(f"Downloaded {self.filename} to {pdf_path}")
+                print(f"Downloaded {self.filename} to {pdf_path}")
 
                 # Check PDF file size
                 pdf_size_mb = os.path.getsize(pdf_path) / (1024 * 1024)
-                logger.info(f"PDF size: {pdf_size_mb:.2f} MB")
+                print(f"PDF size: {pdf_size_mb:.2f} MB")
 
                 # Convert PDF to images using config settings
                 image_output_dir = self._convert_pdf_to_images(pdf_path, tmpdir)
-                logger.info(
-                    f"Converted {self.filename} to images in {image_output_dir}"
-                )
+                print(f"Converted {self.filename} to images in {image_output_dir}")
 
                 # Create zip
                 pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
                 zip_path = os.path.join(tmpdir, f"{pdf_name}.zip")
                 self._zip_images(image_output_dir, zip_path)
-                logger.info(f"Created zip at {zip_path}")
+                print(f"Created zip at {zip_path}")
 
                 # Check zip file size
                 zip_size_mb = os.path.getsize(zip_path) / (1024 * 1024)
-                logger.info(f"Zip size: {zip_size_mb:.2f} MB")
+                print(f"Zip size: {zip_size_mb:.2f} MB")
 
                 # Upload to MinIO
                 zip_key = f"{self.config.output_path}{pdf_name}.zip"
@@ -150,7 +146,7 @@ class PDFToImageFlow(FlowSpec):
                     file_path=zip_path,
                     content_type="application/zip",
                 )
-                logger.info(f"Uploaded zip for {pdf_name} to MinIO at {zip_key}")
+                print(f"Uploaded zip for {pdf_name} to MinIO at {zip_key}")
 
                 self.result = {
                     "pdf_key": self.pdf_key,
@@ -173,8 +169,8 @@ class PDFToImageFlow(FlowSpec):
         """
         End the flow
         """
-        logger.info("PDF to Image conversion pipeline completed!")
-        logger.info("Results: {}".format(self.result))
+        print("PDF to Image conversion pipeline completed!")
+        print("Results: {}".format(self.result))
         if self.slack_token is not None:
             self._send_slack_notification(filename=self.filename)
 
@@ -208,7 +204,7 @@ class PDFToImageFlow(FlowSpec):
 
             pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
             self.pages_count = len(pdf_doc)
-            logger.info(f"Converting {pdf_name} with {self.pages_count} pages.")
+            print(f"Converting {pdf_name} with {self.pages_count} pages.")
 
             if self.pages_count == 0:
                 raise Exception("PDF contains no pages")
@@ -239,13 +235,13 @@ class PDFToImageFlow(FlowSpec):
                     pixmap = None
 
                     if i % 10 == 0:  # Log progress every 10 pages
-                        logger.info(f"Processed page {i + 1}/{self.pages_count}")
+                        print(f"Processed page {i + 1}/{self.pages_count}")
 
                 except Exception as e:
                     logger.error(f"Error processing page {i + 1}: {str(e)}")
                     raise
 
-            logger.info(
+            print(
                 f"Saved {self.pages_count} images for {pdf_name} at {dpi} DPI in {image_format} format."
             )
             return image_output_dir
@@ -272,7 +268,7 @@ class PDFToImageFlow(FlowSpec):
                         zipf.write(file_path, arcname)
                         file_count += 1
 
-                logger.info(f"Zipped {file_count} files")
+                print(f"Zipped {file_count} files")
 
         except Exception as e:
             logger.error(f"Error creating zip file: {str(e)}")
@@ -292,7 +288,7 @@ class PDFToImageFlow(FlowSpec):
             _ = client.chat_postMessage(
                 channel=self.config.slack_channel, text=message.strip()
             )
-            logger.info(f"Slack notification sent to {self.config.slack_channel}")
+            print(f"Slack notification sent to {self.config.slack_channel}")
 
         except SlackApiError as e:
             logger.error(f"Error sending Slack message: {e}")
