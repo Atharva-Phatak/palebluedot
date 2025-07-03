@@ -27,7 +27,7 @@ def publish_event(data: dict):
         raise ValueError("Event name is required in the data")
     config_path = get_config_uri_based_on_event(event_name=event_name)
     payload = {
-        "filename": data.get("file_name", "unknown"),
+        "filename": data.get("filename", "unknown"),
         "file_size": data.get("file_size", "0"),
         "bucket_name": data.get("bucket_name", "unknown"),
         "upload_time": data.get("upload_time", "unknown"),

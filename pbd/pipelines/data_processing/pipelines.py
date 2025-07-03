@@ -57,6 +57,9 @@ class PDFToImageFlow(FlowSpec):
         if not self.access_key or not self.secret_key:
             raise ValueError("AWS credentials not found in environment variables")
 
+        logger.info(
+            f"Received filename: {self.filename} with bucket: {self.bucket_name}"
+        )
         client = Minio(
             endpoint="minio-palebluedot.io",
             access_key=self.access_key,
@@ -68,7 +71,7 @@ class PDFToImageFlow(FlowSpec):
             config_bytes = response.read()
             config_data = json.loads(config_bytes.decode("utf-8"))
             pydantic_model_input = {
-                "bucket_name": config_data.get("bucket_name"),
+                "bucket_name": self.bucket_name,
                 "filepath": self.filename,
                 "output_path": config_data.get("output_path"),
                 "slack_channel": config_data.get("slack_channel"),

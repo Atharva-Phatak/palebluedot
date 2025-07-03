@@ -1,5 +1,5 @@
 {
-  "output_prefix": "extracted_data/",
+  "output_path": "extracted_data/",
   "bucket_path": "data-bucket",
   "endpoint": "http://minio-palebluedot.io",
   "slack_channel" : "#zenml-pipelines",
