@@ -18,7 +18,7 @@ import pymupdf
 from minio import Minio
 from metaflow import FlowSpec, step, trigger, Parameter
 from pbd.helper.logger import setup_logger
-from setting import processing_k8s, lightweight_k8s, orchestrator_k8s
+from setting import processing_k8s, orchestrator_k8s
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 import json
@@ -27,6 +27,7 @@ from pbd.helper.interface.pydantic_models import DataProcessingPipelineConfig
 logger = setup_logger(__name__)
 
 
+@trigger(event="minio.upload")
 class PDFToImageFlow(FlowSpec):
     """
     Metaflow pipeline for converting PDFs to images and uploading to MinIO
@@ -42,7 +43,6 @@ class PDFToImageFlow(FlowSpec):
         help="URI to the JSON configuration file for the pipeline",
     )
 
-    @trigger("minio.upload")
     @orchestrator_k8s
     @step
     def start(self):
@@ -161,44 +161,6 @@ class PDFToImageFlow(FlowSpec):
             logger.error(f"Error processing {self.pdf_key}: {str(e)}", exc_info=True)
             self.result = {"pdf_key": self.pdf_key, "status": "failed", "error": str(e)}
 
-        self.next(self.join_results)
-
-    @lightweight_k8s
-    @step
-    def join_results(self, inputs):
-        """
-        Collect results from all parallel processing branches
-        """
-        self.results = []
-        successful = 0
-        failed = 0
-        skipped = 0
-
-        for inp in inputs:
-            self.results.append(inp.result)
-            if inp.result["status"] == "success":
-                successful += 1
-            elif inp.result["status"] == "failed":
-                failed += 1
-            elif inp.result["status"] == "skipped":
-                skipped += 1
-
-        logger.info("\nProcessing Summary:")
-        logger.info(f"Successfully processed: {successful} PDFs")
-        logger.info(f"Failed: {failed} PDFs")
-        if skipped > 0:
-            logger.info(f"Skipped (no PDFs to process): {skipped}")
-
-        if failed > 0:
-            logger.info("\nFailed PDFs:")
-            for result in self.results:
-                if result["status"] == "failed":
-                    logger.info(f"  - {result['pdf_key']}: {result['error']}")
-
-        # Send Slack notification if configured
-        if hasattr(self.config, "slack") and hasattr(self.config.slack, "token_env"):
-            self._send_slack_notification(successful, failed)
-
         self.next(self.end)
 
     @orchestrator_k8s
@@ -208,13 +170,9 @@ class PDFToImageFlow(FlowSpec):
         End the flow
         """
         logger.info("PDF to Image conversion pipeline completed!")
-        if hasattr(self, "results"):
-            total_pages = sum(
-                r.get("pages_processed", 0)
-                for r in self.results
-                if r["status"] == "success"
-            )
-            logger.info(f"Total pages processed: {total_pages}")
+        logger.info("Results: {}".format(self.result))
+        if self.slack_token is not None:
+            self._send_slack_notification(filename=self.filename)
 
     # Helper methods - defined inside class for better encapsulation
     def _download_pdf(self, client, key: str, download_dir: str) -> str:
@@ -316,7 +274,7 @@ class PDFToImageFlow(FlowSpec):
             logger.error(f"Error creating zip file: {str(e)}")
             raise
 
-    def _send_slack_notification(self, successful: int, failed: int):
+    def _send_slack_notification(self, filename: str):
         """Send a Slack message with the results of the flow."""
         slack_token = os.environ.get("SLACK_TOKEN")
         try:
@@ -324,9 +282,7 @@ class PDFToImageFlow(FlowSpec):
 
             message = f"""
                 PDF Processing Pipeline Completed!
-                ✅ Successfully processed: {successful} PDFs
-                ❌ Failed: {failed} PDFs
-                📊 Total pages processed: {sum(r.get("pages_processed", 0) for r in self.results if r["status"] == "success")}
+                ✅ Successfully processed: {filename}
             """
 
             _ = client.chat_postMessage(
