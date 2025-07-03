@@ -76,6 +76,7 @@ class PDFToImageFlow(FlowSpec):
                 "endpoint": "http://minio-palebluedot.io",
             }
             self.config = DataProcessingPipelineConfig(**pydantic_model_input)
+            logger.info(f"Loaded configuration: {self.config}")
             logger.info(f"Successfully loaded config from {self.config_uri}")
 
         except Exception as e:
