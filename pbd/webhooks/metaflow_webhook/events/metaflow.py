@@ -25,7 +25,6 @@ def publish_event(data: dict):
     event_name = data.get("event_name")
     if not event_name:
         raise ValueError("Event name is required in the data")
-
     config_path = get_config_uri_based_on_event(event_name=event_name)
     payload = {
         "filename": data.get("file_name", "unknown"),
@@ -38,6 +37,7 @@ def publish_event(data: dict):
     }
     print(f"Publishing event '{event_name}' with payload: {payload}")
     logging.info(f"Publishing event '{event_name}' with payload: {payload}")
+    event_name = get_event_name_map(event_name)
     event = ArgoEvent(
         name=event_name,
         payload=payload,
