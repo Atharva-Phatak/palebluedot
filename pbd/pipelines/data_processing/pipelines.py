@@ -30,8 +30,7 @@ logger = setup_logger(__name__)
 @trigger(event="minio.upload")
 class PDFToImageFlow(FlowSpec):
     """
-    Metaflow pipeline for converting PDFs to images and uploading to MinIO
-    All configuration loaded from JSON file, maintaining original K8s decorators
+    Metaflow pipeline for converting PDFs to images and uploading to MinIO reacting to argo events.
     """
 
     filename = Parameter("filename", help="The changed file name")
