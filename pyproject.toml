@@ -9,6 +9,13 @@ dependencies = [
  "typer",
  "rich",
  "metaflow",
+ "pulumi>=3.181.0",
+ "pulumi-kubernetes>=4.23.0",
+ "pulumi-command>=1.1.0",
+ "python-dotenv>=1.1.1",
+ "infisicalsdk>=1.0.9",
+ "pulumi-minio>=0.16.4",
+ "omegaconf>=2.3.0",
 ]
 
 [project.scripts]
