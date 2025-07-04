@@ -149,7 +149,7 @@ class PDFToImageFlow(FlowSpec):
                 print(f"Uploaded zip for {pdf_name} to MinIO at {zip_key}")
 
                 self.result = {
-                    "pdf_key": self.pdf_key,
+                    "pdf_key": self.filename,
                     "zip_key": zip_key,
                     "status": "success",
                     "pages_processed": self.pages_count,
@@ -158,8 +158,12 @@ class PDFToImageFlow(FlowSpec):
                 }
 
         except Exception as e:
-            logger.error(f"Error processing {self.pdf_key}: {str(e)}", exc_info=True)
-            self.result = {"pdf_key": self.pdf_key, "status": "failed", "error": str(e)}
+            logger.error(f"Error processing {self.filename}: {str(e)}", exc_info=True)
+            self.result = {
+                "pdf_key": self.filename,
+                "status": "failed",
+                "error": str(e),
+            }
 
         self.next(self.end)
 
