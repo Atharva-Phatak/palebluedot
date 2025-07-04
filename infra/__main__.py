@@ -57,6 +57,9 @@ arc_namespace = create_namespace(
 metaflow_namespace = create_namespace(
     provider=k8s_provider, namespace="metaflow", depends_on=[minikube_start]
 )
+metallb_namespace = create_namespace(
+    provider=k8s_provider, namespace="metallb-system", depends_on=[minikube_start]
+)
 aws_secret = create_aws_secret(
     provider=k8s_provider,
     namespace="metaflow",
@@ -149,7 +152,12 @@ metaflow_chart, metaflow_config = deploy_metaflow(
     access_key_identifier="postgres_password",
     aws_access_key_identifier="minio_access_key",
     aws_secret_key_identifier="minio_secret_key",
-    depends_on=[minikube_start, metaflow_namespace, postgres_resource, minio_chart],
+    depends_on=[
+        minikube_start,
+        metaflow_namespace,
+        postgres_resource,
+        minio_chart,
+    ],
 )
 
 
@@ -181,13 +189,22 @@ prometheus_chart = deploy_prometheus(
 # deploy_grafana(
 grafana_chart = deploy_grafana(
     provider=k8s_provider,
-    depends_on=[minikube_start, monitoring_namespace, prometheus_chart, metaflow_chart],
+    depends_on=[
+        minikube_start,
+        monitoring_namespace,
+        prometheus_chart,
+        metaflow_chart,
+    ],
     namespace=monitoring_namespace,
 )
 # Deploy Argo Workflows and Events
 argo_workflows_chart = deploy_argo_workflows(
     k8s_provider=k8s_provider,
-    depends_on=[minikube_start, monitoring_namespace, metaflow_chart],
+    depends_on=[
+        minikube_start,
+        monitoring_namespace,
+        metaflow_chart,
+    ],
     namespace=metaflow_namespace,
 )
 argo_events, argo_metaflow_config = deploy_argo_events(

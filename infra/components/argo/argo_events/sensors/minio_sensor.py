@@ -10,6 +10,7 @@ def deploy_minio_sensor(
 ):
     """
     Sensor that captures MinIO file upload events and sends metadata to Metaflow webhook.
+    Only triggers for .pdf files in 'raw_data/'.
     """
     metaflow_webhook_url = (
         "http://metaflow-webhook-service.metaflow.svc.cluster.local:12000/argoevent"
@@ -39,13 +40,13 @@ def deploy_minio_sensor(
                         "http": {
                             "url": metaflow_webhook_url,
                             "method": "POST",
-                            "payload": [  # <-- THIS must be used, not 'parameters'
+                            "payload": [
                                 {
                                     "src": {
                                         "dependencyName": "minio-dep",
                                         "dataKey": "notification.0.s3.object.key",
                                     },
-                                    "dest": "file_name",
+                                    "dest": "filename",
                                 },
                                 {
                                     "src": {
@@ -67,6 +68,13 @@ def deploy_minio_sensor(
                                         "dataKey": "notification.0.eventTime",
                                     },
                                     "dest": "upload_time",
+                                },
+                                {
+                                    "src": {
+                                        "dependencyName": "minio-dep",
+                                        "dataKey": "notification.0.eventName",
+                                    },
+                                    "dest": "event_name",
                                 },
                             ],
                         },
