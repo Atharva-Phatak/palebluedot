@@ -32,16 +32,13 @@ import torch
 from transformers import AutoTokenizer
 from vllm import LLM, SamplingParams
 
-from pbd.helper.logger import setup_logger
 from pbd.pipelines.ocr_engine.steps.prompt import generate_post_processing_prompt
 from pbd.pipelines.ocr_engine.steps.upload_data import store_extracted_texts_to_minio
-
-logger = setup_logger(__name__)
 
 
 def load_model_and_tokenizer(model_path: str):
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    vllm_model = LLM(model=model_path, max_model_len=100000, max_num_seqs=10)
+    vllm_model = LLM(model=model_path, max_num_seqs=10)
     return tokenizer, vllm_model
 
 
@@ -56,7 +53,7 @@ def extract_problem_solution(
 ):
     # empty cuda cache before starting new step
     if torch.cuda.is_available():
-        logger.warning("Emptying cuda cache before starting new step.")
+        print("Emptying cuda cache before starting new step.")
         torch.cuda.empty_cache()
     tokenizer, vllm_model = load_model_and_tokenizer(model_path)
     params = SamplingParams(**sampling_params)
@@ -87,7 +84,7 @@ def extract_problem_solution(
             prompts=prompts, use_tqdm=False, sampling_params=params
         )
         current_batch = indx // batch_size
-        logger.info(
+        print(
             f"Batch : {current_batch} of {total_batches} | Time : {time.time() - gen_time:.2f} seconds"
         )
         for content, output, page in zip(contents, outputs, pages):
@@ -95,7 +92,7 @@ def extract_problem_solution(
                 {"content": content, "generated": output.outputs[0].text, "page": page}
             )
 
-    logger.info(f"Completed inference in {time.time() - start:.2f} seconds.")
+    print(f"Completed inference in {time.time() - start:.2f} seconds.")
     store_extracted_texts_to_minio(
         dataset=results,
         bucket_name=bucket_name,

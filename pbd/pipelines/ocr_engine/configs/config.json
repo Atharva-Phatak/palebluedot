@@ -2,15 +2,13 @@
   "image": "ghcr.io/atharva-phatak/pbd-ocr_engine:latest",
   "minio_endpoint" : "minio-palebluedot.io",
   "bucket" : "data-bucket",
-  "minio_object_key" : "extracted_data/dc_mechanics.zip",
   "local_path" : "/tmp/images.zip",
   "extract_to" : "/tmp/images",
   "ocr_model_path" : "/models/Nanonets-OCR-s",
-  "ocr_config" : {
+  "ocr_params" : {
     "max_new_tokens" : 80000
   },
-  "extraction_batch_size" : 20,
-  "filename" : "dc_mechanics",
+  "ocr_model_batch_size" : 20,
   "post_processing_model_path" : "/models/Qwen3-4B-unsloth-bnb-4bit",
   "post_processing_params" : {
     "temperature" : 0.7,

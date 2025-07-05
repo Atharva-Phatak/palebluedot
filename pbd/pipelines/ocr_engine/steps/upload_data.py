@@ -14,9 +14,6 @@ import tempfile
 
 from datasets import Dataset
 from minio import Minio
-from pbd.helper.logger import setup_logger
-
-logger = setup_logger(__name__)
 
 
 def store_extracted_texts_to_minio(
@@ -83,6 +80,6 @@ def store_extracted_texts_to_minio(
                 content_type="application/octet-stream",
             )
         except Exception:
-            logger.exception("Failed to upload file to MinIO")
+            print("Failed to upload file to MinIO")
             raise
-        logger.info(f"Uploaded {parquet_filename} to MinIO bucket {bucket_name}")
+        print(f"Uploaded {parquet_filename} to MinIO bucket {bucket_name}")

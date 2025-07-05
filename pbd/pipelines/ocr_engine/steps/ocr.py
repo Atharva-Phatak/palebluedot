@@ -42,15 +42,12 @@ import torch
 import vllm
 from PIL import Image
 
-from pbd.helper.logger import setup_logger
 from pbd.helper.file_upload import read_parquet_if_exists
 from pbd.pipelines.ocr_engine.steps.downloader import (
     download_from_minio,
     extract_zip,
 )
 from pbd.pipelines.ocr_engine.steps.upload_data import store_extracted_texts_to_minio
-
-logger = setup_logger(__name__)
 
 
 def sort_pages_by_number(pages: list[str]) -> list[str]:
@@ -111,9 +108,9 @@ def do_inference(
         list[dict]: List of dictionaries with 'page' and 'content' keys for each image.
     """
     if torch.cuda.is_available():
-        logger.info("CUDA is available. Emptying cache")
+        print("CUDA is available. Emptying cache")
         torch.cuda.empty_cache()
-    logger.info(f"Using vllm version {vllm.__version__}")
+    print(f"Using vllm version {vllm.__version__}")
     engine_args = vllm.EngineArgs(
         model=model_path,
         max_num_seqs=10,
@@ -140,7 +137,7 @@ def do_inference(
         outputs = model.generate(
             inputs, use_tqdm=False, sampling_params=sampling_params
         )
-        logger.info(f"Processed batch {indx // batch_size}/{total_batches}")
+        print(f"Processed batch {indx // batch_size}/{total_batches}")
         for img_path, output in zip(batch, outputs):
             page_no = extract_page_number(img_path)
             generated_texts.append(
@@ -150,7 +147,7 @@ def do_inference(
                 }
             )
     total_time = (time.time() - start) // 60
-    logger.info(f"Generated texts: {len(generated_texts)} in {total_time:.2f} minutes")
+    print(f"Generated texts: {len(generated_texts)} in {total_time:.2f} minutes")
     return generated_texts
 
 
@@ -191,7 +188,7 @@ def ocr_images(
         object_path=f"ocr_results/{filename}.parquet",
     )
     if data:
-        logger.info("Data already exists in MinIO. Returning existing data.")
+        print("Data already exists in MinIO. Returning existing data.")
         return data
     else:
         zip_path = download_from_minio(
@@ -203,11 +200,11 @@ def ocr_images(
         image_paths = extract_zip(zip_path=zip_path, extract_to=extract_to)
         image_paths = sort_pages_by_number(pages=image_paths)
         if run_test:
-            logger.warning(f"Running OCR inference test with {batch_size * 2} images")
+            print(f"Running OCR inference test with {batch_size * 2} images")
             image_paths = image_paths[: batch_size * 2]
-        logger.info(f"Extracted {len(image_paths)} images from {zip_path}")
+        print(f"Extracted {len(image_paths)} images from {zip_path}")
         # check if cuda is available
-        logger.info(f"CUDA available: {torch.cuda.is_available()}")
+        print(f"CUDA available: {torch.cuda.is_available()}")
         outputs = do_inference(
             image_paths=image_paths,
             model_path=model_path,
