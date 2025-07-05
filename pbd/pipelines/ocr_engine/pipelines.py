@@ -66,7 +66,6 @@ from minio import Minio
 import json
 from pbd.helper.interface.pydantic_models import OCRPipelineConfig
 
-
 IMAGE_NAME = "ghcr.io/atharva-phatak/pbd-ocr_engine:latest"
 
 
@@ -145,7 +144,7 @@ class OCRFlow(FlowSpec):
             local_path=self.config.local_path,
             model_path=self.config.ocr_model_path,
             extract_to=self.config.extract_to,
-            max_new_tokens=self.config.ocr_params.max_new_tokens,
+            max_new_tokens=self.config.ocr_params.max_tokens,
             batch_size=self.config.ocr_model_batch_size,
             prompt=ocr_prompt,
             run_test=self.config.run_test,

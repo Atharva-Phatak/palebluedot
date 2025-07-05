@@ -6,7 +6,7 @@
   "extract_to" : "/tmp/images",
   "ocr_model_path" : "/models/Nanonets-OCR-s",
   "ocr_params" : {
-    "max_new_tokens" : 80000
+    "max_tokens" : 80000
   },
   "ocr_model_batch_size" : 20,
   "post_processing_model_path" : "/models/Qwen3-4B-unsloth-bnb-4bit",
