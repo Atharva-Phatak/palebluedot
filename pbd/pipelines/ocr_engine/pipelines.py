@@ -113,6 +113,7 @@ class OCRFlow(FlowSpec):
         """
 
         self.bucket_name: str = current.trigger.run.data.bucket_name
+        self.filename: str = current.trigger.run.data.filename
         self.config = self._read_config(
             bucket_name=self.bucket_name,
             config_uri=ocr_engine_config_path(),
