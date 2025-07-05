@@ -1,5 +1,5 @@
 {
-  "image": "ghcr.io/atharva-phatak/pbd-ocr_engine:latest",
+  "image_path": "extracted_data",
   "minio_endpoint" : "minio-palebluedot.io",
   "bucket" : "data-bucket",
   "local_path" : "/tmp/images.zip",

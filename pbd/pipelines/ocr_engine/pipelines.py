@@ -93,6 +93,10 @@ class OCRFlow(FlowSpec):
             response = client.get_object(bucket_name, config_uri)
             config_bytes = response.read()
             config_data = json.loads(config_bytes.decode("utf-8"))
+            if "bucket" not in config_data:
+                config_data["bucket"] = bucket_name
+            if "filename" not in config_data:
+                config_data["filename"] = current.trigger.run.data.filename
             self.config: OCRPipelineConfig = OCRPipelineConfig(**config_data)
         except Exception as e:
             raise ValueError(f"Failed to read configuration from MinIO: {e}")
