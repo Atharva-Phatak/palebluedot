@@ -10,6 +10,7 @@ dependencies = [
     "boto3>=1.38.27",
     "datasets>=3.6.0",
     "kubernetes>=32.0.1",
+    "matplotlib>=3.10.3",
     "metaflow>=2.15.18",
     "minio>=7.2.15",
     "pillow>=11.2.1",
