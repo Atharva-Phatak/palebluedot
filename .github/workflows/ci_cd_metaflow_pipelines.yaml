@@ -18,30 +18,22 @@ permissions:
   id-token: write
 
 jobs:
-  check-runner:
+  determine-runner:
     runs-on: ubuntu-latest
     outputs:
-      runner_available: ${{ steps.check.outputs.available }}
+      runner: ${{ steps.set-runner.outputs.use-runner }}
     steps:
-      - name: Check ARC Runner Status
-        id: check
-        run: |
-          # Check if pbd-runner-scale-set is available
-          if curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-               "https://api.github.com/repos/${{ github.repository }}/actions/runners" | \
-               jq -r '.runners[] | select(.name | contains("pbd-runner-scale-set")) | .status' | \
-               grep -q "online"; then
-            echo "available=true" >> $GITHUB_OUTPUT
-            echo "✅ ARC runner is available"
-          else
-            echo "available=false" >> $GITHUB_OUTPUT
-            echo "❌ ARC runner is not available - skipping pipeline"
-          fi
+      - name: Determine which runner to use
+        id: set-runner
+        uses: jimmygchen/runner-fallback-action@v1
+        with:
+          primary-runner: "pbd-runner-scale-set"
+          fallback-runner: "ubuntu-latest"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   detect-changes:
-    needs: check-runner
-    if: ${{ needs.check-runner.outputs.runner_available == 'true' }}
-    runs-on: pbd-runner-scale-set
+    needs: determine-runner
+    runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     outputs:
       changed_folders: ${{ steps.filter.outputs.folders }}
     steps:
@@ -70,9 +62,9 @@ jobs:
           echo "Detected folders: $CHANGED"
 
   build-and-push:
-    needs: [check-runner, detect-changes]
-    if: ${{ needs.check-runner.outputs.runner_available == 'true' && needs.detect-changes.outputs.changed_folders != '[]' && needs.detect-changes.outputs.changed_folders != '' }}
-    runs-on: pbd-runner-scale-set
+    needs: [determine-runner, detect-changes]
+    if: ${{ needs.detect-changes.outputs.changed_folders != '[]' && needs.detect-changes.outputs.changed_folders != '' }}
+    runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     strategy:
       matrix:
         folder: ${{ fromJson(needs.detect-changes.outputs.changed_folders) }}
@@ -110,9 +102,9 @@ jobs:
       #    fi
 
   notify-slack:
-    needs: [check-runner, detect-changes, build-and-push]
-    if: always() && needs.check-runner.outputs.runner_available == 'true'
-    runs-on: pbd-runner-scale-set
+    needs: [determine-runner, detect-changes, build-and-push]
+    if: always()
+    runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
     steps:
       - name: Send Slack Notification
         uses: slackapi/slack-github-action@v1.26.0
