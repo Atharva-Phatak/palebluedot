@@ -1,6 +1,6 @@
 import pulumi_minio as pm
 import pulumi
-from components.minio.minio import get_minio_secret
+from applications.minio.minio import get_minio_secret
 
 
 def deploy_minio_buckets(

@@ -4,8 +4,8 @@ import typing as T
 import pulumi
 import pulumi_command as command
 import pulumi_kubernetes as k8s
-from components.minio.minio import get_minio_secret
-from components.postgres.deploy_postgres import get_postgres_secret
+from applications.minio.minio import get_minio_secret
+from applications.postgres.deploy_postgres import get_postgres_secret
 from pulumi import ResourceTransformationResult
 from pulumi_kubernetes.core.v1 import Namespace
 from pulumi_kubernetes.helm.v3 import Chart, ChartOpts, FetchOpts

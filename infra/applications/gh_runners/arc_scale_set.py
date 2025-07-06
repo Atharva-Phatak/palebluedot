@@ -3,11 +3,12 @@ import os
 import pulumi
 import pulumi_kubernetes as k8s
 from pulumi_kubernetes.helm.v3 import Chart, ChartOpts
+from pulumi_kubernetes.core.v1 import Namespace
 
 
 def deploy_arc_scale_set(
     depends_on: list[str],
-    namespace: str,
+    namespace: Namespace,
     k8s_provider: k8s.Provider,
     github_secret: k8s.core.v1.Secret,
 ) -> Chart:
@@ -17,13 +18,11 @@ def deploy_arc_scale_set(
         "pbd-runner-scale-set",
         ChartOpts(
             chart="oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set",
-            namespace=namespace,
+            namespace=namespace.metadata["name"],
             values={
                 "githubConfigUrl": github_url,
                 "githubConfigSecret": github_secret.metadata["name"],
-                "containerMode": {
-                    "type": "dind"  # Docker-in-Docker support
-                },
+                "containerMode": {"type": "dind"},  # Docker-in-Docker support
                 "controllerServiceAccount": {
                     "namespace": "arc-ns",
                     "instance": "arc",

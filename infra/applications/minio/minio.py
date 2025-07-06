@@ -1,6 +1,6 @@
 import pulumi
 import pulumi_kubernetes as k8s
-from components.secret_manager.utils import get_infiscal_sdk
+from applications.secret_manager.utils import get_infiscal_sdk
 
 
 def get_minio_secret(
@@ -139,7 +139,6 @@ def deploy_minio(
                 "nginx.ingress.kubernetes.io/proxy-connect-timeout": "300",
                 "nginx.ingress.kubernetes.io/proxy-send-timeout": "300",
                 "nginx.ingress.kubernetes.io/proxy-read-timeout": "300",
-                "cert-manager.io/cluster-issuer": "letsencrypt-prod",
             },
         ),
         spec=k8s.networking.v1.IngressSpecArgs(

@@ -2,7 +2,7 @@ import pulumi
 import pulumi_kubernetes as k8s
 from pulumi_kubernetes.helm.v3 import Chart, ChartOpts, FetchOpts
 from pulumi_kubernetes.core.v1 import Namespace
-from components.secret_manager.utils import get_infiscal_sdk
+from applications.secret_manager.utils import get_infiscal_sdk
 
 
 def get_postgres_secret(

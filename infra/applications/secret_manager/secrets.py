@@ -2,15 +2,16 @@ import os
 
 import pulumi
 import pulumi_kubernetes as k8s
-from components.minio.minio import get_minio_secret
-from components.postgres.deploy_postgres import get_postgres_secret
+from applications.minio.minio import get_minio_secret
+from applications.postgres.deploy_postgres import get_postgres_secret
+from pulumi_kubernetes.core.v1 import Namespace
 
 
 def create_aws_secret(
     provider: k8s.Provider,
+    namespace: Namespace,
     infiscal_project_id: str,
     depends_on: list = None,
-    namespace: str = "pipeline_namespace",
 ):
     # Get credentials from the default profile (or specify a different profile if needed) -> we are using minio details as to hoax aws credentials
     aws_access_key, aws_secret_key = get_minio_secret(
@@ -23,7 +24,7 @@ def create_aws_secret(
     aws_credentials_secret = k8s.core.v1.Secret(
         "aws-credentials",
         metadata=k8s.meta.v1.ObjectMetaArgs(
-            name="aws-credentials", namespace=namespace
+            name="aws-credentials", namespace=namespace.metadata["name"]
         ),
         string_data={
             "AWS_ACCESS_KEY_ID": aws_access_key,
@@ -35,13 +36,15 @@ def create_aws_secret(
     return aws_credentials_secret
 
 
-def create_gh_secret(namespace: str, depends_on: list, k8s_provider: k8s.Provider):
+def create_gh_secret(
+    namespace: Namespace, depends_on: list, k8s_provider: k8s.Provider
+):
     github_token = os.environ.get("GITHUB_TOKEN")
     github_secret = k8s.core.v1.Secret(
         "gha-rs-github-secret",
         metadata={
             "name": "gha-rs-github-secret",
-            "namespace": namespace,
+            "namespace": namespace.metadata["name"],
         },
         string_data={"github_token": github_token},
         opts=pulumi.ResourceOptions(provider=k8s_provider),
@@ -50,7 +53,7 @@ def create_gh_secret(namespace: str, depends_on: list, k8s_provider: k8s.Provide
 
 
 def create_postgres_secret(
-    namespace: str,
+    namespace: Namespace,
     project_id: str,
     environment_slug: str,
     access_key_identifier: str,
@@ -67,7 +70,7 @@ def create_postgres_secret(
         "metaflow-db-secret",
         metadata={
             "name": "metaflow-db-secret",
-            "namespace": namespace,  # Same namespace as the Helm chart
+            "namespace": namespace.metadata["name"],  # Same namespace as the Helm chart
         },
         string_data={"postgres-password": postgres_password},
         opts=pulumi.ResourceOptions(
@@ -78,7 +81,7 @@ def create_postgres_secret(
 
 
 def create_slack_secret(
-    namespace: str,
+    namespace: Namespace,
     depends_on: list,
     k8s_provider: k8s.Provider,
 ):
@@ -87,7 +90,7 @@ def create_slack_secret(
         "slack-secret",
         metadata={
             "name": "slack-secret",
-            "namespace": namespace,
+            "namespace": namespace.metadata["name"],
         },
         string_data={"SLACK_TOKEN": slack_token},
         opts=pulumi.ResourceOptions(provider=k8s_provider, depends_on=depends_on),
