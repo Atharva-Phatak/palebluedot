@@ -16,31 +16,17 @@ permissions:
   packages: write
   attestations: write
   id-token: write
-
 jobs:
-  determine-runner:
-    runs-on: ubuntu-latest
-    outputs:
-      runner: ${{ steps.set-runner.outputs.use-runner }}
-    steps:
-      - name: Determine which runner to use
-        id: set-runner
-        uses: jimmygchen/runner-fallback-action@v1
-        with:
-          primary-runner: "pbd-runner-scale-set"
-          fallback-runner: "ubuntu-latest"
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
   detect-changes:
-    needs: determine-runner
-    runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
+    timeout-minutes: 5  # ⏰ Safe timeout to prevent hanging
+    runs-on: pbd-runner-scale-set # ✅ ARC runner
     outputs:
       changed_folders: ${{ steps.filter.outputs.folders }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 0 # Needed for full git history
       - name: Get Changed Folders
         id: filter
         run: |
@@ -49,6 +35,7 @@ jobs:
           elif [ $(git rev-list --count HEAD) -eq 1 ]; then
             CHANGED=$(find pbd/pipelines -maxdepth 1 -mindepth 1 -type d -exec basename {} \; | jq -R -s -c 'split("\n")[:-1]')
           else
+            # Get folders with changes in pbd/pipelines/*
             FOLDERS=$(git diff --name-only origin/main...HEAD | grep '^pbd/pipelines/' | cut -d '/' -f3 | sort -u)
             EXISTING=()
             for folder in $FOLDERS; do
@@ -59,23 +46,22 @@ jobs:
             CHANGED=$(printf "[%s]" "$(IFS=,; echo "${EXISTING[*]}")")
           fi
           echo "folders=$CHANGED" >> $GITHUB_OUTPUT
-          echo "Detected folders: $CHANGED"
-
+          echo "Detected folders for build: $CHANGED"
   build-and-push:
-    needs: [determine-runner, detect-changes]
+    needs: detect-changes
     if: ${{ needs.detect-changes.outputs.changed_folders != '[]' && needs.detect-changes.outputs.changed_folders != '' }}
-    runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
+    runs-on: pbd-runner-scale-set # ✅ ARC runner
     strategy:
       matrix:
         folder: ${{ fromJson(needs.detect-changes.outputs.changed_folders) }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-      - name: Prepare Repository Details
+      - name: Prepare Lowercase Repository Name
         id: repo-details
         run: |
-          echo "repo_name=$(echo '${{ github.event.repository.name }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
-          echo "repo_owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+          LOWERCASE_REPO_NAME=$(echo "${{ github.event.repository.name }}" | tr '[:upper:]' '[:lower:]')
+          echo "repo_name=$LOWERCASE_REPO_NAME" >> $GITHUB_OUTPUT
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Login to GitHub Container Registry
@@ -84,33 +70,28 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Prepare Lowercase Repository Owner
+        id: repo-owner
+        run: |
+          echo "repo_owner=$(echo '${{ github.repository_owner }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
       - name: Build and Push Docker Image
         uses: docker/build-push-action@v6
         with:
           context: pbd/
           file: pbd/pipelines/${{ matrix.folder }}/Dockerfile
           push: true
-          tags: ghcr.io/${{ steps.repo-details.outputs.repo_owner }}/pbd-${{ matrix.folder }}:latest
-      #- name: Deploy with Forge CLI
-      #  run: |
-      #    echo "🚀 Deploying ${{ matrix.folder }} pipeline with Forge CLI"
-      #    if [ -x "./forge" ]; then
-      #      ./forge deploy --pipeline ${{ matrix.folder }} --image ghcr.io/${{ steps.repo-details.outputs.repo_owner }}/pbd-${{ matrix.folder }}:latest
-      #    else
-      #      echo "❌ Forge CLI not found or not executable"
-      #      exit 1
-      #    fi
+          tags: ghcr.io/${{ steps.repo-owner.outputs.repo_owner }}/pbd-${{ matrix.folder }}:latest
 
   notify-slack:
-    needs: [determine-runner, detect-changes, build-and-push]
-    if: always()
-    runs-on: ${{ fromJson(needs.determine-runner.outputs.runner) }}
+    needs: [detect-changes, build-and-push]
+    if: always() # This ensures the job runs regardless of success/failure of previous jobs
+    runs-on: pbd-runner-scale-set
     steps:
       - name: Send Slack Notification
         uses: slackapi/slack-github-action@v1.26.0
         with:
-          channel-id: 'C09115D7Z2T'
+          channel-id: 'C09115D7Z2T' # Replace with your actual channel ID
           slack-message: |
-            🐳 Pipeline: ${{ needs.detect-changes.outputs.changed_folders }} | Status: ${{ needs.build-and-push.result }} | <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View>
+            🟢 CI : ${{ needs.build-and-push.result }} | Folder : ${{ needs.detect-changes.outputs.changed_folders }}
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
