@@ -26,7 +26,7 @@ RESOURCE_CONFIGS = {
     "orchestrator": {
         "cpu": 1,
         "memory": 128,  # 256Mi in MB
-        "secrets": ["aws-credentials"],
+        "secrets": ["aws-credentials", "slack-secret"],
     },
     "discovery": {
         "cpu": 2,

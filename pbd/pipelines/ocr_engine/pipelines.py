@@ -65,6 +65,7 @@ from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
 from minio import Minio
 import json
 from pbd.helper.interface.pydantic_models import OCRPipelineConfig
+from pbd.helper.profilers.gpu import gpu_profile
 
 IMAGE_NAME = "ghcr.io/atharva-phatak/pbd-ocr_engine:latest"
 
@@ -133,6 +134,7 @@ class OCRFlow(FlowSpec):
         secrets=["aws-credentials", "slack-secret"],
     )
     @environment(vars={"CUDA_VISIBLE_DEVICES": "0"})
+    @gpu_profile(interval=60)
     @step
     def process_ocr(self):
         """
@@ -165,6 +167,7 @@ class OCRFlow(FlowSpec):
         secrets=["aws-credentials", "slack-secret"],
     )
     @environment(vars={"CUDA_VISIBLE_DEVICES": "0"})
+    @gpu_profile(interval=60)
     @step
     def post_process(self):
         """
