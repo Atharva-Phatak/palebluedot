@@ -105,7 +105,7 @@ class OCRFlow(FlowSpec):
         image=IMAGE_NAME,
         cpu=1,
         memory=56,
-        secrets=["aws-credentials", "slack-secret"],
+        secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
     )
     @step
     def start(self):
@@ -126,12 +126,12 @@ class OCRFlow(FlowSpec):
     @kubernetes(
         image=IMAGE_NAME,
         cpu=4,
-        memory=18000,
+        memory=10000,
         gpu=1,
         persistent_volume_claims={"mk-model-pvc": "/models"},
-        shared_memory=1024,
+        shared_memory=2048,
         labels={"app": "ocr_pipeline", "component": "process_ocr"},
-        secrets=["aws-credentials", "slack-secret"],
+        secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
     )
     @environment(vars={"CUDA_VISIBLE_DEVICES": "0"})
     @gpu_profile(interval=60)
@@ -159,12 +159,12 @@ class OCRFlow(FlowSpec):
     @kubernetes(
         image=IMAGE_NAME,
         cpu=4,
-        memory=18000,
+        memory=10000,
         gpu=1,
         persistent_volume_claims={"mk-model-pvc": "/models"},
-        shared_memory=1024,
+        shared_memory=2048,
         labels={"app": "ocr_pipeline", "component": "post_process_ocr"},
-        secrets=["aws-credentials", "slack-secret"],
+        secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
     )
     @environment(vars={"CUDA_VISIBLE_DEVICES": "0"})
     @gpu_profile(interval=60)
@@ -191,7 +191,7 @@ class OCRFlow(FlowSpec):
         image=IMAGE_NAME,
         cpu=1,
         memory=56,
-        secrets=["aws-credentials", "slack-secret"],
+        secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
     )
     @step
     def end(self):

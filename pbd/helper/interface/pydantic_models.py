@@ -1,4 +1,6 @@
 import pydantic
+from dataclasses import dataclass
+from typing import Optional
 
 
 class DataProcessingPipelineConfig(pydantic.BaseModel):
@@ -35,3 +37,33 @@ class OCRPipelineConfig(pydantic.BaseModel):
     filename: str
     bucket: str
     run_test: bool = False
+
+
+# OCR flux specific models
+@dataclass(frozen=True)
+class PageResponse:
+    primary_language: Optional[str]
+    is_rotation_valid: bool
+    rotation_correction: int
+    is_table: bool
+    is_diagram: bool
+    natural_text: Optional[str]
+
+    def __post_init__(self):
+        # Validate rotation_correction is one of the allowed values
+        if self.rotation_correction not in {0, 90, 180, 270}:
+            raise ValueError("rotation_correction must be one of [0, 90, 180, 270].")
+
+        # Type checks
+        if not isinstance(self.primary_language, (str, type(None))):
+            raise TypeError("primary_language must be of type Optional[str].")
+        if not isinstance(self.is_rotation_valid, bool):
+            raise TypeError("is_rotation_valid must be of type bool.")
+        if not isinstance(self.rotation_correction, int):
+            raise TypeError("rotation_correction must be of type int.")
+        if not isinstance(self.is_table, bool):
+            raise TypeError("is_table must be of type bool.")
+        if not isinstance(self.is_diagram, bool):
+            raise TypeError("is_diagram must be of type bool.")
+        if not isinstance(self.natural_text, (str, type(None))):
+            raise TypeError("natural_text must be of type Optional[str].")

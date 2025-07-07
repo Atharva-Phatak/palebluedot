@@ -40,7 +40,6 @@ from pathlib import Path
 
 import torch
 import vllm
-from PIL import Image
 
 from pbd.helper.file_upload import read_parquet_if_exists
 from pbd.pipelines.ocr_engine.steps.downloader import (
@@ -48,6 +47,11 @@ from pbd.pipelines.ocr_engine.steps.downloader import (
     extract_zip,
 )
 from pbd.pipelines.ocr_engine.steps.upload_data import store_extracted_texts_to_minio
+from pbd.pipelines.ocr_engine.steps.post_process_ocr import process_responses
+from pbd.pipelines.ocr_engine.steps.prompt import (
+    build_page_to_markdown_prompt,
+    build_qwen2_5_vl_prompt,
+)
 
 
 def sort_pages_by_number(pages: list[str]) -> list[str]:
@@ -92,8 +96,8 @@ def do_inference(
     model_path: str,
     max_new_tokens: int,
     batch_size: int,
-    prompt: str,
-) -> list[dict]:
+    max_model_len: int = 8192,
+) -> dict:
     """
     Runs OCR inference on a list of images using a multimodal LLM, batching requests for efficiency.
 
@@ -114,41 +118,24 @@ def do_inference(
     engine_args = vllm.EngineArgs(
         model=model_path,
         max_num_seqs=10,
-        max_model_len=100000,
+        max_model_len=max_model_len,
         limit_mm_per_prompt={"image": 10, "video": 0},
         mm_processor_kwargs={"min_pixels": 28 * 28, "max_pixels": 1280 * 80 * 80},
     )
-    sampling_params = vllm.SamplingParams(max_tokens=max_new_tokens, seed=42)
     model = vllm.LLM(**asdict(engine_args))
-    generated_texts = []
-    total_batches = len(image_paths) // batch_size
+    prompt = build_qwen2_5_vl_prompt(build_page_to_markdown_prompt())
+    response = process_responses(
+        model=model,
+        image_paths=image_paths,
+        prompt=prompt,
+        batch_size=batch_size,
+        max_new_tokens=max_new_tokens,
+        max_model_len=max_model_len,
+    )
     start = time.time()
-    for indx in range(0, len(image_paths), batch_size):
-        batch = image_paths[indx : indx + batch_size]
-        inputs = [
-            {
-                "prompt": prompt,
-                "multi_modal_data": {
-                    "image": Image.open(img_path).convert("RGB"),
-                },
-            }
-            for img_path in batch
-        ]
-        outputs = model.generate(
-            inputs, use_tqdm=False, sampling_params=sampling_params
-        )
-        print(f"Processed batch {indx // batch_size}/{total_batches}")
-        for img_path, output in zip(batch, outputs):
-            page_no = extract_page_number(img_path)
-            generated_texts.append(
-                {
-                    "page": page_no,
-                    "content": output.outputs[0].text,
-                }
-            )
     total_time = (time.time() - start) // 60
-    print(f"Generated texts: {len(generated_texts)} in {total_time:.2f} minutes")
-    return generated_texts
+    print(f"Total inference time: {total_time} minutes for {len(image_paths)} images")
+    return response
 
 
 def ocr_images(
