@@ -27,7 +27,7 @@ def deploy_redis(
                     "persistence": {
                         "enabled": True,
                         "path": mount_path,
-                        "size": "4Gi",
+                        "size": "6Gi",
                         "accessModes": ["ReadWriteOnce"],
                     },
                     "resources": {

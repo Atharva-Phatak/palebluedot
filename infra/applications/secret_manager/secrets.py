@@ -4,6 +4,7 @@ import pulumi
 import pulumi_kubernetes as k8s
 from applications.minio.minio import get_minio_secret
 from applications.postgres.deploy_postgres import get_postgres_secret
+from applications.argilla.deploy_argilla import get_argilla_secrets
 from pulumi_kubernetes.core.v1 import Namespace
 
 
@@ -96,3 +97,36 @@ def create_slack_secret(
         opts=pulumi.ResourceOptions(provider=k8s_provider, depends_on=depends_on),
     )
     return slack_secret
+
+
+def create_argilla_secret(
+    namespace: Namespace,
+    argilla_access_key_identifier: str,
+    argilla_secret_key_identifier: str,
+    argilla_api_key_identifier: str,
+    k8s_provider: k8s.Provider,
+    project_id: str,
+    depends_on: list = None,
+    environment_slug: str = "dev",
+):
+    argilla_access_key, argilla_secret_key, argilla_api_key = get_argilla_secrets(
+        access_key_identifier=argilla_access_key_identifier,
+        secret_identifier=argilla_secret_key_identifier,
+        api_key_identifier=argilla_api_key_identifier,
+        project_id=project_id,
+        environment_slug=environment_slug,
+    )
+    argilla_secret = k8s.core.v1.Secret(
+        "argilla-auth-secret",
+        metadata={
+            "name": "argilla-auth-secret",
+            "namespace": namespace.metadata["name"],
+        },
+        string_data={
+            "argilla_username": argilla_access_key,
+            "argilla_password": argilla_secret_key,
+            "argilla_apiKey": argilla_api_key,
+        },
+        opts=pulumi.ResourceOptions(provider=k8s_provider, depends_on=depends_on),
+    )
+    return argilla_secret

@@ -12,6 +12,7 @@ from components.argo import deploy_argo_components
 from components.configuration import deploy_metaflow_config_component
 from components.slack import deploy_slack_secret
 from components.annotator import deploy_argilla_component
+from applications.secret_manager.secrets import create_argilla_secret
 
 
 def load_config():
@@ -36,6 +37,16 @@ metaflow_namespace = deploy_metaflow_namespace(
 slack_secret = deploy_slack_secret(
     k8s_provider=provider,
     namespace=metaflow_namespace,
+    depends_on=[minikube_start, metaflow_namespace],
+)
+
+create_argilla_secret(
+    namespace=metaflow_namespace,
+    argilla_access_key_identifier="argilla_username",
+    argilla_secret_key_identifier="argilla_password",
+    argilla_api_key_identifier="argilla_api_key",
+    k8s_provider=provider,
+    project_id=cfg.infiscal_project_id,
     depends_on=[minikube_start, metaflow_namespace],
 )
 
@@ -115,6 +126,9 @@ deploy_metaflow_config_component(
 argilla_chart = deploy_argilla_component(
     cfg=cfg,
     k8s_provider=provider,
+    argilla_access_key_identifier="argilla_username",
+    argilla_secret_key_identifier="argilla_password",
+    argilla_api_key_identifier="argilla_api_key",
     depends_on=[
         minikube_start,
         metaflow_namespace,

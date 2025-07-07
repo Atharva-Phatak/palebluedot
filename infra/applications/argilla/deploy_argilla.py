@@ -2,14 +2,44 @@ import pulumi
 import pulumi_kubernetes as k8s
 from pulumi_kubernetes.core.v1 import Namespace
 from pulumi_kubernetes.helm.v3 import Chart, LocalChartOpts
-
+from applications.secret_manager.utils import get_infiscal_sdk
 
 import os
 import subprocess
 from pathlib import Path
 
 
-
+def get_argilla_secrets(
+    access_key_identifier: str,
+    secret_identifier: str,
+    api_key_identifier: str,
+    project_id: str,
+    environment_slug: str = "dev",
+):
+    client = get_infiscal_sdk()
+    argilla_username = client.secrets.get_secret_by_name(
+        secret_name=access_key_identifier,
+        project_id=project_id,
+        environment_slug=environment_slug,
+        secret_path="/",
+    )
+    argilla_password = client.secrets.get_secret_by_name(
+        secret_name=secret_identifier,
+        project_id=project_id,
+        environment_slug=environment_slug,
+        secret_path="/",
+    )
+    argilla_api_key = client.secrets.get_secret_by_name(
+        secret_name=api_key_identifier,
+        project_id=project_id,
+        environment_slug=environment_slug,
+        secret_path="/",
+    )
+    return (
+        argilla_username.secretValue,
+        argilla_password.secretValue,
+        argilla_api_key.secretValue,
+    )
 
 
 def get_argilla_chart_path(version: str = "v2.8.0") -> Path:
@@ -98,10 +128,23 @@ def deploy_argilla(
     mount_path: str,
     k8s_provider: k8s.Provider,
     namespace: Namespace,
+    argilla_access_key_identifier: str,
+    argilla_secret_identifier: str,
+    argilla_api_key_identifier: str,
+    project_id: str,
+    environment_slug: str = "dev",
     depends_on: list = None,
 ):
 
     chart_path = get_argilla_chart_path()
+
+    argilla_access_key, argilla_secret_key, argilla_api_key = get_argilla_secrets(
+        access_key_identifier=argilla_access_key_identifier,
+        secret_identifier=argilla_secret_identifier,
+        api_key_identifier=argilla_api_key_identifier,
+        project_id=project_id,
+        environment_slug=environment_slug,
+    )
 
     # Deploy Argilla Helm chart
     argilla_chart = Chart(
@@ -113,10 +156,11 @@ def deploy_argilla(
                 "argilla": {
                     "authSecretKey": "argilla-auth-secret",
                     "auth": {
-                        "username": "admin",
-                        "password": "admin1234",
+                        "username": argilla_access_key,
+                        "password": argilla_secret_key,
+                        "apiKey": argilla_api_key,
                     },
-                    "persistence": {"mountPath": mount_path, "size": "6Gi"},
+                    "persistence": {"mountPath": mount_path, "size": "10Gi"},
                     "ingress": {
                         "host": "argilla.palebluedot.io",
                         "annotations": {
