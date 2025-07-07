@@ -18,7 +18,6 @@ permissions:
   id-token: write
 jobs:
   detect-changes:
-    timeout-minutes: 5  # ⏰ Safe timeout to prevent hanging
     runs-on: pbd-runner-scale-set # ✅ ARC runner
     outputs:
       changed_folders: ${{ steps.filter.outputs.folders }}
