@@ -35,6 +35,7 @@ class OCRPipelineConfig(pydantic.BaseModel):
     post_processing_params: PostProcessingParams
     post_processing_batch_size: int
     filename: str
+    extracted_zip_path: str
     bucket: str
     run_test: bool = False
 
