@@ -1,6 +1,5 @@
 from vllm import LLM, SamplingParams
 from PIL import Image
-import json5
 import re
 from pathlib import Path
 
@@ -49,12 +48,10 @@ def simple_inference(
         print(f"Processed batch {indx // batch_size}")
         for img_path, output in zip(batch, outputs):
             page_no = extract_page_number(img_path)
-            op = json5.loads(output.outputs[0].text)
-            if "natural_text" in op:
-                generated_texts.append(
-                    {
-                        "page": page_no,
-                        "content": op["natural_text"],
-                    }
-                )
+            generated_texts.append(
+                {
+                    "page": page_no,
+                    "content": output.outputs[0].text,
+                }
+            )
     return generated_texts
