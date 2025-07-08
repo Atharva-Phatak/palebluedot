@@ -181,5 +181,6 @@ def ocr_images(
             bucket_name=bucket,
             minio_endpoint=endpoint,
             filename=filename,
+            path=ocr_path,
         )
         return outputs

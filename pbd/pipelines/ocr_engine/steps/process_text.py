@@ -34,7 +34,7 @@ from vllm import LLM, SamplingParams
 
 from pbd.pipelines.ocr_engine.steps.prompt import generate_post_processing_prompt
 from pbd.pipelines.ocr_engine.steps.upload_data import store_extracted_texts_to_minio
-
+from pbd.helper.s3_paths import formatted_results_path
 
 def load_model_and_tokenizer(model_path: str):
     tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -91,11 +91,12 @@ def extract_problem_solution(
             results.append(
                 {"content": content, "generated": output.outputs[0].text, "page": page}
             )
-
-    print(f"Completed inference in {time.time() - start:.2f} seconds.")
+    path = formatted_results_path(filename)
+    print(f"Completed inference in {time.time() - start:.2f} seconds. Storing results to MinIO at {path}")
     store_extracted_texts_to_minio(
         dataset=results,
         bucket_name=bucket_name,
         minio_endpoint=minio_endpoint,
         filename=filename,
+        path = path
     )

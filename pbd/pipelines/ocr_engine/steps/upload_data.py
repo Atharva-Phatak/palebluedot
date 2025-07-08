@@ -21,6 +21,7 @@ def store_extracted_texts_to_minio(
     bucket_name: str,
     minio_endpoint: str,
     filename: str,
+    path: str,
     secure=False,
 ):
     """
@@ -70,12 +71,10 @@ def store_extracted_texts_to_minio(
         if not minio_client.bucket_exists(bucket_name):
             minio_client.make_bucket(bucket_name)
 
-        # Upload the file
-        object_name = f"ocr_results/{parquet_filename}"
         try:
             minio_client.fput_object(
                 bucket_name=bucket_name,
-                object_name=object_name,
+                object_name=path,
                 file_path=parquet_path,
                 content_type="application/octet-stream",
             )

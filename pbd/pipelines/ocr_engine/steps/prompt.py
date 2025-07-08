@@ -56,6 +56,7 @@ def get_ocr_prompt():
 
 def generate_post_processing_prompt(input: str):
     return f"""
+        <|im_start|>user
         You are a text extraction and formatting tool. Your ONLY job is to find existing solved problems and reformat them.
 
         STRICT RULES:
@@ -117,51 +118,5 @@ def generate_post_processing_prompt(input: str):
         ---
         Input Text:
         \"\"\"{input}\"\"\"
+        <|im_end|><|im_start|>assistant
 """
-
-
-# Code specific to OCRFlux model : https://github.com/chatdoc-com/OCRFlux/blob/main/ocrflux/prompts.py
-
-
-def build_qwen2_5_vl_prompt(question: str) -> str:
-    """Builds a prompt for the Qwen2.5 VL model."""
-    return (
-        "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n"
-        f"<|im_start|>user\n<|vision_start|><|image_pad|><|vision_end|>"
-        f"{question}<|im_end|>\n"
-        "<|im_start|>assistant\n"
-    )
-
-
-def build_element_merge_detect_prompt(
-    text_list_1: list[str], text_list_2: list[str]
-) -> str:
-    task = """Below are two consecutive pages in Markdown format, where each element of them is numbered. Identify pairs of elements which should be merged across the two pages, such as text paragraphs or tables that span across the two pages. Return pairs as [(element_index_of_page1, element_index_of_page2), ...] or [] if no elements should be merged.\n"""
-    task += "Previous page:\n"
-    for i, text in enumerate(text_list_1):
-        task += f"{i}. {text}\n\n"
-    task += "Next page:\n"
-    for i, text in enumerate(text_list_2):
-        task += f"{i}. {text}\n\n"
-    return task
-
-
-def build_html_table_merge_prompt(table1, table2) -> str:
-    return (
-        f"Below are two tables in HTML format, merge them into one table in HTML format.\n"
-        f"TABLE 1:\n"
-        f"{table1}\n"
-        f"TABLE 2:\n"
-        f"{table2}\n"
-    )
-
-
-def build_page_to_markdown_prompt() -> str:
-    return (
-        "Below is the image of one page of a document. "
-        "Just return the plain text representation of this document as if you were reading it naturally.\n"
-        "ALL tables should be presented in HTML format.\n"
-        'If there are images or figures in the page, present them as "<Image>(left,top),(right,bottom)</Image>", (left,top,right,bottom) are the coordinates of the top-left and bottom-right corners of the image or figure.\n'
-        "Present all titles and headings as H1 headings.\n"
-        "Do not hallucinate.\n"
-    )

@@ -16,3 +16,6 @@ def minio_zip_path(filename: str):
 
 def ocr_results_path(filename: str):
     return f"ocr_results/{filename}.parquet"
+
+def formatted_results_path(filename: str):
+    return f"formatted_results/{filename}.parquet"
