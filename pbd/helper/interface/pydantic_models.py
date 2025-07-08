@@ -44,11 +44,13 @@ class OCRPipelineConfig(pydantic.BaseModel):
 @dataclass(frozen=True)
 class PageResponse:
     primary_language: Optional[str]
-    is_rotation_valid: bool
-    rotation_correction: int
-    is_table: bool
-    is_diagram: bool
+    is_rotation_valid: Optional[bool]
+    rotation_correction: Optional[int]
+    is_table: Optional[bool]
+    is_diagram: Optional[bool]
     natural_text: Optional[str]
+
+    model_config = pydantic.ConfigDict(extra="allow")
 
     def __post_init__(self):
         # Validate rotation_correction is one of the allowed values
