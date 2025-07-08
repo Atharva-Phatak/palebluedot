@@ -4,7 +4,7 @@
   "bucket" : "data-bucket",
   "local_path" : "/tmp/images.zip",
   "extract_to" : "/tmp/images",
-  "ocr_model_path" : "/models/Nanonets-OCR-s",
+  "ocr_model_path" : "/models/OCRFlux-3B",
   "ocr_params" : {
     "max_tokens" : 80000
   },

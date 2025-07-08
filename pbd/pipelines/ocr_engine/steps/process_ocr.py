@@ -1,7 +1,6 @@
 from vllm import LLM, SamplingParams
 from PIL import Image
 import json5
-from pbd.helper.interface.pydantic_models import PageResponse
 import re
 from pathlib import Path
 
@@ -51,11 +50,11 @@ def simple_inference(
         for img_path, output in zip(batch, outputs):
             page_no = extract_page_number(img_path)
             op = json5.loads(output.outputs[0].text)
-            op = PageResponse(**op)
-            generated_texts.append(
-                {
-                    "page": page_no,
-                    "content": op.natural_text,
-                }
-            )
+            if "natural_text" in op:
+                generated_texts.append(
+                    {
+                        "page": page_no,
+                        "content": op["natural_text"],
+                    }
+                )
     return generated_texts
