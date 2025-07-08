@@ -12,6 +12,7 @@ from components.argo import deploy_argo_components
 from components.configuration import deploy_metaflow_config_component
 from components.slack import deploy_slack_secret
 from components.annotator import deploy_argilla_component
+from components.models_pvc import deploy_models_pvc
 from applications.secret_manager.secrets import create_argilla_secret
 
 
@@ -37,6 +38,14 @@ metaflow_namespace = deploy_metaflow_namespace(
 slack_secret = deploy_slack_secret(
     k8s_provider=provider,
     namespace=metaflow_namespace,
+    depends_on=[minikube_start, metaflow_namespace],
+)
+
+# Deploy models PVC
+deploy_models_pvc(
+    cfg=cfg,
+    namespace=metaflow_namespace,
+    k8s_provider=provider,
     depends_on=[minikube_start, metaflow_namespace],
 )
 

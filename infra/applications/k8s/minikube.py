@@ -1,7 +1,6 @@
 import pulumi
 import pulumi_command as command
 
-
 def start_minikube(
     n_cpus: str,
     memory: str,
