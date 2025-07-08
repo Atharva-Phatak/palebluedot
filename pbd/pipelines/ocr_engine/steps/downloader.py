@@ -1,5 +1,4 @@
-(
-    """
+"""
 ================================================================================
 Downloader and Extraction Utilities for OCR Engine
 ================================================================================
@@ -95,8 +94,6 @@ Exceptions
 - ValueError: Raised by download_from_minio if required environment variables
               for MinIO credentials are missing.
 
-"""
-    """
 Downloader and Extraction Utilities for OCR Engine
 
 This module provides functions for downloading files from MinIO object storage and extracting images from zip archives.
@@ -109,7 +106,7 @@ Functions:
     extract_zip(zip_path, extract_to):
         Extracts image files from a zip archive to a target directory.
 """
-)
+
 
 import os
 from pathlib import Path

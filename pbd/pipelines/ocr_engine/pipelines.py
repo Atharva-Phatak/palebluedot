@@ -1,5 +1,5 @@
-(
-    """
+
+"""
 ocr_pipeline.py
 
 This module defines the OCRFlow Metaflow pipeline for performing Optical Character Recognition (OCR) on images using a multimodal Large Language Model (LLM). The pipeline is designed to automate the process of extracting text from images, post-processing the extracted text, and notifying users upon completion.
@@ -37,14 +37,11 @@ Notes:
 - Ensure that the MinIO and model paths are accessible from the execution environment.
 - For detailed documentation on each step, refer to the respective modules in `pbd.pipelines.ocr_engine.steps`.
 
-"""
-    """
 OCR Pipeline converted to Metaflow
 
 This module provides a Metaflow pipeline for performing OCR on images using a multimodal LLM.
 It includes steps for downloading, extracting, OCR processing, and post-processing text.
 """
-)
 
 import os
 
@@ -61,11 +58,11 @@ from slack_sdk.errors import SlackApiError
 from pbd.helper.s3_paths import ocr_engine_config_path
 from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
 from pbd.pipelines.ocr_engine.steps.process_text import extract_problem_solution
-from pbd.pipelines.ocr_engine.steps.prompt import ocr_prompt
 from minio import Minio
 import json
 from pbd.helper.interface.pydantic_models import OCRPipelineConfig
 from pbd.helper.profilers.gpu import gpu_profile
+from pbd.helper.s3_paths import minio_zip_path
 
 IMAGE_NAME = "ghcr.io/atharva-phatak/pbd-ocr_engine:latest"
 
@@ -76,7 +73,7 @@ class OCRFlow(FlowSpec):
     Metaflow pipeline for OCR processing of images from zip files
     """
 
-    def _read_config(self, bucket_name: str, config_uri: str):
+    def _read_config(self, bucket_name: str, config_uri: str) -> OCRPipelineConfig:
         print("Starting OCR pipeline")
         self.access_key = os.environ.get("AWS_ACCESS_KEY_ID")
         self.secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
@@ -96,8 +93,16 @@ class OCRFlow(FlowSpec):
             if "bucket" not in config_data:
                 config_data["bucket"] = bucket_name
             if "filename" not in config_data:
-                config_data["filename"] = current.trigger.run.data.filename
-            self.config: OCRPipelineConfig = OCRPipelineConfig(**config_data)
+                filename = current.trigger.run.data.filename.split("/")[-1].split(
+                    ".pdf"
+                )[0]
+                config_data["filename"] = filename
+                print(f"Filename not found in config, using: {filename}")
+            if "extracted_zip_path" not in config_data:
+                config_data["extracted_zip_path"] = minio_zip_path(
+                    filename=config_data["filename"]
+                )
+            return OCRPipelineConfig(**config_data)
         except Exception as e:
             raise ValueError(f"Failed to read configuration from MinIO: {e}")
 
@@ -114,12 +119,13 @@ class OCRFlow(FlowSpec):
         """
 
         self.bucket_name: str = current.trigger.run.data.bucket_name
-        self.filename: str = current.trigger.run.data.filename
         self.config = self._read_config(
             bucket_name=self.bucket_name,
             config_uri=ocr_engine_config_path(),
         )
-        print(f"Received filename: {self.filename} with bucket: {self.bucket_name}")
+        print(
+            f"Received filename: {self.config.filename} with bucket: {self.bucket_name}"
+        )
 
         self.next(self.process_ocr)
 
@@ -143,13 +149,12 @@ class OCRFlow(FlowSpec):
         self.ocr_texts = ocr_images(
             endpoint=self.config.minio_endpoint,
             bucket=self.config.bucket,
-            object_key=f"{self.image_path}/{self.filename}.zip",
+            minio_zip_path=self.config.extracted_zip_path,
             local_path=self.config.local_path,
             model_path=self.config.ocr_model_path,
             extract_to=self.config.extract_to,
             max_new_tokens=self.config.ocr_params.max_tokens,
             batch_size=self.config.ocr_model_batch_size,
-            prompt=ocr_prompt,
             run_test=self.config.run_test,
             filename=self.config.filename,
         )

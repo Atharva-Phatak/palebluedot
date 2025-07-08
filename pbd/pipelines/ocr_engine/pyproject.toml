@@ -9,6 +9,7 @@ dependencies = [
     "bitsandbytes>=0.46.0",
     "boto3>=1.38.27",
     "datasets>=3.6.0",
+    "json5>=0.12.0",
     "kubernetes>=32.0.1",
     "matplotlib>=3.10.3",
     "metaflow>=2.15.18",

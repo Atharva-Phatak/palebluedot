@@ -36,7 +36,6 @@ Functions:
 import re
 import time
 from dataclasses import asdict
-from pathlib import Path
 
 import torch
 import vllm
@@ -47,12 +46,9 @@ from pbd.pipelines.ocr_engine.steps.downloader import (
     extract_zip,
 )
 from pbd.pipelines.ocr_engine.steps.upload_data import store_extracted_texts_to_minio
-from pbd.pipelines.ocr_engine.steps.post_process_ocr import process_responses
-from pbd.pipelines.ocr_engine.steps.prompt import (
-    build_page_to_markdown_prompt,
-    build_qwen2_5_vl_prompt,
-)
-
+from pbd.pipelines.ocr_engine.steps.process_ocr import simple_inference
+from pbd.pipelines.ocr_engine.steps.prompt import get_ocr_prompt
+from pbd.helper.s3_paths import ocr_results_path
 
 def sort_pages_by_number(pages: list[str]) -> list[str]:
     """
@@ -72,32 +68,13 @@ def sort_pages_by_number(pages: list[str]) -> list[str]:
     return sorted(pages, key=extract_number)
 
 
-def extract_page_number(filename: str) -> int:
-    """
-    Extracts the numeric page number from a filename like 'page_23.jpg'.
-
-    Args:
-        filename (str): The filename or path containing the page number.
-
-    Returns:
-        int: The extracted page number.
-
-    Raises:
-        ValueError: If the filename does not match the expected format.
-    """
-    match = re.search(r"page_(\d+)", Path(filename).stem)
-    if match:
-        return int(match.group(1))
-    raise ValueError(f"Invalid filename format for page number: {filename}")
-
-
 def do_inference(
     image_paths: list[str],
     model_path: str,
     max_new_tokens: int,
     batch_size: int,
-    max_model_len: int = 8192,
-) -> dict:
+    max_model_len: int = 100000,
+) -> list[dict]:
     """
     Runs OCR inference on a list of images using a multimodal LLM, batching requests for efficiency.
 
@@ -106,7 +83,7 @@ def do_inference(
         model_path (str): Path to the pretrained multimodal LLM model.
         max_new_tokens (int): Maximum number of tokens to generate per output.
         batch_size (int): Number of images to process per batch.
-        prompt (str): The prompt to use for the OCR model.
+        max_model_len (int, optional): Maximum model length for the LLM. Defaults to 100000.
 
     Returns:
         list[dict]: List of dictionaries with 'page' and 'content' keys for each image.
@@ -117,20 +94,20 @@ def do_inference(
     print(f"Using vllm version {vllm.__version__}")
     engine_args = vllm.EngineArgs(
         model=model_path,
-        max_num_seqs=10,
+        max_num_seqs=batch_size,
         max_model_len=max_model_len,
-        limit_mm_per_prompt={"image": 10, "video": 0},
+        limit_mm_per_prompt={"image": batch_size, "video": 0},
         mm_processor_kwargs={"min_pixels": 28 * 28, "max_pixels": 1280 * 80 * 80},
     )
     model = vllm.LLM(**asdict(engine_args))
-    prompt = build_qwen2_5_vl_prompt(build_page_to_markdown_prompt())
-    response = process_responses(
+    sampling_params = vllm.SamplingParams(max_tokens=max_new_tokens)
+    prompt = get_ocr_prompt()
+    response = simple_inference(
         model=model,
         image_paths=image_paths,
         prompt=prompt,
         batch_size=batch_size,
-        max_new_tokens=max_new_tokens,
-        max_model_len=max_model_len,
+        sampling_params=sampling_params,
     )
     start = time.time()
     total_time = (time.time() - start) // 60
@@ -141,12 +118,11 @@ def do_inference(
 def ocr_images(
     endpoint: str,
     bucket: str,
-    object_key: str,
+    minio_zip_path: str,
     local_path: str,
     model_path: str,
     extract_to: str,
     max_new_tokens: int,
-    prompt: str,
     run_test: bool,
     filename: str,
     batch_size: int = 5,
@@ -158,21 +134,23 @@ def ocr_images(
     Args:
         endpoint (str): MinIO endpoint URL.
         bucket (str): MinIO bucket name.
-        object_key (str): Object key for the zip file in MinIO.
+        minio_zip_path (str): Object key for the zip file in MinIO.
         local_path (str): Local path to save the downloaded zip file.
         model_path (str): Path to the pretrained multimodal LLM model.
         extract_to (str): Directory to extract images to.
         max_new_tokens (int): Maximum number of tokens to generate per output.
         batch_size (int, optional): Number of images to process per batch. Defaults to 5.
-        prompt (str): The prompt to use for the OCR model.
+        run_test (bool): If True, runs a test with a smaller batch of images.
+        filename (str): Name of the file to store OCR results in MinIO.
 
     Returns:
         Dataset: Hugging Face Dataset containing OCR results for each image.
     """
+    ocr_path = ocr_results_path(filename = filename)
     data = read_parquet_if_exists(
         endpoint=endpoint,
         bucket_name=bucket,
-        object_path=f"ocr_results/{filename}.parquet",
+        object_path=ocr_path,
     )
     if data:
         print("Data already exists in MinIO. Returning existing data.")
@@ -181,7 +159,7 @@ def ocr_images(
         zip_path = download_from_minio(
             endpoint=endpoint,
             bucket=bucket,
-            object_key=object_key,
+            object_key=minio_zip_path,
             local_path=local_path,
         )
         image_paths = extract_zip(zip_path=zip_path, extract_to=extract_to)
@@ -197,7 +175,6 @@ def ocr_images(
             model_path=model_path,
             max_new_tokens=max_new_tokens,
             batch_size=batch_size,
-            prompt=prompt,
         )
         store_extracted_texts_to_minio(
             dataset=outputs,
