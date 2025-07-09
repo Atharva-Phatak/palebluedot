@@ -50,6 +50,7 @@ from pbd.pipelines.ocr_engine.steps.process_ocr import simple_inference
 from pbd.pipelines.ocr_engine.steps.prompt import get_ocr_prompt
 from pbd.helper.s3_paths import ocr_results_path
 
+
 def sort_pages_by_number(pages: list[str]) -> list[str]:
     """
     Sorts a list of image filenames by their embedded page numbers.
@@ -102,6 +103,7 @@ def do_inference(
     model = vllm.LLM(**asdict(engine_args))
     sampling_params = vllm.SamplingParams(max_tokens=max_new_tokens)
     prompt = get_ocr_prompt()
+    start = time.time()
     response = simple_inference(
         model=model,
         image_paths=image_paths,
@@ -109,7 +111,6 @@ def do_inference(
         batch_size=batch_size,
         sampling_params=sampling_params,
     )
-    start = time.time()
     total_time = (time.time() - start) // 60
     print(f"Total inference time: {total_time} minutes for {len(image_paths)} images")
     return response
@@ -146,7 +147,7 @@ def ocr_images(
     Returns:
         Dataset: Hugging Face Dataset containing OCR results for each image.
     """
-    ocr_path = ocr_results_path(filename = filename)
+    ocr_path = ocr_results_path(filename=filename)
     data = read_parquet_if_exists(
         endpoint=endpoint,
         bucket_name=bucket,

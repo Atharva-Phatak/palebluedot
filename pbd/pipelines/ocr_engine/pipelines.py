@@ -1,4 +1,3 @@
-
 """
 ocr_pipeline.py
 
@@ -52,6 +51,7 @@ from metaflow import (
     step,
     trigger_on_finish,
     current,
+    card,
 )
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
@@ -61,7 +61,6 @@ from pbd.pipelines.ocr_engine.steps.process_text import extract_problem_solution
 from minio import Minio
 import json
 from pbd.helper.interface.pydantic_models import OCRPipelineConfig
-from pbd.helper.profilers.gpu import gpu_profile
 from pbd.helper.s3_paths import minio_zip_path
 
 IMAGE_NAME = "ghcr.io/atharva-phatak/pbd-ocr_engine:latest"
@@ -140,7 +139,7 @@ class OCRFlow(FlowSpec):
         secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
     )
     @environment(vars={"CUDA_VISIBLE_DEVICES": "0"})
-    @gpu_profile(interval=60)
+    @card
     @step
     def process_ocr(self):
         """
@@ -158,7 +157,7 @@ class OCRFlow(FlowSpec):
             run_test=self.config.run_test,
             filename=self.config.filename,
         )
-        print(f"OCR processing completed for {self.filename}")
+        print(f"OCR processing completed for {self.config.filename}")
         self.next(self.post_process)
 
     @kubernetes(
@@ -172,7 +171,7 @@ class OCRFlow(FlowSpec):
         secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
     )
     @environment(vars={"CUDA_VISIBLE_DEVICES": "0"})
-    @gpu_profile(interval=60)
+    @card
     @step
     def post_process(self):
         """
@@ -189,7 +188,7 @@ class OCRFlow(FlowSpec):
             filename=self.config.filename,
             minio_endpoint=self.config.minio_endpoint,
         )
-        print(f"Post-processing completed for {self.filename}")
+        print(f"Post-processing completed for {self.config.filename}")
         self.next(self.end)
 
     @kubernetes(
