@@ -37,9 +37,9 @@ from pbd.pipelines.ocr_engine.steps.upload_data import store_extracted_texts_to_
 from pbd.helper.s3_paths import formatted_results_path
 
 
-def load_model_and_tokenizer(model_path: str):
+def load_model_and_tokenizer(model_path: str, batch_size: int = 20):
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    vllm_model = LLM(model=model_path, max_num_seqs=20)
+    vllm_model = LLM(model=model_path, max_num_seqs=batch_size, max_model_len=80000)
     return tokenizer, vllm_model
 
 
@@ -56,7 +56,9 @@ def extract_problem_solution(
     if torch.cuda.is_available():
         print("Emptying cuda cache before starting new step.")
         torch.cuda.empty_cache()
-    tokenizer, model = load_model_and_tokenizer(model_path)
+    tokenizer, model = load_model_and_tokenizer(
+        model_path=model_path, batch_size=batch_size
+    )
     params = SamplingParams(**sampling_params)
 
     results = []
@@ -79,12 +81,15 @@ def extract_problem_solution(
             )
             prompts.append(text)
             contents.append(content)
-            pages.append(example["page"])  # Track original content
+            pages.append(example["page"])
+        current_batch = indx // batch_size + 1
+        print(
+            f"Generated Prompts for batch : {current_batch}"
+        )  # Track original content
         gen_time = time.time()
         outputs = model.generate(
             prompts=prompts, use_tqdm=False, sampling_params=params
         )
-        current_batch = indx // batch_size
         print(
             f"Batch : {current_batch} of {total_batches} | Time : {time.time() - gen_time:.2f} seconds"
         )
