@@ -39,7 +39,7 @@ from pbd.helper.s3_paths import formatted_results_path
 
 def load_model_and_tokenizer(model_path: str):
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    vllm_model = LLM(model=model_path, max_num_seqs=20, max_model_len=80000)
+    vllm_model = LLM(model=model_path, max_num_seqs=20)
     return tokenizer, vllm_model
 
 
