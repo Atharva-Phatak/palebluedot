@@ -2252,6 +2252,7 @@ dependencies = [
     { name = "pillow" },
     { name = "s3fs" },
     { name = "slack-sdk" },
+    { name = "transformers" },
     { name = "vllm" },
 ]
 
@@ -2274,6 +2275,7 @@ requires-dist = [
     { name = "pillow", specifier = ">=11.2.1" },
     { name = "s3fs", specifier = ">=0.4.2" },
     { name = "slack-sdk", specifier = ">=3.35.0" },
+    { name = "transformers", specifier = ">=4.52.4" },
     { name = "vllm", specifier = "==0.9.0.1" },
 ]
 
