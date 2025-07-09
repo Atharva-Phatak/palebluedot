@@ -36,9 +36,10 @@ from pbd.pipelines.ocr_engine.steps.prompt import generate_post_processing_promp
 from pbd.pipelines.ocr_engine.steps.upload_data import store_extracted_texts_to_minio
 from pbd.helper.s3_paths import formatted_results_path
 
+
 def load_model_and_tokenizer(model_path: str):
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    vllm_model = LLM(model=model_path, max_num_seqs=10)
+    vllm_model = LLM(model=model_path, max_num_seqs=20, max_model_len=80000)
     return tokenizer, vllm_model
 
 
@@ -55,7 +56,7 @@ def extract_problem_solution(
     if torch.cuda.is_available():
         print("Emptying cuda cache before starting new step.")
         torch.cuda.empty_cache()
-    tokenizer, vllm_model = load_model_and_tokenizer(model_path)
+    tokenizer, model = load_model_and_tokenizer(model_path)
     params = SamplingParams(**sampling_params)
 
     results = []
@@ -80,7 +81,7 @@ def extract_problem_solution(
             contents.append(content)
             pages.append(example["page"])  # Track original content
         gen_time = time.time()
-        outputs = vllm_model.generate(
+        outputs = model.generate(
             prompts=prompts, use_tqdm=False, sampling_params=params
         )
         current_batch = indx // batch_size
@@ -92,11 +93,13 @@ def extract_problem_solution(
                 {"content": content, "generated": output.outputs[0].text, "page": page}
             )
     path = formatted_results_path(filename)
-    print(f"Completed inference in {time.time() - start:.2f} seconds. Storing results to MinIO at {path}")
+    print(
+        f"Completed inference in {time.time() - start:.2f} seconds. Storing results to MinIO at {path}"
+    )
     store_extracted_texts_to_minio(
         dataset=results,
         bucket_name=bucket_name,
         minio_endpoint=minio_endpoint,
         filename=filename,
-        path = path
+        path=path,
     )
