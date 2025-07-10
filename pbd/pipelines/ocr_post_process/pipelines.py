@@ -112,7 +112,9 @@ class OCRPostProcessFlow(FlowSpec):
         extract_problem_solution(
             data=data,
             model_path=self.config.post_processing_model_path,
-            sampling_params=self.config.post_processing_params.model_dump(),
+            sampling_params=self.config.post_processing_params.model_dump(
+                exclude_none=True
+            ),
             batch_size=self.config.post_processing_batch_size,
             bucket_name=self.config.bucket,
             filename=self.config.filename,
