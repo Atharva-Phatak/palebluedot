@@ -8,5 +8,6 @@
   "ocr_params" : {
     "max_tokens" : 80000
   },
-  "ocr_model_batch_size" : 20
+  "ocr_model_batch_size" : 20,
+  "run_test" : true
 }

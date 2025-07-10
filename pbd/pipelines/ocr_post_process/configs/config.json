@@ -8,5 +8,5 @@
     "max_tokens" : 38912
   },
   "post_processing_batch_size" : 20,
-  "run_test" : "true"
+  "run_test" : true
 }

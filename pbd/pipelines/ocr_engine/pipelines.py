@@ -172,14 +172,12 @@ class OCRFlow(FlowSpec):
         """
         slack_token = os.environ.get("SLACK_TOKEN")
         print("OCR pipeline completed successfully!")
-        print(f"Processed {len(self.ocr_results)} pages")
         print(f"Results stored in MinIO bucket '{self.config.bucket}'")
 
         try:
             client = WebClient(token=slack_token)
             message = f"""
-                    PDF Processing Pipeline Completed!
-                    ✅ Successfully processed: {self.ocr_results} pages."""
+                    PDF Processing Pipeline Completed for {self.config.filename}!"""
 
             _ = client.chat_postMessage(
                 channel="#zenml-pipelines", text=message.strip()

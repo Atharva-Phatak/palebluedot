@@ -86,7 +86,7 @@ class OCRPostProcessFlow(FlowSpec):
             bucket_name=self.bucket_name,
             config_uri=config_uri,
         )
-        self.next(self.process_text)
+        self.next(self.post_process)
 
     @kubernetes(
         image=IMAGE_NAME,
