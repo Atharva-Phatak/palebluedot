@@ -42,7 +42,7 @@ def load_model_and_tokenizer(model_path: str, batch_size: int = 20):
     engine_args = vllm.EngineArgs(
         model=model_path,
         max_num_seqs=batch_size,
-        max_model_len=32758,
+        max_model_len=8192,
         enable_prefix_caching=True,
     )
     model = vllm.LLM(**asdict(engine_args))
