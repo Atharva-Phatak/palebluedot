@@ -56,7 +56,6 @@ def get_ocr_prompt():
 
 def generate_post_processing_prompt(input: str):
     return f"""
-        <|im_start|>user
         You are a text extraction and formatting tool. Your ONLY job is to find existing solved problems and reformat them.
 
         STRICT RULES:
@@ -118,5 +117,4 @@ def generate_post_processing_prompt(input: str):
         ---
         Input Text:
         \"\"\"{input}\"\"\"
-        <|im_end|><|im_start|>assistant
 """

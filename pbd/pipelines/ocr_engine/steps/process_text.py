@@ -30,17 +30,23 @@ import time
 
 import torch
 from transformers import AutoTokenizer
-from vllm import LLM, SamplingParams
-
+import vllm
 from pbd.pipelines.ocr_engine.steps.prompt import generate_post_processing_prompt
 from pbd.pipelines.ocr_engine.steps.upload_data import store_extracted_texts_to_minio
 from pbd.helper.s3_paths import formatted_results_path
+from dataclasses import asdict
 
 
 def load_model_and_tokenizer(model_path: str, batch_size: int = 20):
     tokenizer = AutoTokenizer.from_pretrained(model_path)
-    vllm_model = LLM(model=model_path, max_num_seqs=batch_size, max_model_len=80000)
-    return tokenizer, vllm_model
+    engine_args = vllm.EngineArgs(
+        model=model_path,
+        max_num_seqs=batch_size,
+        max_model_len=32758,
+    )
+    model = vllm.LLM(**asdict(engine_args))
+    print(f"Loaded model from {model_path} with batch size {batch_size}")
+    return tokenizer, model
 
 
 def extract_problem_solution(
@@ -59,29 +65,25 @@ def extract_problem_solution(
     tokenizer, model = load_model_and_tokenizer(
         model_path=model_path, batch_size=batch_size
     )
-    params = SamplingParams(**sampling_params)
+    params = vllm.SamplingParams(**sampling_params)
 
     results = []
     total_batches = len(data) // batch_size
     start = time.time()
     for indx in range(0, len(data), batch_size):
         batch = data[indx : indx + batch_size]
-        prompts = []
-        contents = []
-        pages = []
-        for example in batch:
-            content = example["content"]
-            prompt = generate_post_processing_prompt(content)
-            messages = [{"role": "user", "content": prompt}]
-            text = tokenizer.apply_chat_template(
-                messages,
+        contents = [ex["content"] for ex in batch]
+        pages = [ex["page"] for ex in batch]
+        # Pre-generate prompts in one go
+        prompts = [
+            tokenizer.apply_chat_template(
+                [{"role": "user", "content": generate_post_processing_prompt(content)}],
                 tokenize=False,
                 add_generation_prompt=True,
                 enable_thinking=False,
             )
-            prompts.append(text)
-            contents.append(content)
-            pages.append(example["page"])
+            for content in contents
+        ]
         current_batch = indx // batch_size + 1
         print(
             f"Generated Prompts for batch : {current_batch}"
