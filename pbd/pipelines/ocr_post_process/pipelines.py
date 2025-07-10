@@ -1,4 +1,11 @@
-from metaflow import FlowSpec, step, trigger_on_finish, current, environment, kubernetes
+from metaflow import (
+    FlowSpec,
+    environment,
+    kubernetes,
+    step,
+    trigger_on_finish,
+    current,
+)
 from pbd.helper.profilers.gpu import gpu_profile
 import os
 from minio import Minio
@@ -141,3 +148,6 @@ class OCRPostProcessFlow(FlowSpec):
             print(f"Error sending Slack message: {e}")
         except Exception as e:
             print(f"Unexpected error sending Slack notification: {e}")
+
+if __name__ == "__main__":
+    OCRPostProcessFlow()
