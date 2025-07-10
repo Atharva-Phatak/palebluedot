@@ -1,4 +1,5 @@
 import pydantic
+from typing import Optional
 
 
 class DataProcessingPipelineConfig(pydantic.BaseModel):
@@ -17,8 +18,8 @@ class OCRModelParams(pydantic.BaseModel):
 class PostProcessingParams(pydantic.BaseModel):
     temperature: float
     top_p: float
-    top_k: int
     max_tokens: int
+    top_k: Optional[int] = None
 
 
 class OCRPipelineConfig(pydantic.BaseModel):
