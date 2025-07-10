@@ -42,10 +42,10 @@ import vllm
 
 from pbd.helper.file_upload import read_parquet_if_exists
 from pbd.pipelines.ocr_engine.steps.downloader import (
-    download_from_minio,
     extract_zip,
 )
-from pbd.pipelines.ocr_engine.steps.upload_data import store_extracted_texts_to_minio
+from pbd.helper.file_download import download_from_minio
+from pbd.helper.file_upload import store_extracted_texts_to_minio
 from pbd.pipelines.ocr_engine.steps.process_ocr import simple_inference
 from pbd.pipelines.ocr_engine.steps.prompt import get_ocr_prompt
 from pbd.helper.s3_paths import ocr_results_path

@@ -52,12 +52,10 @@ from metaflow import (
     trigger_on_finish,
     current,
 )
-import time
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
 from pbd.helper.s3_paths import ocr_engine_config_path
 from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
-from pbd.pipelines.ocr_engine.steps.process_text import extract_problem_solution
 from minio import Minio
 import json
 from pbd.helper.interface.pydantic_models import OCRPipelineConfig
@@ -146,7 +144,7 @@ class OCRFlow(FlowSpec):
         """
         Perform OCR inference on extracted images
         """
-        self.ocr_texts = ocr_images(
+        _ = ocr_images(
             endpoint=self.config.minio_endpoint,
             bucket=self.config.bucket,
             minio_zip_path=self.config.extracted_zip_path,
@@ -159,39 +157,6 @@ class OCRFlow(FlowSpec):
             filename=self.config.filename,
         )
         print(f"OCR processing completed for {self.config.filename}")
-        self.next(self.post_process)
-
-    @kubernetes(
-        image=IMAGE_NAME,
-        cpu=4,
-        memory=10000,
-        gpu=1,
-        persistent_volume_claims={"mk-model-pvc": "/models"},
-        shared_memory=2048,
-        labels={"app": "ocr_pipeline", "component": "post_process_ocr"},
-        secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
-    )
-    @environment(vars={"CUDA_VISIBLE_DEVICES": "0"})
-    @gpu_profile(interval=60, include_artifacts=False)
-    @step
-    def post_process(self):
-        """
-        Post-process OCR results to extract problem-solution pairs
-        """
-        print("Starting post-processing step")
-        start = time.time()
-        extract_problem_solution(
-            data=self.ocr_texts,
-            model_path=self.config.post_processing_model_path,
-            sampling_params=self.config.post_processing_params.model_dump(),
-            batch_size=self.config.post_processing_batch_size,
-            bucket_name=self.config.bucket,
-            filename=self.config.filename,
-            minio_endpoint=self.config.minio_endpoint,
-        )
-        print(
-            f"Post-processing completed for {self.config.filename} in {time.time() - start:.2f} seconds"
-        )
         self.next(self.end)
 
     @kubernetes(

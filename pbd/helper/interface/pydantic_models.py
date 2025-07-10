@@ -1,5 +1,4 @@
 import pydantic
-from typing import Optional
 
 
 class DataProcessingPipelineConfig(pydantic.BaseModel):
@@ -30,22 +29,18 @@ class OCRPipelineConfig(pydantic.BaseModel):
     ocr_model_path: str
     ocr_params: OCRModelParams
     ocr_model_batch_size: int
-    post_processing_model_path: str
-    post_processing_params: PostProcessingParams
-    post_processing_batch_size: int
+
     filename: str
     extracted_zip_path: str
     bucket: str
     run_test: bool = False
 
 
-# OCR flux specific models
-class PageResponse(pydantic.BaseModel):
-    primary_language: Optional[str]
-    is_rotation_valid: Optional[bool]
-    rotation_correction: Optional[int]
-    is_table: Optional[bool]
-    is_diagram: Optional[bool]
-    natural_text: Optional[str]
-
-    model_config = pydantic.ConfigDict(extra="allow")
+class OCRPostProcessPipelineConfig(pydantic.BaseModel):
+    minio_endpoint: str
+    filename: str
+    bucket: str
+    post_processing_model_path: str
+    post_processing_params: PostProcessingParams
+    post_processing_batch_size: int
+    run_test: bool = False

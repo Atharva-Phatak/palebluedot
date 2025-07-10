@@ -31,10 +31,10 @@ import time
 import torch
 from transformers import AutoTokenizer
 import vllm
-from pbd.pipelines.ocr_engine.steps.prompt import generate_post_processing_prompt
-from pbd.pipelines.ocr_engine.steps.upload_data import store_extracted_texts_to_minio
+from pbd.pipelines.ocr_post_process.steps.prompt import generate_post_processing_prompt
 from pbd.helper.s3_paths import formatted_results_path
 from dataclasses import asdict
+from pbd.helper.file_upload import store_extracted_texts_to_minio
 
 
 def load_model_and_tokenizer(model_path: str, batch_size: int = 20):
@@ -70,6 +70,9 @@ def extract_problem_solution(
     results = []
     total_batches = len(data) // batch_size
     start = time.time()
+    print(
+        f"Starting inference with {len(data)} examples in batches of {batch_size}. Total batches: {total_batches}"
+    )
     for indx in range(0, len(data), batch_size):
         batch = data[indx : indx + batch_size]
         contents = [ex["content"] for ex in batch]
