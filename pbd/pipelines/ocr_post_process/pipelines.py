@@ -50,7 +50,7 @@ class OCRPostProcessFlow(FlowSpec):
             if "bucket" not in config_data:
                 config_data["bucket"] = bucket_name
             if "filename" not in config_data:
-                config_data["filename"] = current.trigger.run.data.filename
+                config_data["filename"] = current.trigger.run.data.config.filename
             return OCRPostProcessPipelineConfig(**config_data)
         except Exception as e:
             raise ValueError(f"Failed to read configuration from MinIO: {e}")
@@ -148,6 +148,7 @@ class OCRPostProcessFlow(FlowSpec):
             print(f"Error sending Slack message: {e}")
         except Exception as e:
             print(f"Unexpected error sending Slack notification: {e}")
+
 
 if __name__ == "__main__":
     OCRPostProcessFlow()

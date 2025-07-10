@@ -43,6 +43,7 @@ def load_model_and_tokenizer(model_path: str, batch_size: int = 20):
         model=model_path,
         max_num_seqs=batch_size,
         max_model_len=32758,
+        enable_prefix_caching=True,
     )
     model = vllm.LLM(**asdict(engine_args))
     print(f"Loaded model from {model_path} with batch size {batch_size}")
