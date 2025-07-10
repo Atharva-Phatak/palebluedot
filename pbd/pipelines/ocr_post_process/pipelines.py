@@ -15,7 +15,7 @@ from slack_sdk.errors import SlackApiError
 IMAGE_NAME = "ghcr.io/atharva-phatak/pbd-ocr_post_process:latest"
 
 
-@trigger_on_finish(flow="PDFToImageFlow")
+@trigger_on_finish(flow="OCRFlow")
 class OCRPostProcessFlow(FlowSpec):
     """
     Metaflow pipeline for post-processing OCR results.
