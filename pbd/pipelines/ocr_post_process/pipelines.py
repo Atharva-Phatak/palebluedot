@@ -107,8 +107,10 @@ class OCRPostProcessFlow(FlowSpec):
         """
         print("Starting post-processing step")
         start = time.time()
+        data = self._load_data()
+        print(f"Loaded {len(data)} records for post-processing from MinIO")
         extract_problem_solution(
-            data=self.ocr_texts,
+            data=data,
             model_path=self.config.post_processing_model_path,
             sampling_params=self.config.post_processing_params.model_dump(),
             batch_size=self.config.post_processing_batch_size,
