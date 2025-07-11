@@ -37,12 +37,12 @@ from dataclasses import asdict
 from pbd.helper.file_upload import store_extracted_texts_to_minio
 
 
-def load_model_and_tokenizer(model_path: str, batch_size: int = 20):
+def load_model_and_tokenizer(model_path: str, max_model_len: int, batch_size: int):
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     engine_args = vllm.EngineArgs(
         model=model_path,
         max_num_seqs=batch_size,
-        max_model_len=8192,
+        max_model_len=max_model_len,
         enable_prefix_caching=True,
     )
     model = vllm.LLM(**asdict(engine_args))
@@ -51,6 +51,7 @@ def load_model_and_tokenizer(model_path: str, batch_size: int = 20):
 
 
 def extract_problem_solution(
+    max_model_len: int,
     data: list[dict],
     model_path: str,
     sampling_params: dict,
@@ -64,7 +65,7 @@ def extract_problem_solution(
         print("Emptying cuda cache before starting new step.")
         torch.cuda.empty_cache()
     tokenizer, model = load_model_and_tokenizer(
-        model_path=model_path, batch_size=batch_size
+        max_model_len=max_model_len, model_path=model_path, batch_size=batch_size
     )
     params = vllm.SamplingParams(**sampling_params)
 
@@ -77,17 +78,20 @@ def extract_problem_solution(
     for indx in range(0, len(data), batch_size):
         batch = data[indx : indx + batch_size]
         contents = [ex["content"] for ex in batch]
-        pages = [ex["page"] for ex in batch]
+        concat_contents = "\n\n".join(contents)
         # Pre-generate prompts in one go
-        prompts = [
-            tokenizer.apply_chat_template(
-                [{"role": "user", "content": generate_post_processing_prompt(content)}],
-                tokenize=False,
-                add_generation_prompt=True,
-                enable_thinking=False,
-            )
-            for content in contents
-        ]
+        prompts = tokenizer.apply_chat_template(
+            [
+                {
+                    "role": "user",
+                    "content": generate_post_processing_prompt(concat_contents),
+                }
+            ],
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=False,
+        )
+
         current_batch = indx // batch_size + 1
         print(
             f"Generated Prompts for batch : {current_batch}"
@@ -99,13 +103,12 @@ def extract_problem_solution(
         print(
             f"Batch : {current_batch} of {total_batches} | Time : {time.time() - gen_time:.2f} seconds"
         )
-        for content, output, page in zip(contents, outputs, pages):
-            results.append(
-                {"content": content, "generated": output.outputs[0].text, "page": page}
-            )
+        results.append(
+            {"content": concat_contents, "generated": outputs[0].outputs[0].text}
+        )
     path = formatted_results_path(filename)
     print(
-        f"Completed inference in {time.time() - start:.2f} seconds. Storing results to MinIO at {path}"
+        f"Completed inference in {(time.time() - start)//60 :.2f} minutes. Storing results to MinIO at {path}"
     )
     store_extracted_texts_to_minio(
         dataset=results,
@@ -114,3 +117,4 @@ def extract_problem_solution(
         filename=filename,
         path=path,
     )
+    print(f"Results stored to MinIO at {path}")

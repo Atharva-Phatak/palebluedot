@@ -18,6 +18,7 @@ from pbd.pipelines.ocr_post_process.steps.process_text import extract_problem_so
 import time
 from slack_sdk import WebClient
 from slack_sdk.errors import SlackApiError
+from pbd.pipelines.ocr_post_process.steps.utils import find_max_model_len
 
 IMAGE_NAME = "ghcr.io/atharva-phatak/pbd-ocr_post_process:latest"
 
@@ -109,8 +110,14 @@ class OCRPostProcessFlow(FlowSpec):
         start = time.time()
         data = self._load_data()
         print(f"Loaded {len(data)} records for post-processing from MinIO")
+        max_model_len = find_max_model_len(
+            data=data,
+            batch_size=self.config.post_processing_batch_size,
+            model_path=self.config.post_processing_model_path,
+        )
         extract_problem_solution(
             data=data,
+            max_model_len=max_model_len,
             model_path=self.config.post_processing_model_path,
             sampling_params=self.config.post_processing_params.model_dump(
                 exclude_none=True
