@@ -7,6 +7,6 @@
     "top_k": 20,
     "max_tokens" : 38912
   },
-  "post_processing_batch_size" : 10,
-  "run_test" : true
+  "post_processing_batch_size" : 5,
+  "run_test" : false
 }

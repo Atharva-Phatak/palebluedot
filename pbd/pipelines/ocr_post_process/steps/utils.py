@@ -36,7 +36,7 @@ def find_max_model_len(
         f"95th percentile: {pct95} for batch size {batch_size}"
     )
     # Clamp logic
-    max_token_len = max_token_len + 2000  # prompt overhead
+    max_token_len = pct95 + 2000  # prompt overhead
     recommended_max_len = min(max_token_len, upper_token_limit)
     print(f"\nSuggested max_model_len: {recommended_max_len}")
     return recommended_max_len
