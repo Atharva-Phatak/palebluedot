@@ -41,7 +41,7 @@ def deploy_argilla_component(
         argilla_secret_identifier=argilla_secret_key_identifier,
         argilla_api_key_identifier=argilla_api_key_identifier,
         project_id=cfg.infiscal_project_id,
-        environment_slug=cfg.environment_slug,
+        environment_slug="dev",
     )
 
     return argilla_chart
