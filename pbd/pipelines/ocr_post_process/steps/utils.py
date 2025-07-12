@@ -3,7 +3,7 @@ from pbd.pipelines.ocr_post_process.steps.prompt import generate_post_processing
 
 
 def get_token_len(prompt: str, tokenizer) -> int:
-    return len(tokenizer(prompt)["input_ids"])
+    return len(tokenizer(prompt)["input_ids"]) + 10 # buffer if vllm add additional tokens
 
 
 def find_max_model_len(data: list[dict], batch_size: int, model_path: str) -> int:
