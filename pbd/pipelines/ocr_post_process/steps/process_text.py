@@ -37,16 +37,18 @@ from dataclasses import asdict
 from pbd.helper.file_upload import store_extracted_texts_to_minio
 
 
-def load_model_and_tokenizer(model_path: str, max_model_len: int, batch_size: int):
+def load_model_and_tokenizer(model_path: str, max_model_len: int):
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     engine_args = vllm.EngineArgs(
         model=model_path,
-        max_num_seqs=batch_size,
+        max_num_seqs=1,  # Set to 1 because we going to concatentae content from batch size pages into single prompt
         max_model_len=max_model_len,
         enable_prefix_caching=True,
     )
     model = vllm.LLM(**asdict(engine_args))
-    print(f"Loaded model from {model_path} with batch size {batch_size} and max model length {max_model_len}")
+    print(
+        f"Loaded model from {model_path} with batch size 1 and max model length {max_model_len}"
+    )
     return tokenizer, model
 
 
@@ -55,8 +57,8 @@ def extract_problem_solution(
     data: list[dict],
     model_path: str,
     sampling_params: dict,
-    batch_size: int,
     bucket_name: str,
+    batch_size: int,
     filename: str,
     minio_endpoint: str,
 ):
@@ -65,7 +67,7 @@ def extract_problem_solution(
         print("Emptying cuda cache before starting new step.")
         torch.cuda.empty_cache()
     tokenizer, model = load_model_and_tokenizer(
-        max_model_len=max_model_len, model_path=model_path, batch_size=batch_size
+        max_model_len=max_model_len, model_path=model_path
     )
     params = vllm.SamplingParams(**sampling_params)
 

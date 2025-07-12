@@ -6,9 +6,7 @@ def get_token_len(prompt: str, tokenizer) -> int:
     return len(tokenizer(prompt)["input_ids"])
 
 
-def find_max_model_len(
-    data: list[dict], batch_size: int, model_path: str, upper_token_limit: int = 30000
-) -> int:
+def find_max_model_len(data: list[dict], batch_size: int, model_path: str) -> int:
     """
     Calculate the average content length in the dataset.
 
@@ -31,12 +29,9 @@ def find_max_model_len(
     max_token_len = max(token_lens)
     pct95 = sorted(token_lens)[int(0.95 * len(token_lens))]
     print(
-        f"Average content length in dataset: {avg_token_len}"
+        f"Average content length in dataset: {avg_token_len} "
         f"Max content length: {max_token_len}"
         f"95th percentile: {pct95} for batch size {batch_size}"
     )
-    # Clamp logic
-    max_token_len = pct95 + 2000  # prompt overhead
-    recommended_max_len = min(max_token_len, upper_token_limit)
-    print(f"\nSuggested max_model_len: {recommended_max_len}")
-    return recommended_max_len
+    print(f"Upper token limit: {max_token_len}")
+    return max_token_len
