@@ -37,11 +37,11 @@ from dataclasses import asdict
 from pbd.helper.file_upload import store_extracted_texts_to_minio
 
 
-def load_model_and_tokenizer(model_path: str, max_model_len: int):
+def load_model_and_tokenizer(model_path: str, batch_size: int, max_model_len: int):
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     engine_args = vllm.EngineArgs(
         model=model_path,
-        max_num_seqs=1,  # Set to 1 because we going to concatentae content from batch size pages into single prompt
+        max_num_seqs=batch_size,
         max_model_len=max_model_len,
         enable_prefix_caching=True,
     )
@@ -100,7 +100,7 @@ def extract_problem_solution(
         )  # Track original content
         gen_time = time.time()
         outputs = model.generate(
-            prompts=prompts, use_tqdm=False, sampling_params=params
+            prompts=[prompts], use_tqdm=False, sampling_params=params
         )
         print(
             f"Batch : {current_batch} of {total_batches} | Time : {time.time() - gen_time:.2f} seconds"
