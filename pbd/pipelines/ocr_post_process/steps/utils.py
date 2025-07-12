@@ -3,7 +3,7 @@ from pbd.pipelines.ocr_post_process.steps.prompt import generate_post_processing
 
 
 def get_token_len(prompt: str, tokenizer) -> int:
-    return len(tokenizer(prompt)["input_ids"]) + 10 # buffer if vllm add additional tokens
+    return len(tokenizer(prompt)["input_ids"])
 
 
 def find_max_model_len(data: list[dict], batch_size: int, model_path: str) -> int:
@@ -27,6 +27,7 @@ def find_max_model_len(data: list[dict], batch_size: int, model_path: str) -> in
         token_lens.append(token_len)
     avg_token_len = sum(token_lens) / len(token_lens)
     max_token_len = max(token_lens)
+    token_len_to_use = max_token_len + 1000  # add some buffer
     pct95 = sorted(token_lens)[int(0.95 * len(token_lens))]
     print(
         f"Average content length in dataset: {avg_token_len} "
@@ -34,4 +35,4 @@ def find_max_model_len(data: list[dict], batch_size: int, model_path: str) -> in
         f"95th percentile: {pct95} for batch size {batch_size}"
     )
     print(f"Upper token limit: {max_token_len}")
-    return max_token_len
+    return token_len_to_use
