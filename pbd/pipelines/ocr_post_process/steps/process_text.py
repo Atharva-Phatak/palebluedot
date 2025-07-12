@@ -67,7 +67,8 @@ def extract_problem_solution(
         print("Emptying cuda cache before starting new step.")
         torch.cuda.empty_cache()
     tokenizer, model = load_model_and_tokenizer(
-        max_model_len=max_model_len, model_path=model_path
+        max_model_len=max_model_len, model_path=model_path,
+        batch_size=batch_size
     )
     params = vllm.SamplingParams(**sampling_params)
 
