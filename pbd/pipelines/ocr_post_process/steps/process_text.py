@@ -41,8 +41,8 @@ def load_model_and_tokenizer(model_path: str, batch_size: int, max_model_len: in
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     engine_args = vllm.EngineArgs(
         model=model_path,
-        max_num_seqs=batch_size,
-        max_model_len=max_model_len,
+        max_num_seqs=10,
+        max_model_len=40000,
         enable_prefix_caching=True,
     )
     model = vllm.LLM(**asdict(engine_args))
@@ -67,8 +67,7 @@ def extract_problem_solution(
         print("Emptying cuda cache before starting new step.")
         torch.cuda.empty_cache()
     tokenizer, model = load_model_and_tokenizer(
-        max_model_len=max_model_len, model_path=model_path,
-        batch_size=batch_size
+        max_model_len=max_model_len, model_path=model_path, batch_size=batch_size
     )
     params = vllm.SamplingParams(**sampling_params)
 
