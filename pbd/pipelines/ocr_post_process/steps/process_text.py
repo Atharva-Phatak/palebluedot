@@ -41,8 +41,8 @@ def load_model_and_tokenizer(model_path: str, batch_size: int, max_model_len: in
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     engine_args = vllm.EngineArgs(
         model=model_path,
-        max_num_seqs=10,
-        max_model_len=40000,
+        max_num_seqs=batch_size,
+        max_model_len=max_model_len,
         enable_prefix_caching=True,
     )
     model = vllm.LLM(**asdict(engine_args))

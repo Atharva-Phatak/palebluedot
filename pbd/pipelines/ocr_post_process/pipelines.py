@@ -99,7 +99,7 @@ class OCRPostProcessFlow(FlowSpec):
         labels={"app": "ocr_pipeline", "component": "post_process_ocr"},
         secrets=["aws-credentials", "slack-secret"],
     )
-    @environment(vars={"CUDA_VISIBLE_DEVICES": "0"})
+    @environment(vars={"CUDA_VISIBLE_DEVICES": "0", "VLLM_USE_V1": "0"})
     @gpu_profile(interval=60, include_artifacts=False)
     @step
     def post_process(self):
@@ -112,7 +112,7 @@ class OCRPostProcessFlow(FlowSpec):
         print(f"Loaded {len(data)} records for post-processing from MinIO")
         max_model_len = find_max_model_len(
             data=data,
-            batch_size=10,
+            batch_size=self.config.post_processing_batch_size,
             model_path=self.config.post_processing_model_path,
         )
         extract_problem_solution(
