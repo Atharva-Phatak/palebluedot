@@ -110,7 +110,7 @@ class OCRPostProcessFlow(FlowSpec):
         start = time.time()
         data = self._load_data()
         print(f"Loaded {len(data)} records for post-processing from MinIO")
-        max_model_len = find_max_model_len(
+        chunk_size, max_model_len = find_max_model_len(
             data=data,
             batch_size=self.config.post_processing_batch_size,
             model_path=self.config.post_processing_model_path,
@@ -123,6 +123,7 @@ class OCRPostProcessFlow(FlowSpec):
                 exclude_none=True
             ),
             batch_size=self.config.post_processing_batch_size,
+            chunk_size=chunk_size,
             bucket_name=self.config.bucket,
             filename=self.config.filename,
             minio_endpoint=self.config.minio_endpoint,

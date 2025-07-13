@@ -61,6 +61,7 @@ def extract_problem_solution(
     batch_size: int,
     filename: str,
     minio_endpoint: str,
+    chunk_size: int,
 ):
     # empty cuda cache before starting new step
     if torch.cuda.is_available():
@@ -72,42 +73,43 @@ def extract_problem_solution(
     params = vllm.SamplingParams(**sampling_params)
 
     results = []
-    total_batches = len(data) // batch_size
+    total_batches = len(data) // chunk_size
     start = time.time()
     print(
-        f"Starting inference with {len(data)} examples in batches of {batch_size}. Total batches: {total_batches}"
+        f"Starting inference with {len(data)} examples in batches of {chunk_size}. Total batches: {total_batches}"
     )
-    for indx in range(0, len(data), batch_size):
-        batch = data[indx : indx + batch_size]
-        contents = [ex["content"] for ex in batch]
-        concat_contents = "\n\n".join(contents)
-        # Pre-generate prompts in one go
-        prompts = tokenizer.apply_chat_template(
-            [
-                {
-                    "role": "user",
-                    "content": generate_post_processing_prompt(concat_contents),
-                }
-            ],
-            tokenize=False,
-            add_generation_prompt=True,
-            enable_thinking=False,
-        )
+    for i in range(0, len(data), chunk_size * batch_size):
+        prompt_batch = []
+        content_batch = []
 
-        current_batch = indx // batch_size + 1
-        print(
-            f"Generated Prompts for batch : {current_batch}"
-        )  # Track original content
+        for j in range(i, min(i + chunk_size * batch_size, len(data)), chunk_size):
+            chunk = data[j : j + chunk_size]
+            contents = [ex["content"] for ex in chunk]
+            concat_contents = "\n\n".join(contents)
+
+            content_batch.append(concat_contents)
+            prompt = tokenizer.apply_chat_template(
+                [
+                    {
+                        "role": "user",
+                        "content": generate_post_processing_prompt(concat_contents),
+                    }
+                ],
+                tokenize=False,
+                add_generation_prompt=True,
+                enable_thinking=False,
+            )
+            prompt_batch.append(prompt)
+
+        print(f"Running vLLM on batch {i // (chunk_size * batch_size) + 1}")
         gen_time = time.time()
         outputs = model.generate(
-            prompts=[prompts], use_tqdm=False, sampling_params=params
+            prompts=prompt_batch, use_tqdm=False, sampling_params=params
         )
-        print(
-            f"Batch : {current_batch} of {total_batches} | Time : {time.time() - gen_time:.2f} seconds"
-        )
-        results.append(
-            {"content": concat_contents, "generated": outputs[0].outputs[0].text}
-        )
+
+        for content, output in zip(content_batch, outputs):
+            results.append({"content": content, "generated": output.outputs[0].text})
+        print(f"Batch took {time.time() - gen_time:.2f} seconds")
     path = formatted_results_path(filename)
     print(
         f"Completed inference in {(time.time() - start)//60 :.2f} minutes. Storing results to MinIO at {path}"
