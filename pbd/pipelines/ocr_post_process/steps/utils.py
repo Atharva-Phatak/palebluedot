@@ -57,11 +57,11 @@ def estimate_chunk_size_maximizing_coverage(
             )
 
             token_len = get_token_len(prompt, tokenizer)
-            max_token_len_this_size = max(max_token_len_this_size, token_len)
 
             # Count how many chunks fit within the limit
             if token_len + buffer <= model_max_len:
                 fitting_chunks += 1
+                max_token_len_this_size = max(max_token_len_this_size, token_len)
 
         # If we can fit at least some chunks of this size, this is our answer
         if fitting_chunks > 0:
