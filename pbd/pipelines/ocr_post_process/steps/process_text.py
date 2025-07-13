@@ -71,48 +71,53 @@ def extract_problem_solution(
         max_model_len=max_model_len, model_path=model_path, batch_size=batch_size
     )
     params = vllm.SamplingParams(**sampling_params)
-
-    results = []
-    total_batches = len(data) // chunk_size
+    results, content_batch, prompt_batch = [] , [], []
+    batch_count = 0
     start = time.time()
     print(
-        f"Starting inference with {len(data)} examples in batches of {chunk_size}. Total batches: {total_batches}"
+        f"🚀 Starting inference with {len(data)} samples, chunk size = {chunk_size}, batch size = {batch_size}"
     )
-    for i in range(0, len(data), chunk_size * batch_size):
-        prompt_batch = []
-        content_batch = []
+    for i in range(0, len(data), chunk_size):
+        chunk = data[i: i + chunk_size]
+        contents = [ex["content"] for ex in chunk]
+        concat_contents = "\n\n".join(contents)
 
-        for j in range(i, min(i + chunk_size * batch_size, len(data)), chunk_size):
-            chunk = data[j : j + chunk_size]
-            contents = [ex["content"] for ex in chunk]
-            concat_contents = "\n\n".join(contents)
-
-            content_batch.append(concat_contents)
-            prompt = tokenizer.apply_chat_template(
-                [
-                    {
-                        "role": "user",
-                        "content": generate_post_processing_prompt(concat_contents),
-                    }
-                ],
-                tokenize=False,
-                add_generation_prompt=True,
-                enable_thinking=False,
-            )
-            prompt_batch.append(prompt)
-
-        print(f"Running vLLM on batch {i // (chunk_size * batch_size) + 1}")
-        gen_time = time.time()
-        outputs = model.generate(
-            prompts=prompt_batch, use_tqdm=False, sampling_params=params
+        prompt_text = generate_post_processing_prompt(concat_contents)
+        prompt = tokenizer.apply_chat_template(
+            [{"role": "user", "content": prompt_text}],
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=False,
         )
 
-        for content, output in zip(content_batch, outputs):
-            results.append({"content": content, "generated": output.outputs[0].text})
-        print(f"Batch took {time.time() - gen_time:.2f} seconds")
+        # ✅ Skip if tokenized prompt exceeds model limit
+        prompt_token_len = len(tokenizer(prompt)["input_ids"])
+        if prompt_token_len <= max_model_len:
+            content_batch.append(concat_contents)
+            prompt_batch.append(prompt)
+        else:
+            print(f"⚠️ Skipped prompt {i // chunk_size + 1} (too long: {prompt_token_len} tokens)")
+
+        # Run inference if batch is full or last item
+        if len(prompt_batch) == batch_size or i + chunk_size >= len(data):
+            batch_count += 1
+            print(f"🧠 Running vLLM batch {batch_count} with {len(prompt_batch)} prompts")
+
+            gen_time = time.time()
+            outputs = model.generate(
+                prompts=prompt_batch, sampling_params=params, use_tqdm=False
+            )
+            for content, output in zip(content_batch, outputs):
+                results.append({"content": content, "generated": output.outputs[0].text})
+
+            print(f"✅ Batch {batch_count} done in {time.time() - gen_time:.2f} sec")
+
+            # Clear batch
+            prompt_batch = []
+            content_batch = []
     path = formatted_results_path(filename)
     print(
-        f"Completed inference in {(time.time() - start)//60 :.2f} minutes. Storing results to MinIO at {path}"
+        f"\n🎉 Completed inference in {(time.time() - start)//60 :.2f} minutes. Storing results to MinIO at {path}"
     )
     store_extracted_texts_to_minio(
         dataset=results,
