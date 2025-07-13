@@ -2,6 +2,7 @@ from vllm import LLM, SamplingParams
 from PIL import Image
 import re
 from pathlib import Path
+import time
 
 
 def extract_page_number(filename: str) -> int:
@@ -31,6 +32,8 @@ def simple_inference(
     sampling_params: SamplingParams,
 ) -> list[dict]:
     generated_texts = []
+    total_batches = len(image_paths) // batch_size
+    print(f"Total batches to process: {total_batches}")
     for indx in range(0, len(image_paths), batch_size):
         batch = image_paths[indx : indx + batch_size]
         inputs = [
@@ -42,10 +45,13 @@ def simple_inference(
             }
             for img_path in batch
         ]
+        start = time.time()
         outputs = model.generate(
             inputs, use_tqdm=False, sampling_params=sampling_params
         )
-        print(f"Processed batch {indx // batch_size}")
+        print(
+            f"Processed batch {indx // batch_size} in {time.time() - start:.2f} seconds"
+        )
         for img_path, output in zip(batch, outputs):
             page_no = extract_page_number(img_path)
             generated_texts.append(
