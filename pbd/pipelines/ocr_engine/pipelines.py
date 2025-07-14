@@ -137,7 +137,7 @@ class OCRFlow(FlowSpec):
         labels={"app": "ocr_pipeline", "component": "process_ocr"},
         secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
     )
-    @environment(vars={"VLLM_USE_V1": "0"})
+    @environment(vars={"CUDA_VISIBLE_DEVICES": "0"})
     @gpu_profile(interval=60, include_artifacts=False)
     @step
     def process_ocr(self):
