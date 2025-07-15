@@ -55,19 +55,6 @@ class TextToTextRatingFlow(FlowSpec):
         # Create dataset name
         dataset_name = f"{self.filename}_ocr_post_process"
 
-        # Get or create workspace
-        try:
-            workspaces = client.workspaces
-            if workspaces:
-                workspace_name = workspaces[0].name  # Use first available workspace
-            else:
-                # Create a default workspace if none exist
-                workspace = rg.Workspace(name="default")
-                workspace = workspace.create()
-                workspace_name = "default"
-        except Exception:
-            workspace_name = None  # Use default workspace (None)
-
         # Create dataset settings for text-to-text annotation
         settings = rg.Settings(
             fields=[
@@ -94,18 +81,14 @@ class TextToTextRatingFlow(FlowSpec):
             metadata=[rg.TermsMetadataProperty(name="source", title="Source File")],
         )
 
-        # Create or get dataset
-        try:
-            dataset = client.datasets(name=dataset_name, workspace=workspace_name)
-            print(f"Dataset '{dataset_name}' already exists, adding records to it.")
-        except Exception:
-            dataset = rg.Dataset(
-                name=dataset_name,
-                workspace=workspace_name,
-                settings=settings,
-            )
-            dataset = dataset.create()
-            print(f"Created new dataset: {dataset_name}")
+        # Create dataset (always create new one to avoid workspace issues)
+        dataset = rg.Dataset(
+            name=dataset_name,
+            settings=settings,
+            client=client,
+        )
+        dataset = dataset.create()
+        print(f"Created new dataset: {dataset_name}")
 
         # Prepare records
         records = []
