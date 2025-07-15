@@ -1,0 +1,11 @@
+[project]
+name = "data-annotator"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "argilla>=2.8.0",
+    "kubernetes>=33.1.0",
+    "metaflow==2.16.0",
+]
