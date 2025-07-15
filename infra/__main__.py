@@ -14,6 +14,8 @@ from components.slack import deploy_slack_secret
 from components.annotator import deploy_argilla_component
 from components.models_pvc import deploy_models_pvc
 from applications.secret_manager.secrets import create_argilla_secret
+from components.certificate_manager import deploy_certificate_manager
+from components.wehooks import deploy_metaflow_webhook_components
 
 
 def load_config():
@@ -32,6 +34,11 @@ provider, minikube_start = deploy_minikube_cluster(cfg)
 metaflow_namespace = deploy_metaflow_namespace(
     k8s_provider=provider,
     depends_on=[minikube_start],
+)
+
+cert_manager, cluser_issuer = deploy_certificate_manager(
+    depends_on=[minikube_start, metaflow_namespace],
+    provider=provider,
 )
 
 # Create slack secret
@@ -101,7 +108,7 @@ prometheus_chart, grafana_chart = deploy_monitoring_components(
     ],
 )
 # Deploy argo components
-argo_config = deploy_argo_components(
+argo_config, argo_workflows_chart, argo_events_chart = deploy_argo_components(
     cfg=cfg,
     k8s_provider=provider,
     namespace=metaflow_namespace,
@@ -114,8 +121,30 @@ argo_config = deploy_argo_components(
         minio_chart,
         postgres_chart,
         arc_component,
+        cluser_issuer,
+        cert_manager,
     ],
 )
+# Deploy metaflow webhook components
+metaflow_ingress = deploy_metaflow_webhook_components(
+    depends_on=[
+        minikube_start,
+        metaflow_namespace,
+        prometheus_chart,
+        grafana_chart,
+        metaflow_chart,
+        minio_chart,
+        postgres_chart,
+        arc_component,
+        cluser_issuer,
+        cert_manager,
+        argo_workflows_chart,
+        argo_events_chart,
+    ],
+    k8s_provider=provider,
+    namespace=metaflow_namespace,
+)
+
 # Finally create metaflow config
 deploy_metaflow_config_component(
     metaflow_config=metaflow_config,

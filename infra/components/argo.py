@@ -7,7 +7,6 @@ from applications.argo.argo_events.event_sources.metaflow import (
 )
 from applications.argo.argo_events.event_sources.minio import deploy_minio_event_source
 from applications.argo.argo_events.sensors.minio_sensor import deploy_minio_sensor
-from applications.webhooks.metaflow_webhook import deploy_metaflow_webhook
 
 from applications.secret_manager.secrets import create_aws_secret
 
@@ -48,9 +47,4 @@ def deploy_argo_components(
         provider=k8s_provider,
         depends_on=depends_on + [argo_events, argo_workflows_chart, aws_secret],
     )
-    _ = deploy_metaflow_webhook(
-        namespace=namespace,
-        provider=k8s_provider,
-        depends_on=depends_on + [argo_events, argo_workflows_chart, aws_secret],
-    )
-    return argo_metaflow_config
+    return argo_metaflow_config, argo_workflows_chart, argo_events
