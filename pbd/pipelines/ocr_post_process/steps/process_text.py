@@ -37,6 +37,26 @@ from dataclasses import asdict
 from pbd.helper.file_upload import store_extracted_texts_to_minio
 
 
+def batch_prompts(chunk_size:int,
+                  tokenizer,
+                  data: list[dict]):
+    batches = []
+    for indx in range(0, len(data), chunk_size):
+        chunk = data[indx: indx + chunk_size]
+        contents = [ex["content"] for ex in chunk]
+        concat_contents = "\n\n".join(contents)
+
+        prompt_text = generate_post_processing_prompt(concat_contents)
+        prompt = tokenizer.apply_chat_template(
+            [{"role": "user", "content": prompt_text}],
+            tokenize=False,
+            add_generation_prompt=True,
+            enable_thinking=False,
+        )
+        batches.append(prompt)
+    return batches
+
+
 def load_model_and_tokenizer(model_path: str, batch_size: int, max_model_len: int):
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     engine_args = vllm.EngineArgs(
@@ -61,7 +81,7 @@ def extract_problem_solution(
     batch_size: int,
     filename: str,
     minio_endpoint: str,
-    chunk_size: int,
+    chunk_size:int
 ):
     # empty cuda cache before starting new step
     if torch.cuda.is_available():
@@ -71,50 +91,27 @@ def extract_problem_solution(
         max_model_len=max_model_len, model_path=model_path, batch_size=batch_size
     )
     params = vllm.SamplingParams(**sampling_params)
-    results, content_batch, prompt_batch = [] , [], []
+    results, content_batch = [] , []
     batch_count = 0
     start = time.time()
     print(
         f"🚀 Starting inference with {len(data)} samples, chunk size = {chunk_size}, batch size = {batch_size}"
     )
-    for i in range(0, len(data), chunk_size):
-        chunk = data[i: i + chunk_size]
-        contents = [ex["content"] for ex in chunk]
-        concat_contents = "\n\n".join(contents)
-
-        prompt_text = generate_post_processing_prompt(concat_contents)
-        prompt = tokenizer.apply_chat_template(
-            [{"role": "user", "content": prompt_text}],
-            tokenize=False,
-            add_generation_prompt=True,
-            enable_thinking=False,
+    batches = batch_prompts(
+        chunk_size=chunk_size,
+        tokenizer=tokenizer,
+        data=data,
+    )
+    for indx in range(0, len(batches), batch_size):
+        current_batch = batches[indx: indx + batch_size]
+        gen_time = time.time()
+        outputs = model.generate(
+                prompts=current_batch, sampling_params=params, use_tqdm=False
         )
-
-        # ✅ Skip if tokenized prompt exceeds model limit
-        prompt_token_len = len(tokenizer(prompt)["input_ids"])
-        if prompt_token_len <= max_model_len:
-            content_batch.append(concat_contents)
-            prompt_batch.append(prompt)
-        else:
-            print(f"⚠️ Skipped prompt {i // chunk_size + 1} (too long: {prompt_token_len} tokens)")
-
-        # Run inference if batch is full or last item
-        if len(prompt_batch) == batch_size or i + chunk_size >= len(data):
-            batch_count += 1
-            print(f"🧠 Running vLLM batch {batch_count} with {len(prompt_batch)} prompts")
-
-            gen_time = time.time()
-            outputs = model.generate(
-                prompts=prompt_batch, sampling_params=params, use_tqdm=False
-            )
-            for content, output in zip(content_batch, outputs):
-                results.append({"content": content, "generated": output.outputs[0].text})
-
-            print(f"✅ Batch {batch_count} done in {time.time() - gen_time:.2f} sec")
-
-            # Clear batch
-            prompt_batch = []
-            content_batch = []
+        for content, output in zip(content_batch, outputs):
+            results.append({"content": content, "generated": output.outputs[0].text})
+        print(
+            f"Batch {batch_count} processed in {(time.time() - gen_time):.2f} seconds, ")
     path = formatted_results_path(filename)
     print(
         f"\n🎉 Completed inference in {(time.time() - start)//60 :.2f} minutes. Storing results to MinIO at {path}"

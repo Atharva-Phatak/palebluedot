@@ -1,17 +1,16 @@
-from metaflow import step, FlowSpec, kubernetes, Parameter, schedule
+from metaflow import step, FlowSpec, kubernetes, trigger_on_finish
 import os
 import argilla as rg
 from pbd.helper.s3_paths import formatted_results_path
 from pbd.helper.file_download import download_from_minio
 from datasets import load_dataset
-from pbd.helper.slack import send_slack_message
+from pbd.helper.decorators import notify_slack_on_success
 
 IMAGE_NAME = "ghcr.io/atharva-phatak/pbd-data_annotator:latest"
 
 
-@schedule()
+@trigger_on_finish(flow="OCRPostProcessFlow")
 class TextToTextRatingFlow(FlowSpec):
-    filename = Parameter("filename", help="Name of the input file (without extension)")
 
     @kubernetes(
         image=IMAGE_NAME,
@@ -23,6 +22,7 @@ class TextToTextRatingFlow(FlowSpec):
     def start(self):
         self.minio_endpoint = "minio-palebluedot.io"
         self.bucket = "data-bucket"
+        self.slack_token = os.environ.get("SLACK_TOKEN")
         self.data = self._load_data()
         print(f"Loaded {len(self.data)} samples.")
         self.next(self.push_to_argilla)
@@ -121,11 +121,10 @@ class TextToTextRatingFlow(FlowSpec):
         memory=1,
         secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
     )
+    @notify_slack_on_success
     @step
     def end(self):
-        token = os.environ.get("SLACK_TOKEN")
-        message = f"Annotation ready in Argilla UI: http://argilla.palebluedot.io/datasets/{self.dataset_name}"
-        send_slack_message(token=token, message=message)
+
         print("Annotation ready in Argilla UI.")
 
 

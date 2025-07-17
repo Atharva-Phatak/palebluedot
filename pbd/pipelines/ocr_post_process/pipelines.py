@@ -16,9 +16,8 @@ from pbd.helper.file_download import download_from_minio
 from datasets import load_dataset
 from pbd.pipelines.ocr_post_process.steps.process_text import extract_problem_solution
 import time
-from slack_sdk import WebClient
-from slack_sdk.errors import SlackApiError
 from pbd.pipelines.ocr_post_process.steps.utils import find_max_model_len_and_chunk_size
+from pbd.helper.decorators import notify_slack_on_success
 
 IMAGE_NAME = "ghcr.io/atharva-phatak/pbd-ocr_post_process:latest"
 
@@ -35,7 +34,6 @@ class OCRPostProcessFlow(FlowSpec):
         print("Starting Post-Processing Pipeline")
         self.access_key = os.environ.get("AWS_ACCESS_KEY_ID")
         self.secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
-        self.slack_token = os.environ.get("SLACK_TOKEN")
         if not self.access_key or not self.secret_key:
             raise ValueError("AWS credentials not found in environment variables")
         client = Minio(
@@ -81,6 +79,7 @@ class OCRPostProcessFlow(FlowSpec):
         Start step to initialize the flow.
         """
         print("Starting OCR Post-Processing Pipeline")
+        self.slack_token = os.environ.get("SLACK_TOKEN")
         self.bucket_name: str = current.trigger.run.data.bucket_name
         config_uri: str = ocr_post_process_config_path()
         self.config = self._read_config(
@@ -110,7 +109,7 @@ class OCRPostProcessFlow(FlowSpec):
         start = time.time()
         data = self._load_data()
         print(f"Loaded {len(data)} records for post-processing from MinIO")
-        chunk_size, max_model_len = find_max_model_len_and_chunk_size(
+        _ , max_model_len = find_max_model_len_and_chunk_size(
             data=data,
             model_path=self.config.post_processing_model_path,
         )
@@ -122,7 +121,7 @@ class OCRPostProcessFlow(FlowSpec):
                 exclude_none=True
             ),
             batch_size=self.config.post_processing_batch_size,
-            chunk_size=chunk_size,
+            chunk_size=10,
             bucket_name=self.config.bucket,
             filename=self.config.filename,
             minio_endpoint=self.config.minio_endpoint,
@@ -139,26 +138,12 @@ class OCRPostProcessFlow(FlowSpec):
         secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
     )
     @step
+    @notify_slack_on_success
     def end(self):
         """
         Final step to conclude the flow.
         """
-        slack_token = os.environ.get("SLACK_TOKEN")
         print("OCR Post-Processing Pipeline completed successfully.")
-        try:
-            client = WebClient(token=slack_token)
-            message = f"""
-                    PDF Post Processing Pipeline Completed!
-                    ✅ Successfully processed: {self.config.filename}."""
-
-            _ = client.chat_postMessage(
-                channel="#zenml-pipelines", text=message.strip()
-            )
-            print("Slack notification sent to #zenml-pipelines")
-        except SlackApiError as e:
-            print(f"Error sending Slack message: {e}")
-        except Exception as e:
-            print(f"Unexpected error sending Slack notification: {e}")
 
 
 if __name__ == "__main__":

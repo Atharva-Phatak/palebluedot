@@ -52,8 +52,7 @@ from metaflow import (
     trigger_on_finish,
     current,
 )
-from slack_sdk import WebClient
-from slack_sdk.errors import SlackApiError
+from pbd.helper.decorators import notify_slack_on_success
 from pbd.helper.s3_paths import ocr_engine_config_path
 from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
 from minio import Minio
@@ -75,7 +74,6 @@ class OCRFlow(FlowSpec):
         print("Starting OCR pipeline")
         self.access_key = os.environ.get("AWS_ACCESS_KEY_ID")
         self.secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
-        self.slack_token = os.environ.get("SLACK_TOKEN")
         if not self.access_key or not self.secret_key:
             raise ValueError("AWS credentials not found in environment variables")
         client = Minio(
@@ -115,7 +113,7 @@ class OCRFlow(FlowSpec):
         """
         Initialize the pipeline
         """
-
+        self.slack_token = os.environ.get("SLACK_TOKEN")
         self.bucket_name: str = current.trigger.run.data.bucket_name
         self.config = self._read_config(
             bucket_name=self.bucket_name,
@@ -165,28 +163,16 @@ class OCRFlow(FlowSpec):
         memory=56,
         secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
     )
+    @notify_slack_on_success
     @step
     def end(self):
         """
         Final step of the pipeline
         """
-        slack_token = os.environ.get("SLACK_TOKEN")
+
         print("OCR pipeline completed successfully!")
         print(f"Results stored in MinIO bucket '{self.config.bucket}'")
 
-        try:
-            client = WebClient(token=slack_token)
-            message = f"""
-                    PDF Processing Pipeline Completed for {self.config.filename}!"""
-
-            _ = client.chat_postMessage(
-                channel="#zenml-pipelines", text=message.strip()
-            )
-            print("Slack notification sent to #zenml-pipelines")
-        except SlackApiError as e:
-            print(f"Error sending Slack message: {e}")
-        except Exception as e:
-            print(f"Unexpected error sending Slack notification: {e}")
 
 
 if __name__ == "__main__":

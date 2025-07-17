@@ -49,6 +49,9 @@ from pbd.helper.file_upload import store_extracted_texts_to_minio
 from pbd.pipelines.ocr_engine.steps.process_ocr import simple_inference
 from pbd.pipelines.ocr_engine.steps.prompt import get_ocr_prompt
 from pbd.helper.s3_paths import ocr_results_path
+from pbd.pipelines.ocr_engine.steps.format import clean_and_format_html
+
+
 
 
 def sort_pages_by_number(pages: list[str]) -> list[str]:
@@ -67,6 +70,16 @@ def sort_pages_by_number(pages: list[str]) -> list[str]:
         return int(match.group(1)) if match else -1
 
     return sorted(pages, key=extract_number)
+
+
+def process_response(response: list[dict]) -> list[dict]:
+    cleaned_response = []
+    for item in response:
+        cleaned_response.append({
+            "page" : item["page"],
+            "content": clean_and_format_html(item["content"]),
+        })
+    return cleaned_response
 
 
 def do_inference(
@@ -111,9 +124,12 @@ def do_inference(
         batch_size=batch_size,
         sampling_params=sampling_params,
     )
+
     total_time = (time.time() - start) // 60
     print(f"Total inference time: {total_time} minutes for {len(image_paths)} images")
-    return response
+    cleaned_response = process_response(response)
+    print(f"Processed {len(cleaned_response)} images with OCR")
+    return cleaned_response
 
 
 def ocr_images(

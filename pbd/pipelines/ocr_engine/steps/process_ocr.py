@@ -1,8 +1,8 @@
 from vllm import LLM, SamplingParams
-from PIL import Image
 import re
 from pathlib import Path
 import time
+from pbd.pipelines.ocr_engine.steps.process_image import fetch_image
 
 
 def extract_page_number(filename: str) -> int:
@@ -40,7 +40,7 @@ def simple_inference(
             {
                 "prompt": prompt,
                 "multi_modal_data": {
-                    "image": Image.open(img_path).convert("RGB"),
+                    "image": fetch_image(img_path),
                 },
             }
             for img_path in batch

@@ -1,64 +1,54 @@
 def generate_post_processing_prompt(input_problem: str):
-    return f"""
-        You are a text extraction and formatting tool. Your ONLY job is to find existing solved problems and reformat them.
+    return f"""You are a specialized extraction system for physics problems with complete solutions.
 
-        STRICT RULES:
-        1. NEVER solve any problems yourself
-        2. NEVER add solution steps that aren't already in the text
-        3. NEVER perform calculations or work out answers
-        4. ONLY reformat text that already contains both a problem AND its complete solution
-        5. If you see a problem without a solution, IGNORE it completely
+TASK: Extract fully solved physics problems from the provided content.
 
-        Task: Find text sections that contain BOTH a physics problem statement AND its already-worked solution, then reformat them.
+EXTRACTION CRITERIA:
+A valid extraction requires BOTH components:
+1. Problem Statement: Clear, complete question or scenario
+2. Complete Solution: Multi-step worked solution with mathematical derivations
 
-        What to look for:
-        - Problem statement (question asking for something)
-        - Complete worked solution (showing steps and final answer)
-        - Both must already exist in the input text
+EXCLUSIONS:
+- Problems with only final answers or brief explanations
+- Multiple choice, true/false, or fill-in-the-blank questions
+- Incomplete solutions or solution fragments
+- Problems requiring you to fill in missing steps
 
-        What to SKIP entirely:
-        - Multiple choice questions (MCQ) - even if they have answer keys
-        - True/False questions
-        - Fill-in-the-blank questions
-        - Questions with only final answers but no worked solutions
-        - Any question format that doesn't show step-by-step mathematical work
+OUTPUT FORMAT:
+For each valid problem-solution pair found:
 
-        If no such complete problem+solution pairs exist, respond with exactly: "No problems found"
+**Problem Statement:**
+[Exact copy of original problem text, preserving all formatting and LaTeX]
 
-        Reformatting Instructions (ONLY for problems that already have solutions):
+**Solution Steps:**
+Step 1: [Clear description of this step's purpose]
+Equation: $$ [Original LaTeX equation] $$
+SymPy: [Valid SymPy Python code for this equation]
 
-        Extract and reformat in this structure:
+Step 2: [Description of next step]
+Equation: $$ [Next equation] $$
+SymPy: [Corresponding SymPy code]
 
-        **Problem Statement:**
-        [Copy the original question exactly as written]
+[Continue for all solution steps...]
 
-        **Solution Steps:**
-        [For each step that already exists in the original solution:]
+**Final Answer:**
+$$ [Final result with proper formatting] $$
 
-        Step N: [Describe what this existing step does]
-        Equation: $$ [LaTeX format of equation that was already shown] $$
-        SymPy: [Convert the existing equation to SymPy format]
+---
 
-        **Final Answer:**
-        [Copy the final answer that was already provided, in LaTeX box]
+IMPORTANT NOTES:
+- Preserve all original LaTeX formatting exactly
+- Convert equations to valid SymPy syntax (use proper Python variable names, operators, and functions)
+- Maintain logical flow between solution steps
+- Include units in final answers when present
+- If multiple problems exist, separate each with "---"
 
-        CRITICAL: You are a copy-and-reformat tool, not a solver.
-        If the original text shows:
-        - "F = ma = 5 × 2 = 10 N"
-        You reformat it as:
-        Step 1: Apply Newton's second law with given values
-        Equation: $ F = ma = 5 \times 2 = 10 \text N $
-        SymPy: Eq(F, m*a).subs([(m, 5), (a, 2)])
+If no valid problem-solution pairs are found, respond with:
+```
+No complete problem-solution pairs found in the provided content.
+```
 
-        If the original text shows:
-        - "Find the force when m=5kg and a=2m/s²" with no solution
-        - "What is the acceleration? A) 2 m/s² B) 4 m/s² C) 6 m/s²" (MCQ format)
-        - "True or False: Force equals mass times acceleration"
-        You IGNORE these completely.
+INPUT CONTENT:
 
-        Remember: Extract and reformat existing solutions only. Never solve anything yourself.
-
-        ---
-        Input Text:
-        \"\"\"{input_problem}\"\"\"
+{input_problem}
 """
