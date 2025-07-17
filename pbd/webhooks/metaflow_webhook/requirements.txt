@@ -8,7 +8,7 @@ certifi==2025.6.15
 charset-normalizer==3.4.2
 click==8.2.1
 colorama==0.4.6 ; sys_platform == 'win32'
-fastapi==0.115.13
+fastapi==0.115.14
 fastapi-cli==0.0.7
 h11==0.16.0
 httptools==0.6.4
@@ -16,9 +16,9 @@ idna==3.10
 jmespath==1.0.1
 markdown-it-py==3.0.0
 mdurl==0.1.2
-metaflow==2.15.18
-pydantic==2.11.1
-pydantic-core==2.33.0
+metaflow==2.16.3
+pydantic==2.11.7
+pydantic-core==2.33.2
 pygments==2.19.2
 python-dateutil==2.9.0.post0
 python-dotenv==1.1.1
