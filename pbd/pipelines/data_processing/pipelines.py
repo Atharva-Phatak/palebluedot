@@ -19,10 +19,9 @@ from minio import Minio
 from metaflow import FlowSpec, step, trigger, Parameter
 from pbd.helper.logger import setup_logger
 from setting import processing_k8s, orchestrator_k8s
-from slack_sdk import WebClient
-from slack_sdk.errors import SlackApiError
 import json
 from pbd.helper.interface.pydantic_models import DataProcessingPipelineConfig
+from pbd.helper.decorators import notify_slack_on_success
 
 logger = setup_logger(__name__)
 
@@ -167,6 +166,7 @@ class PDFToImageFlow(FlowSpec):
         self.next(self.end)
 
     @orchestrator_k8s
+    @notify_slack_on_success
     @step
     def end(self):
         """
@@ -174,8 +174,6 @@ class PDFToImageFlow(FlowSpec):
         """
         print("PDF to Image conversion pipeline completed!")
         print("Results: {}".format(self.result))
-        if self.slack_token is not None:
-            self._send_slack_notification(filename=self.filename)
 
     # Helper methods - defined inside class for better encapsulation
     def _download_pdf(self, client, key: str, download_dir: str) -> str:
@@ -277,26 +275,6 @@ class PDFToImageFlow(FlowSpec):
             logger.error(f"Error creating zip file: {str(e)}")
             raise
 
-    def _send_slack_notification(self, filename: str):
-        """Send a Slack message with the results of the flow."""
-        slack_token = os.environ.get("SLACK_TOKEN")
-        try:
-            client = WebClient(token=slack_token)
-
-            message = f"""
-                PDF Processing Pipeline Completed!
-                ✅ Successfully processed: {filename}
-            """
-
-            _ = client.chat_postMessage(
-                channel=self.config.slack_channel, text=message.strip()
-            )
-            print(f"Slack notification sent to {self.config.slack_channel}")
-
-        except SlackApiError as e:
-            logger.error(f"Error sending Slack message: {e}")
-        except Exception as e:
-            logger.error(f"Unexpected error sending Slack notification: {e}")
 
 
 if __name__ == "__main__":

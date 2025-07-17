@@ -19,3 +19,16 @@ repos:
       - id: check-json
       - id: end-of-file-fixer
       - id: trailing-whitespace
+
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    # uv version.
+    rev: 0.7.21
+    hooks:
+      - id: uv-lock
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    # uv version.
+    rev: 0.7.21
+    hooks:
+      - id: uv-export
+        args: ["--no-hashes", "--format", "requirements-txt"]
+        files: ^pbd/pipelines/.*/(pyproject\.toml|uv\.lock)$
