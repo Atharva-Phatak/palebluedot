@@ -52,7 +52,7 @@ from metaflow import (
     trigger_on_finish,
     current,
 )
-from pbd.helper.decorators import notify_slack_on_success
+from pbd.helper.slack import send_slack_message
 from pbd.helper.s3_paths import ocr_engine_config_path
 from pbd.pipelines.ocr_engine.steps.ocr import ocr_images
 from minio import Minio
@@ -60,6 +60,7 @@ import json
 from pbd.helper.interface.pydantic_models import OCRPipelineConfig
 from pbd.helper.s3_paths import minio_zip_path
 from pbd.helper.profilers.gpu import gpu_profile
+
 
 IMAGE_NAME = "ghcr.io/atharva-phatak/pbd-ocr_engine:latest"
 
@@ -163,7 +164,6 @@ class OCRFlow(FlowSpec):
         memory=56,
         secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
     )
-    @notify_slack_on_success
     @step
     def end(self):
         """
@@ -172,7 +172,11 @@ class OCRFlow(FlowSpec):
 
         print("OCR pipeline completed successfully!")
         print(f"Results stored in MinIO bucket '{self.config.bucket}'")
-
+        send_slack_message(
+            token=self.slack_token,
+            message=f"✅ OCR pipeline completed successfully for {self.config.filename}!",
+            channel="#zenml-pipelines",
+        )
 
 
 if __name__ == "__main__":

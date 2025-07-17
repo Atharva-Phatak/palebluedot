@@ -4,7 +4,7 @@ import argilla as rg
 from pbd.helper.s3_paths import formatted_results_path
 from pbd.helper.file_download import download_from_minio
 from datasets import load_dataset
-from pbd.helper.decorators import notify_slack_on_success
+from pbd.helper.slack import send_slack_message
 
 IMAGE_NAME = "ghcr.io/atharva-phatak/pbd-data_annotator:latest"
 
@@ -121,11 +121,15 @@ class TextToTextRatingFlow(FlowSpec):
         memory=1,
         secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
     )
-    @notify_slack_on_success
     @step
     def end(self):
 
         print("Annotation ready in Argilla UI.")
+        send_slack_message(
+            token=self.slack_token,
+            message=f"✅ Annotation ready in Argilla for {self.dataset_name}!",
+            channel="#zenml-pipelines",
+        )
 
 
 if __name__ == "__main__":

@@ -21,7 +21,7 @@ from pbd.helper.logger import setup_logger
 from setting import processing_k8s, orchestrator_k8s
 import json
 from pbd.helper.interface.pydantic_models import DataProcessingPipelineConfig
-from pbd.helper.decorators import notify_slack_on_success
+from pbd.helper.slack import send_slack_message
 
 logger = setup_logger(__name__)
 
@@ -166,7 +166,6 @@ class PDFToImageFlow(FlowSpec):
         self.next(self.end)
 
     @orchestrator_k8s
-    @notify_slack_on_success
     @step
     def end(self):
         """
@@ -174,6 +173,11 @@ class PDFToImageFlow(FlowSpec):
         """
         print("PDF to Image conversion pipeline completed!")
         print("Results: {}".format(self.result))
+        send_slack_message(
+            token=self.slack_token,
+            message=f"✅ PDF to Image conversion completed for {self.config.filepath}!",
+            channel="#zenml-pipelines",
+        )
 
     # Helper methods - defined inside class for better encapsulation
     def _download_pdf(self, client, key: str, download_dir: str) -> str:
@@ -274,7 +278,6 @@ class PDFToImageFlow(FlowSpec):
         except Exception as e:
             logger.error(f"Error creating zip file: {str(e)}")
             raise
-
 
 
 if __name__ == "__main__":
