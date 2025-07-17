@@ -1298,16 +1298,16 @@ wheels = [
 
 [[package]]
 name = "metaflow"
-version = "2.16.0"
+version = "2.16.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "boto3", version = "1.38.27", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
     { name = "boto3", version = "1.39.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
     { name = "requests" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/7b/7f/e15ab0dac9c1f3d7d4338745ba091c0432e8399d0214cc432f3dcae8a531/metaflow-2.16.0.tar.gz", hash = "sha256:8eff07891de6f2120aa93ef6266fd7b66224835dad2dc8a7412fcfd580986a8c", size = 1463722 }
+sdist = { url = "https://files.pythonhosted.org/packages/b8/7a/9b471269984d03df67d9c43004f8be68d15fba6881428c4585d3dff9be8e/metaflow-2.16.3.tar.gz", hash = "sha256:99b7154af52509522d2adcb61925c155ae68bb79d3250d9f440e4b2681e07903", size = 1464214 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/4c/c989ddb7a97ec6fd6bfdfcfc7f9935397636ad2c8f2407444515c5e9a2b3/metaflow-2.16.0-py2.py3-none-any.whl", hash = "sha256:b746a134c0cbc0b3498ba24b1b333c528c6b1deabf64681c0faee7775682dcf4", size = 1638757 },
+    { url = "https://files.pythonhosted.org/packages/f8/1a/7f125798366a8ed9f30e8f467052e0d964ad02b96fd5c9042b92466d8424/metaflow-2.16.3-py2.py3-none-any.whl", hash = "sha256:2a37933fb042f33b5a5367ceba60265fb5a325095f49db0339c41dacff8f10f1", size = 1639275 },
 ]
 
 [[package]]
@@ -1794,7 +1794,7 @@ requires-dist = [
     { name = "json5", specifier = ">=0.12.0" },
     { name = "kubernetes", specifier = ">=32.0.1" },
     { name = "matplotlib", specifier = ">=3.10.3" },
-    { name = "metaflow", specifier = "==2.16" },
+    { name = "metaflow", specifier = "==2.16.3" },
     { name = "minio", specifier = ">=7.2.15" },
     { name = "pillow", specifier = ">=11.2.1" },
     { name = "s3fs", specifier = ">=0.4.2" },
