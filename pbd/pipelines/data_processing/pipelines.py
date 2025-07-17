@@ -191,7 +191,7 @@ class PDFToImageFlow(FlowSpec):
             logger.error(f"Failed to download {key}: {str(e)}")
             raise
 
-    def _convert_pdf_to_images(self, pdf_path: str, tmpdir: str) -> str:
+    def _convert_pdf_to_images(self, pdf_path: str, tmpdir: str):
         """Convert PDF pages to images using configuration settings."""
         pdf_doc = None
         try:

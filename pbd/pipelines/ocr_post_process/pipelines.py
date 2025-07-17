@@ -1,3 +1,46 @@
+"""
+`pipelines.py`
+
+This file defines the `OCRPostProcessFlow` class, which implements a Metaflow pipeline for post-processing OCR results.
+The pipeline consists of multiple steps to read configuration, load data, process OCR results, and finalize the flow.
+
+Classes:
+---------
+- `OCRPostProcessFlow`:
+  A Metaflow pipeline class that orchestrates the post-processing of OCR results.
+
+Functions:
+----------
+- `_read_config(bucket_name: str, config_uri: str) -> OCRPostProcessPipelineConfig`:
+  Reads the pipeline configuration from MinIO storage and returns a validated configuration object.
+
+- `_load_data()`:
+  Loads OCR results from MinIO storage and returns the data as a list.
+
+Steps:
+------
+- `start`:
+  Initializes the pipeline by reading configuration and preparing for post-processing.
+
+- `post_process`:
+  Processes OCR results to extract problem-solution pairs using the specified model and parameters.
+
+- `end`:
+  Finalizes the pipeline and sends a Slack notification upon successful completion.
+
+Constants:
+----------
+- `IMAGE_NAME`:
+  Specifies the Docker image used for Kubernetes steps.
+
+Dependencies:
+-------------
+- `metaflow`: Used for defining and managing the pipeline.
+- `minio`: Used for interacting with MinIO storage.
+- `datasets`: Used for loading OCR results in Parquet format.
+- `pbd.helper`: Contains helper functions and models for the pipeline.
+- `time`: Used for measuring execution time.
+"""
 from metaflow import (
     FlowSpec,
     environment,
