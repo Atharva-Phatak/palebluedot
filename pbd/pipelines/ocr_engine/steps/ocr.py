@@ -52,8 +52,6 @@ from pbd.helper.s3_paths import ocr_results_path
 from pbd.pipelines.ocr_engine.steps.format import clean_and_format_html
 
 
-
-
 def sort_pages_by_number(pages: list[str]) -> list[str]:
     """
     Sorts a list of image filenames by their embedded page numbers.
@@ -75,10 +73,12 @@ def sort_pages_by_number(pages: list[str]) -> list[str]:
 def process_response(response: list[dict]) -> list[dict]:
     cleaned_response = []
     for item in response:
-        cleaned_response.append({
-            "page" : item["page"],
-            "content": clean_and_format_html(item["content"]),
-        })
+        cleaned_response.append(
+            {
+                "page": item["page"],
+                "content": clean_and_format_html(item["content"]),
+            }
+        )
     return cleaned_response
 
 
@@ -87,7 +87,7 @@ def do_inference(
     model_path: str,
     max_new_tokens: int,
     batch_size: int,
-    max_model_len: int = 100000,
+    max_model_len: int = 21768,
 ) -> list[dict]:
     """
     Runs OCR inference on a list of images using a multimodal LLM, batching requests for efficiency.
@@ -97,7 +97,7 @@ def do_inference(
         model_path (str): Path to the pretrained multimodal LLM model.
         max_new_tokens (int): Maximum number of tokens to generate per output.
         batch_size (int): Number of images to process per batch.
-        max_model_len (int, optional): Maximum model length for the LLM. Defaults to 100000.
+        max_model_len (int, optional): Maximum model length for the LLM. Defaults to 32769.
 
     Returns:
         list[dict]: List of dictionaries with 'page' and 'content' keys for each image.
