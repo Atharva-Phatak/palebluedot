@@ -10,7 +10,7 @@ dependencies = [
     "boto3>=1.38.27",
     "datasets>=3.6.0",
     "kubernetes>=32.0.1",
-    "metaflow==2.16.3",
+    "metaflow==2.15.8",
     "minio>=7.2.15",
     "s3fs>=0.4.2",
     "slack-sdk>=3.35.0",
