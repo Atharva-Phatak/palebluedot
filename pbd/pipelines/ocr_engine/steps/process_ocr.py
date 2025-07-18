@@ -54,6 +54,7 @@ def simple_inference(
         )
         for img_path, output in zip(batch, outputs):
             page_no = extract_page_number(img_path)
+            print(f"Generated text for page {page_no}: {len(output.outputs[0].text)}")
             generated_texts.append(
                 {
                     "page": page_no,
