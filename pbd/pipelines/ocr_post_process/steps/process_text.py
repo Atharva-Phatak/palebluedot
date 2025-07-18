@@ -37,12 +37,12 @@ from dataclasses import asdict
 from pbd.helper.file_upload import store_extracted_texts_to_minio
 
 
-def batch_prompts(chunk_size:int,
-                  tokenizer,
-                  data: list[dict]):
+def batch_prompts(
+    chunk_size: int, tokenizer, data: list[dict]
+) -> list[tuple[str, list[dict]]]:
     batches = []
     for indx in range(0, len(data), chunk_size):
-        chunk = data[indx: indx + chunk_size]
+        chunk = data[indx : indx + chunk_size]
         contents = [ex["content"] for ex in chunk]
         concat_contents = "\n\n".join(contents)
 
@@ -53,7 +53,9 @@ def batch_prompts(chunk_size:int,
             add_generation_prompt=True,
             enable_thinking=False,
         )
-        batches.append(prompt)
+        batches.append(
+            (prompt, concat_contents)
+        )  # return both prompt and associated examples
     return batches
 
 
@@ -81,7 +83,7 @@ def extract_problem_solution(
     batch_size: int,
     filename: str,
     minio_endpoint: str,
-    chunk_size:int
+    chunk_size: int,
 ):
     # empty cuda cache before starting new step
     if torch.cuda.is_available():
@@ -91,7 +93,7 @@ def extract_problem_solution(
         max_model_len=max_model_len, model_path=model_path, batch_size=batch_size
     )
     params = vllm.SamplingParams(**sampling_params)
-    results, content_batch = [] , []
+    results = []
     batch_count = 0
     start = time.time()
     print(
@@ -103,15 +105,20 @@ def extract_problem_solution(
         data=data,
     )
     for indx in range(0, len(batches), batch_size):
-        current_batch = batches[indx: indx + batch_size]
+        batch_slice = batches[indx : indx + batch_size]
+        current_prompts = [b[0] for b in batch_slice]
+        current_contents = [b[1] for b in batch_slice]
+
         gen_time = time.time()
         outputs = model.generate(
-                prompts=current_batch, sampling_params=params, use_tqdm=False
+            prompts=current_prompts, sampling_params=params, use_tqdm=False
         )
-        for content, output in zip(content_batch, outputs):
-            results.append({"content": content, "generated": output.outputs[0].text})
+
+        for chunk, output in zip(current_contents, outputs):
+            results.append({"content": chunk, "generated": output.outputs[0].text})
         print(
-            f"Batch {batch_count} processed in {(time.time() - gen_time):.2f} seconds, ")
+            f"Batch {batch_count} processed in {(time.time() - gen_time):.2f} seconds, "
+        )
     path = formatted_results_path(filename)
     print(
         f"\n🎉 Completed inference in {(time.time() - start)//60 :.2f} minutes. Storing results to MinIO at {path}"
