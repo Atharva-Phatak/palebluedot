@@ -1,4 +1,4 @@
-from metaflow import step, FlowSpec, kubernetes, trigger_on_finish
+from metaflow import step, FlowSpec, kubernetes, trigger_on_finish, current
 import os
 import argilla as rg
 from pbd.helper.s3_paths import formatted_results_path
@@ -28,6 +28,7 @@ class TextToTextRatingFlow(FlowSpec):
         self.next(self.push_to_argilla)
 
     def _load_data(self):
+        self.filename = current.trigger.run.data.config.filename
         formatted_results = formatted_results_path(filename=self.filename)
         local_path = download_from_minio(
             endpoint=self.minio_endpoint,
