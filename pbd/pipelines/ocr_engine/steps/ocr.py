@@ -87,7 +87,7 @@ def do_inference(
     model_path: str,
     max_new_tokens: int,
     batch_size: int,
-    max_model_len: int = 21768,
+    max_model_len: int = 32768,
 ) -> list[dict]:
     """
     Runs OCR inference on a list of images using a multimodal LLM, batching requests for efficiency.
@@ -127,9 +127,9 @@ def do_inference(
 
     total_time = (time.time() - start) // 60
     print(f"Total inference time: {total_time} minutes for {len(image_paths)} images")
-    cleaned_response = process_response(response)
-    print(f"Processed {len(cleaned_response)} images with OCR")
-    return cleaned_response
+    # cleaned_response = process_response(response)
+    # print(f"Processed {len(cleaned_response)} images with OCR")
+    return response
 
 
 def ocr_images(
