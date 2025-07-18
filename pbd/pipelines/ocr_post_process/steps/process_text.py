@@ -35,9 +35,10 @@ from pbd.pipelines.ocr_post_process.steps.prompt import generate_post_processing
 from pbd.helper.s3_paths import formatted_results_path
 from dataclasses import asdict
 from pbd.helper.file_upload import store_extracted_texts_to_minio
+from pbd.pipelines.ocr_post_process.steps.format import clean_html
 
 
-def batch_prompts(
+def chunk_prompts(
     chunk_size: int, tokenizer, data: list[dict]
 ) -> list[tuple[str, list[dict]]]:
     batches = []
@@ -94,18 +95,18 @@ def extract_problem_solution(
     )
     params = vllm.SamplingParams(**sampling_params)
     results = []
-    batch_count = 0
     start = time.time()
     print(
         f"🚀 Starting inference with {len(data)} samples, chunk size = {chunk_size}, batch size = {batch_size}"
     )
-    batches = batch_prompts(
+    chunks = chunk_prompts(
         chunk_size=chunk_size,
         tokenizer=tokenizer,
         data=data,
     )
-    for indx in range(0, len(batches), batch_size):
-        batch_slice = batches[indx : indx + batch_size]
+    print(f"Total batches to process: {chunks}")
+    for indx in range(0, len(chunks), batch_size):
+        batch_slice = chunks[indx : indx + batch_size]
         current_prompts = [b[0] for b in batch_slice]
         current_contents = [b[1] for b in batch_slice]
 
@@ -115,10 +116,10 @@ def extract_problem_solution(
         )
 
         for chunk, output in zip(current_contents, outputs):
-            results.append({"content": chunk, "generated": output.outputs[0].text})
-        print(
-            f"Batch {batch_count} processed in {(time.time() - gen_time):.2f} seconds, "
-        )
+            generated_text = output.outputs[0].text
+            clean_text = clean_html(generated_text)
+            results.append({"content": chunk, "generated": clean_text})
+        print(f"Batch {indx} processed in {(time.time() - gen_time):.2f} seconds, ")
     path = formatted_results_path(filename)
     print(
         f"\n🎉 Completed inference in {(time.time() - start)//60 :.2f} minutes. Storing results to MinIO at {path}"

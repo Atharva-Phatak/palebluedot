@@ -127,9 +127,9 @@ def do_inference(
 
     total_time = (time.time() - start) // 60
     print(f"Total inference time: {total_time} minutes for {len(image_paths)} images")
-    # cleaned_response = process_response(response)
-    # print(f"Processed {len(cleaned_response)} images with OCR")
-    return response
+    cleaned_response = process_response(response)
+    print(f"Processed {len(cleaned_response)} images with OCR")
+    return cleaned_response
 
 
 def ocr_images(
