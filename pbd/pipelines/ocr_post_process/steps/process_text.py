@@ -35,7 +35,6 @@ from pbd.pipelines.ocr_post_process.steps.prompt import generate_post_processing
 from pbd.helper.s3_paths import formatted_results_path
 from dataclasses import asdict
 from pbd.helper.file_upload import store_extracted_texts_to_minio
-from pbd.pipelines.ocr_post_process.steps.format import clean_html
 
 
 def chunk_prompts(
@@ -104,7 +103,7 @@ def extract_problem_solution(
         tokenizer=tokenizer,
         data=data,
     )
-    print(f"Total batches to process: {chunks}")
+    print(f"Total batches to process: {len(chunks)}")
     for indx in range(0, len(chunks), batch_size):
         batch_slice = chunks[indx : indx + batch_size]
         current_prompts = [b[0] for b in batch_slice]
@@ -117,8 +116,7 @@ def extract_problem_solution(
 
         for chunk, output in zip(current_contents, outputs):
             generated_text = output.outputs[0].text
-            clean_text = clean_html(generated_text)
-            results.append({"content": chunk, "generated": clean_text})
+            results.append({"content": chunk, "generated": generated_text})
         print(f"Batch {indx} processed in {(time.time() - gen_time):.2f} seconds, ")
     path = formatted_results_path(filename)
     print(
