@@ -53,6 +53,12 @@ class TextToTextRatingFlow(FlowSpec):
             api_key=os.environ.get("argilla_apiKey"),
         )
 
+        workspace = client.workspaces("pbd")
+        if workspace is None:
+            print("Creating workspace 'pbd' in Argilla...")
+            workspace_to_create = rg.Workspace(name="pbd")
+            _ = workspace_to_create.create()
+
         # Create dataset name
         dataset_name = f"{self.filename}_ocr_post_process"
 
@@ -87,6 +93,7 @@ class TextToTextRatingFlow(FlowSpec):
             name=dataset_name,
             settings=settings,
             client=client,
+            workspace="pbd"
         )
         dataset = dataset.create()
         print(f"Created new dataset: {dataset_name}")
