@@ -104,8 +104,7 @@ class PDFToImageFlow(FlowSpec):
             secure=False,
         )
 
-        try:
-            with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
                 print(f"Using temporary directory: {tmpdir}")
 
                 # Check available disk space
@@ -167,13 +166,6 @@ class PDFToImageFlow(FlowSpec):
                     "pages_processed": pages_count,
                 }
 
-        except Exception as e:
-            logger.error(f"Error processing {self.filename}: {str(e)}", exc_info=True)
-            self.result = {
-                "pdf_key": self.filename,
-                "status": "failed",
-                "error": str(e),
-            }
 
         self.next(self.end)
 
