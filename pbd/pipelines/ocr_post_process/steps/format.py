@@ -86,6 +86,8 @@ def verify_latex(latex_code: str) -> str:
 
 
 def clean_html(html_content: str) -> str:
+    if len(html_content) == 0:
+        return ""
     soup = BeautifulSoup(html_content, "html.parser")
     output = []
 

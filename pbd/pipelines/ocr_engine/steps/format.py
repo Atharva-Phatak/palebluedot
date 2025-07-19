@@ -2,6 +2,8 @@ import re
 from bs4 import BeautifulSoup, Tag
 
 def clean_and_format_html(full_predict):
+    if len(full_predict) == 0:
+        return ""
     soup = BeautifulSoup(full_predict, 'html.parser')
 
     # Regular expression pattern to match 'color' styles in style attributes

@@ -20,7 +20,7 @@ import json
 from pbd.helper.interface.pydantic_models import DataProcessingPipelineConfig
 from pbd.helper.slack import send_slack_message
 from pbd.pipelines.data_processing.steps.utils import download_pdf, zip_images
-from pbd.pipelines.data_processing.steps.pdf_to_image import convert_pdf_to_images, build_page_to_prompt
+from pbd.pipelines.data_processing.steps.pdf_to_image import convert_pdf_to_images
 from pbd.helper.s3_paths import pdf_prompt_path
 
 logger = setup_logger(__name__)
@@ -131,17 +131,17 @@ class PDFToImageFlow(FlowSpec):
             print(f"Created zip at {zip_path}")
 
             # Build prompts for finetuning
-            prompts = build_page_to_prompt(
-                pdf_path=pdf_path,
-                page_count=pages_count
-            )
+            #prompts = build_page_to_prompt(
+            #    pdf_path=pdf_path,
+            #    page_count=pages_count
+            #)
             print(f"Built prompts for {pdf_name}")
             # Dump prompts to MinIO
-            self._dump_json_to_minio(
-                pdf_name=pdf_name,
-                tmpdir=tmpdir,
-                prompts=prompts,
-                client=client)
+            #self._dump_json_to_minio(
+            #    pdf_name=pdf_name,
+            #    tmpdir=tmpdir,
+            #    prompts=prompts,
+            #    client=client)
             print(f"Dumped prompts to MinIO at {pdf_prompt_path(pdf_name)}")
 
             print(f"uploading zip file to MinIO at {self.config.output_path}{pdf_name}.zip")
