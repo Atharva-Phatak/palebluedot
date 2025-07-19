@@ -2,6 +2,7 @@ def data_processing_pipeline_config_path():
     return "pipeline_configs/data_processing/config.json"
 
 
+
 def ocr_engine_config_path():
     return "pipeline_configs/ocr_engine/config.json"
 
@@ -24,3 +25,6 @@ def ocr_results_path(filename: str):
 
 def formatted_results_path(filename: str):
     return f"formatted_results/{filename}.parquet"
+
+def pdf_prompt_path(filename: str):
+    return f"pdf_prompts/{filename}.json"

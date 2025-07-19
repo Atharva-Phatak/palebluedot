@@ -3,7 +3,7 @@ from slack_sdk.errors import SlackApiError
 
 
 def send_slack_message(
-    token: str, message: str, channel: str = "#zeml-pipelines"
+    token: str, message: str, channel: str = "#metaflow-pipelines"
 ) -> bool:
     """
     Send a Slack message using the official Slack SDK.

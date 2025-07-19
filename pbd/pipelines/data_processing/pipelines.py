@@ -12,9 +12,6 @@ All configuration is loaded from a JSON file, keeping the original K8s decorator
 
 import os
 import tempfile
-import shutil
-import zipfile
-import pymupdf
 from minio import Minio
 from metaflow import FlowSpec, step, trigger, Parameter
 from pbd.helper.logger import setup_logger
@@ -22,7 +19,9 @@ from setting import processing_k8s, orchestrator_k8s
 import json
 from pbd.helper.interface.pydantic_models import DataProcessingPipelineConfig
 from pbd.helper.slack import send_slack_message
-
+from pbd.pipelines.data_processing.steps.utils import download_pdf, zip_images
+from pbd.pipelines.data_processing.steps.pdf_to_image import convert_pdf_to_images, build_page_to_prompt
+from pbd.helper.s3_paths import pdf_prompt_path
 logger = setup_logger(__name__)
 
 
@@ -115,27 +114,36 @@ class PDFToImageFlow(FlowSpec):
                 print(f"Available disk space: {free_space_gb:.2f} GB")
 
                 # Download PDF
-                pdf_path = self._download_pdf(client, self.filename, tmpdir)
+                pdf_path = download_pdf(client, self.filename, tmpdir)
                 print(f"Downloaded {self.filename} to {pdf_path}")
 
-                # Check PDF file size
-                pdf_size_mb = os.path.getsize(pdf_path) / (1024 * 1024)
-                print(f"PDF size: {pdf_size_mb:.2f} MB")
 
                 # Convert PDF to images using config settings
-                image_output_dir = self._convert_pdf_to_images(pdf_path, tmpdir)
+                pages_count, image_output_dir = convert_pdf_to_images(pdf_path, tmpdir)
                 print(f"Converted {self.filename} to images in {image_output_dir}")
 
                 # Create zip
                 pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
                 zip_path = os.path.join(tmpdir, f"{pdf_name}.zip")
-                self._zip_images(image_output_dir, zip_path)
+                zip_images(image_output_dir, zip_path)
                 print(f"Created zip at {zip_path}")
 
-                # Check zip file size
-                zip_size_mb = os.path.getsize(zip_path) / (1024 * 1024)
-                print(f"Zip size: {zip_size_mb:.2f} MB")
+                # Build prompts for finetuning
+                prompts = build_page_to_prompt(
+                    pdf_path=pdf_path,
+                    page_count = pages_count
+                )
+                print(f"Built prompts for {pdf_name}")
+                # Dump prompts to MinIO
+                self._dump_json_to_minio(
+                    pdf_name=pdf_name,
+                    tmpdir=tmpdir,
+                    prompts=prompts,
+                    client=client)
+                print(f"Dumped prompts to MinIO at {pdf_prompt_path(pdf_name)}")
 
+
+                print(f"uploading zip file to MinIO at {self.config.output_path}{pdf_name}.zip")
                 # Upload to MinIO
                 zip_key = f"{self.config.output_path}{pdf_name}.zip"
                 client.fput_object(
@@ -146,13 +154,14 @@ class PDFToImageFlow(FlowSpec):
                 )
                 print(f"Uploaded zip for {pdf_name} to MinIO at {zip_key}")
 
+
+
+
                 self.result = {
                     "pdf_key": self.filename,
                     "zip_key": zip_key,
                     "status": "success",
-                    "pages_processed": self.pages_count,
-                    "pdf_size_mb": pdf_size_mb,
-                    "zip_size_mb": zip_size_mb,
+                    "pages_processed": pages_count,
                 }
 
         except Exception as e:
@@ -179,105 +188,25 @@ class PDFToImageFlow(FlowSpec):
             channel="#zenml-pipelines",
         )
 
-    # Helper methods - defined inside class for better encapsulation
-    def _download_pdf(self, client, key: str, download_dir: str) -> str:
-        """Download a PDF file from MinIO to a local directory."""
-        local_path = os.path.join(download_dir, os.path.basename(key))
-        try:
-            response = client.get_object(self.config.bucket_name, key)
-            with open(local_path, "wb") as file_data:
-                shutil.copyfileobj(response, file_data)
-            # Verify the file was written successfully
-            if os.path.getsize(local_path) == 0:
-                raise Exception(f"Downloaded file {local_path} is empty")
-            return local_path
-        except Exception as e:
-            logger.error(f"Failed to download {key}: {str(e)}")
-            raise
+    def _dump_json_to_minio(self,
+                            pdf_name:str,
+                            tmpdir:str,
+                            prompts:dict,
+                            client: Minio):
+        prompt_path = pdf_prompt_path(pdf_name)
+        with open(os.path.join(tmpdir, f"{pdf_name}.json"), "w") as f:
+            json.dump(prompts, f)
+        client.fput_object(
+            bucket_name=self.config.bucket_name,
+            object_name=prompt_path,
+            file_path=os.path.join(tmpdir, f"{pdf_name}.json"),
+            content_type="application/json",
+        )
 
-    def _convert_pdf_to_images(self, pdf_path: str, tmpdir: str):
-        """Convert PDF pages to images using configuration settings."""
-        pdf_doc = None
-        try:
-            # Open PDF with error checking
-            if not os.path.exists(pdf_path):
-                raise FileNotFoundError(f"PDF file not found: {pdf_path}")
 
-            pdf_doc = pymupdf.open(pdf_path)
-            if pdf_doc.is_closed:
-                raise Exception("PDF document is closed after opening")
 
-            pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
-            self.pages_count = len(pdf_doc)
-            print(f"Converting {pdf_name} with {self.pages_count} pages.")
 
-            if self.pages_count == 0:
-                raise Exception("PDF contains no pages")
 
-            # Create a directory to store image files
-            image_output_dir = os.path.join(tmpdir, pdf_name)
-            os.makedirs(image_output_dir, exist_ok=True)
-
-            image_format = "png"
-            dpi = 300
-
-            for i in range(self.pages_count):
-                try:
-                    page = pdf_doc[i]
-                    # Use a reasonable DPI to avoid memory issues
-                    pixmap = page.get_pixmap(dpi=dpi)
-                    extension = (
-                        "jpg"
-                        if image_format.upper() == "JPEG"
-                        else image_format.lower()
-                    )
-                    img_path = os.path.join(
-                        image_output_dir, f"page_{i + 1}.{extension}"
-                    )
-                    pixmap.save(img_path, image_format)
-
-                    # Clear pixmap to free memory
-                    pixmap = None
-
-                    if i % 10 == 0:  # Log progress every 10 pages
-                        print(f"Processed page {i + 1}/{self.pages_count}")
-
-                except Exception as e:
-                    logger.error(f"Error processing page {i + 1}: {str(e)}")
-                    raise
-
-            print(
-                f"Saved {self.pages_count} images for {pdf_name} at {dpi} DPI in {image_format} format."
-            )
-            return image_output_dir
-
-        except Exception as e:
-            logger.error(f"Error converting PDF to images: {str(e)}")
-            raise
-        finally:
-            # Ensure PDF is properly closed
-            if pdf_doc and not pdf_doc.is_closed:
-                pdf_doc.close()
-
-    def _zip_images(self, image_dir: str, output_zip_path: str):
-        """Zip all images in a directory into a single zip file."""
-        try:
-            with zipfile.ZipFile(
-                output_zip_path, "w", zipfile.ZIP_DEFLATED, compresslevel=6
-            ) as zipf:
-                file_count = 0
-                for root, _, files in os.walk(image_dir):
-                    for file in files:
-                        file_path = os.path.join(root, file)
-                        arcname = os.path.relpath(file_path, image_dir)
-                        zipf.write(file_path, arcname)
-                        file_count += 1
-
-                print(f"Zipped {file_count} files")
-
-        except Exception as e:
-            logger.error(f"Error creating zip file: {str(e)}")
-            raise
 
 
 if __name__ == "__main__":
