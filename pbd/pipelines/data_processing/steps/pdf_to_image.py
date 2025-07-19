@@ -73,7 +73,7 @@ def build_page_to_prompt(pdf_path:str,
 
     """Build a prompt for finetuning using the PDF content."""
     prompts = {}
-    for page_no in range(page_count):
+    for page_no in range(1, page_count+1):
         anchor_text = get_anchor_text(
             local_pdf_path=pdf_path,
             page=page_no,
