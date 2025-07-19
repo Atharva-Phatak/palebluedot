@@ -114,12 +114,15 @@ class PDFToImageFlow(FlowSpec):
                 print(f"Available disk space: {free_space_gb:.2f} GB")
 
                 # Download PDF
-                pdf_path = download_pdf(client, self.filename, tmpdir)
+                pdf_path = download_pdf(client=client,
+                                        key=self.filename,
+                                        download_dir=tmpdir,
+                                        bucket_name=self.config.bucket_name)
                 print(f"Downloaded {self.filename} to {pdf_path}")
 
 
                 # Convert PDF to images using config settings
-                pages_count, image_output_dir = convert_pdf_to_images(pdf_path, tmpdir)
+                pages_count, image_output_dir = convert_pdf_to_images(pdf_path=pdf_path, tmpdir=tmpdir)
                 print(f"Converted {self.filename} to images in {image_output_dir}")
 
                 # Create zip
