@@ -22,6 +22,7 @@ from pbd.helper.slack import send_slack_message
 from pbd.pipelines.data_processing.steps.utils import download_pdf, zip_images
 from pbd.pipelines.data_processing.steps.pdf_to_image import convert_pdf_to_images, build_page_to_prompt
 from pbd.helper.s3_paths import pdf_prompt_path
+
 logger = setup_logger(__name__)
 
 
@@ -105,67 +106,61 @@ class PDFToImageFlow(FlowSpec):
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
-                print(f"Using temporary directory: {tmpdir}")
+            print(f"Using temporary directory: {tmpdir}")
 
-                # Check available disk space
-                statvfs = os.statvfs(tmpdir)
-                free_space_gb = (statvfs.f_frsize * statvfs.f_bavail) / (1024**3)
-                print(f"Available disk space: {free_space_gb:.2f} GB")
+            # Check available disk space
+            statvfs = os.statvfs(tmpdir)
+            free_space_gb = (statvfs.f_frsize * statvfs.f_bavail) / (1024 ** 3)
+            print(f"Available disk space: {free_space_gb:.2f} GB")
 
-                # Download PDF
-                pdf_path = download_pdf(client=client,
-                                        key=self.filename,
-                                        download_dir=tmpdir,
-                                        bucket_name=self.config.bucket_name)
-                print(f"Downloaded {self.filename} to {pdf_path}")
+            # Download PDF
+            pdf_path = download_pdf(client=client,
+                                    key=self.filename,
+                                    download_dir=tmpdir,
+                                    bucket_name=self.config.bucket_name)
+            print(f"Downloaded {self.filename} to {pdf_path}")
 
+            # Convert PDF to images using config settings
+            pages_count, image_output_dir = convert_pdf_to_images(pdf_path=pdf_path, tmpdir=tmpdir)
+            print(f"Converted {self.filename} to images in {image_output_dir}")
 
-                # Convert PDF to images using config settings
-                pages_count, image_output_dir = convert_pdf_to_images(pdf_path=pdf_path, tmpdir=tmpdir)
-                print(f"Converted {self.filename} to images in {image_output_dir}")
+            # Create zip
+            pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
+            zip_path = os.path.join(tmpdir, f"{pdf_name}.zip")
+            zip_images(image_output_dir, zip_path)
+            print(f"Created zip at {zip_path}")
 
-                # Create zip
-                pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
-                zip_path = os.path.join(tmpdir, f"{pdf_name}.zip")
-                zip_images(image_output_dir, zip_path)
-                print(f"Created zip at {zip_path}")
+            # Build prompts for finetuning
+            prompts = build_page_to_prompt(
+                pdf_path=pdf_path,
+                page_count=pages_count
+            )
+            print(f"Built prompts for {pdf_name}")
+            # Dump prompts to MinIO
+            self._dump_json_to_minio(
+                pdf_name=pdf_name,
+                tmpdir=tmpdir,
+                prompts=prompts,
+                client=client)
+            print(f"Dumped prompts to MinIO at {pdf_prompt_path(pdf_name)}")
 
-                # Build prompts for finetuning
-                prompts = build_page_to_prompt(
-                    pdf_path=pdf_path,
-                    page_count = pages_count
-                )
-                print(f"Built prompts for {pdf_name}")
-                # Dump prompts to MinIO
-                self._dump_json_to_minio(
-                    pdf_name=pdf_name,
-                    tmpdir=tmpdir,
-                    prompts=prompts,
-                    client=client)
-                print(f"Dumped prompts to MinIO at {pdf_prompt_path(pdf_name)}")
+            print(f"uploading zip file to MinIO at {self.config.output_path}{pdf_name}.zip")
+            # Upload to MinIO
+            zip_key = f"{self.config.output_path}{pdf_name}.zip"
+            client.fput_object(
+                bucket_name=self.config.bucket_name,
+                object_name=zip_key,
+                file_path=zip_path,
+                content_type="application/zip",
+            )
+            print(f"Uploaded zip for {pdf_name} to MinIO at {zip_key}")
 
-
-                print(f"uploading zip file to MinIO at {self.config.output_path}{pdf_name}.zip")
-                # Upload to MinIO
-                zip_key = f"{self.config.output_path}{pdf_name}.zip"
-                client.fput_object(
-                    bucket_name=self.config.bucket_name,
-                    object_name=zip_key,
-                    file_path=zip_path,
-                    content_type="application/zip",
-                )
-                print(f"Uploaded zip for {pdf_name} to MinIO at {zip_key}")
-
-
-
-
-                self.result = {
-                    "pdf_key": self.filename,
-                    "zip_key": zip_key,
-                    "status": "success",
-                    "pages_processed": pages_count,
-                }
-
+            self.result = {
+                "pdf_key": self.filename,
+                "zip_key": zip_key,
+                "status": "success",
+                "pages_processed": pages_count,
+            }
 
         self.next(self.end)
 
@@ -184,9 +179,9 @@ class PDFToImageFlow(FlowSpec):
         )
 
     def _dump_json_to_minio(self,
-                            pdf_name:str,
-                            tmpdir:str,
-                            prompts:dict,
+                            pdf_name: str,
+                            tmpdir: str,
+                            prompts: dict,
                             client: Minio):
         prompt_path = pdf_prompt_path(pdf_name)
         with open(os.path.join(tmpdir, f"{pdf_name}.json"), "w") as f:
@@ -197,11 +192,6 @@ class PDFToImageFlow(FlowSpec):
             file_path=os.path.join(tmpdir, f"{pdf_name}.json"),
             content_type="application/json",
         )
-
-
-
-
-
 
 
 if __name__ == "__main__":
