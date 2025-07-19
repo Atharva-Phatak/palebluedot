@@ -57,7 +57,7 @@ def convert_pdf_to_images(pdf_path: str,
             print(
                 f"Saved {pages_count} images for {pdf_name} at {dpi} DPI in {image_format} format."
             )
-            return image_output_dir
+            return pages_count, image_output_dir
 
     except Exception as e:
         print(f"Error converting PDF to images: {str(e)}")
@@ -66,7 +66,7 @@ def convert_pdf_to_images(pdf_path: str,
         # Ensure PDF is properly closed
         if pdf_doc and not pdf_doc.is_closed:
                 pdf_doc.close()
-    return pages_count, image_output_dir
+
 
 def build_page_to_prompt(pdf_path:str,
                          page_count:int):
