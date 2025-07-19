@@ -47,8 +47,7 @@ from pbd.pipelines.ocr_engine.steps.downloader import (
 from pbd.helper.file_download import download_from_minio
 from pbd.helper.file_upload import store_extracted_texts_to_minio
 from pbd.pipelines.ocr_engine.steps.process_ocr import simple_inference
-from pbd.pipelines.ocr_engine.steps.prompt import get_ocr_prompt
-from pbd.helper.s3_paths import ocr_results_path
+from pbd.helper.s3_paths import ocr_results_path, pdf_prompt_path
 from pbd.pipelines.ocr_engine.steps.format import clean_and_format_html
 
 
@@ -87,6 +86,7 @@ def do_inference(
     model_path: str,
     max_new_tokens: int,
     batch_size: int,
+    prompts: dict[int, str],
     max_model_len: int = 32768,
 ) -> list[dict]:
     """
@@ -115,12 +115,11 @@ def do_inference(
     )
     model = vllm.LLM(**asdict(engine_args))
     sampling_params = vllm.SamplingParams(max_tokens=max_new_tokens)
-    prompt = get_ocr_prompt()
     start = time.time()
     response = simple_inference(
         model=model,
         image_paths=image_paths,
-        prompt=prompt,
+        prompts=prompts,
         batch_size=batch_size,
         sampling_params=sampling_params,
     )
@@ -187,11 +186,19 @@ def ocr_images(
         print(f"Extracted {len(image_paths)} images from {zip_path}")
         # check if cuda is available
         print(f"CUDA available: {torch.cuda.is_available()}")
+        prompt_path = pdf_prompt_path(filename=filename)
+        prompts = download_from_minio(
+            endpoint=endpoint,
+            bucket=bucket,
+            object_key=prompt_path,
+            local_path="/tmp/prompts.json",
+        )
         outputs = do_inference(
             image_paths=image_paths,
             model_path=model_path,
             max_new_tokens=max_new_tokens,
             batch_size=batch_size,
+            prompts=prompts,
         )
         store_extracted_texts_to_minio(
             dataset=outputs,

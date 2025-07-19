@@ -27,7 +27,7 @@ def extract_page_number(filename: str) -> int:
 def simple_inference(
     model: LLM,
     image_paths: list[str],
-    prompt: str,
+    prompts: dict[int, str],
     batch_size: int,
     sampling_params: SamplingParams,
 ) -> list[dict]:
@@ -36,14 +36,15 @@ def simple_inference(
     print(f"Total batches to process: {total_batches}")
     for indx in range(0, len(image_paths), batch_size):
         batch = image_paths[indx : indx + batch_size]
+        pages = [extract_page_number(img_path) for img_path in batch]
         inputs = [
             {
-                "prompt": prompt,
+                "prompt": prompts[page_no],
                 "multi_modal_data": {
                     "image": fetch_image(img_path),
                 },
             }
-            for img_path in batch
+            for page_no,img_path in enumerate(pages,batch)
         ]
         start = time.time()
         outputs = model.generate(
