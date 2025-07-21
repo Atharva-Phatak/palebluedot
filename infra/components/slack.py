@@ -7,10 +7,13 @@ def deploy_slack_secret(
     depends_on: list,
     namespace: Namespace,
     k8s_provider: k8s.Provider,
+    project_id: str,
 ):
     slack_secret = create_slack_secret(
         namespace=namespace,
         depends_on=depends_on,
         k8s_provider=k8s_provider,
+        project_id=project_id,
+        environment_slug="dev",
     )
     return slack_secret

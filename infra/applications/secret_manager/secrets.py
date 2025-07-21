@@ -1,4 +1,3 @@
-import os
 
 import pulumi
 import pulumi_kubernetes as k8s
@@ -6,7 +5,23 @@ from applications.minio.minio import get_minio_secret
 from applications.postgres.deploy_postgres import get_postgres_secret
 from applications.argilla.deploy_argilla import get_argilla_secrets
 from pulumi_kubernetes.core.v1 import Namespace
+from applications.secret_manager.utils import get_infiscal_sdk
 
+
+def get_secret(
+    access_key_identifier: str,
+    project_id: str,
+    environment_slug: str
+):
+    """Retrieve the Postgres password from the secret manager."""
+    client = get_infiscal_sdk()
+    _secret = client.secrets.get_secret_by_name(
+        secret_name=access_key_identifier,
+        project_id=project_id,
+        environment_slug=environment_slug,
+        secret_path="/",
+    )
+    return _secret.secretValue
 
 def create_aws_secret(
     provider: k8s.Provider,
@@ -38,9 +53,17 @@ def create_aws_secret(
 
 
 def create_gh_secret(
-    namespace: Namespace, depends_on: list, k8s_provider: k8s.Provider
+    namespace: Namespace,
+    project_id: str,
+    depends_on: list,
+    k8s_provider: k8s.Provider,
+    environment_slug: str = "dev",
 ):
-    github_token = os.environ.get("GITHUB_TOKEN")
+    github_token = get_secret(
+        access_key_identifier = "gh_token",
+        project_id  = project_id,
+        environment_slug = environment_slug,
+    )
     github_secret = k8s.core.v1.Secret(
         "gha-rs-github-secret",
         metadata={
@@ -84,9 +107,16 @@ def create_postgres_secret(
 def create_slack_secret(
     namespace: Namespace,
     depends_on: list,
+    project_id: str,
+
     k8s_provider: k8s.Provider,
+    environment_slug: str="dev",
 ):
-    slack_token = os.environ.get("SLACK_TOKEN")
+    slack_token = get_secret(
+        access_key_identifier = "slack_token",
+        project_id  = project_id,
+        environment_slug = environment_slug,
+    )
     slack_secret = k8s.core.v1.Secret(
         "slack-secret",
         metadata={

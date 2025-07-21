@@ -39,6 +39,7 @@ metaflow_namespace = deploy_metaflow_namespace(
 slack_secret = deploy_slack_secret(
     k8s_provider=provider,
     namespace=metaflow_namespace,
+    project_id=cfg.infiscal_project_id,
     depends_on=[minikube_start, metaflow_namespace],
 )
 
@@ -78,6 +79,7 @@ postgres_chart = deploy_postgres_component(
 # Deploy arc controller and scale set
 arc_component = deploy_arc_components(
     k8s_provider=provider,
+    project_id=cfg.infiscal_project_id,
     depends_on=[minikube_start, metaflow_namespace],
 )
 
@@ -168,3 +170,4 @@ argilla_chart = deploy_argilla_component(
         minio_chart,
     ],
 )
+print("All components deployed successfully!")

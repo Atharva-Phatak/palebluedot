@@ -5,7 +5,9 @@ from applications.secret_manager.secrets import create_gh_secret
 from applications.k8s.namespace import create_namespace
 
 
-def deploy_arc_components(k8s_provider: k8s.Provider, depends_on: list):
+def deploy_arc_components(k8s_provider: k8s.Provider,
+                          project_id: str,
+                          depends_on: list):
     namespace = create_namespace(
         provider=k8s_provider,
         namespace="arc-ns",
@@ -15,6 +17,8 @@ def deploy_arc_components(k8s_provider: k8s.Provider, depends_on: list):
         k8s_provider=k8s_provider,
         depends_on=depends_on,
         namespace=namespace,
+        project_id=project_id,
+        environment_slug="dev",
     )
     arc_controller_resource = deploy_arc_controller(
         depends_on=depends_on,
