@@ -53,8 +53,14 @@ class MistralToMarkdownFlow(FlowSpec):
         self.access_key = os.environ.get("AWS_ACCESS_KEY_ID")
         self.secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
         self.slack_token = os.environ.get("SLACK_TOKEN")
+        mistral_token = os.environ.get("MISTRAL_TOKEN")
+
         if not self.access_key or not self.secret_key:
             raise ValueError("AWS credentials not found in environment variables")
+
+        if not mistral_token:
+            raise ValueError("Mistral token not found in environment variables")
+
 
         print(f"Received filename: {self.filename} with bucket: {self.bucket_name}")
         client = Minio(
