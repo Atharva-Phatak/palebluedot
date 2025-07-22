@@ -149,24 +149,25 @@ class MistralToMarkdownFlow(FlowSpec):
                 local_path=markdown_path,
                 client=client,
             )
-            zip_output_path = minio_zip_path(pdf_name)
-            zip_path = os.path.join(tmpdir, f"{pdf_name}.zip")
-            zip_images(markdown_images_path, zip_path)
-            print(f"Created zip at {zip_path}")
-            print(f"uploading zip file to MinIO at {zip_output_path}")
-            # Upload to MinIO
-            client.fput_object(
-                bucket_name=self.config.bucket_name,
-                object_name=zip_output_path,
-                file_path=zip_path,
-                content_type="application/zip",
-            )
-            print(f"Uploaded zip for {pdf_name} to MinIO at {zip_output_path}")
-            print(f"Time taken to process {pdf_name}: {time.time() - start:.2f} seconds")
-            self.result = {
-                "pdf_key": self.filename,
-                "status": "success",
-            }
+            if markdown_images_path is not None:
+                zip_output_path = minio_zip_path(pdf_name)
+                zip_path = os.path.join(tmpdir, f"{pdf_name}.zip")
+                zip_images(markdown_images_path, zip_path)
+                print(f"Created zip at {zip_path}")
+                print(f"uploading zip file to MinIO at {zip_output_path}")
+                # Upload to MinIO
+                client.fput_object(
+                    bucket_name=self.config.bucket_name,
+                    object_name=zip_output_path,
+                    file_path=zip_path,
+                    content_type="application/zip",
+                )
+                print(f"Uploaded zip for {pdf_name} to MinIO at {zip_output_path}")
+                print(f"Time taken to process {pdf_name}: {time.time() - start:.2f} seconds")
+                self.result = {
+                    "pdf_key": self.filename,
+                    "status": "success",
+                }
 
         self.next(self.end)
 

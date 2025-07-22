@@ -72,4 +72,5 @@ def fetch_pdf_content(pdf_path:str,output_path:str):
        print(f"Error processing PDF: {response['detail']}")
     else:
         print(f"PDF processed successfully. Storing content to {output_path}")
-        create_markdown_file(response, output_path)
+        images_path = create_markdown_file(response, output_path)
+        return images_path
