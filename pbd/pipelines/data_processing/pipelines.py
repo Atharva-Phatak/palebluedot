@@ -17,17 +17,18 @@ from metaflow import FlowSpec, step, trigger, Parameter
 from pbd.helper.logger import setup_logger
 from setting import processing_k8s, orchestrator_k8s
 import json
+import time
 from pbd.helper.interface.pydantic_models import DataProcessingPipelineConfig
 from pbd.helper.slack import send_slack_message
-from pbd.pipelines.data_processing.steps.utils import download_pdf, zip_images
-from pbd.pipelines.data_processing.steps.pdf_to_image import convert_pdf_to_images
-from pbd.helper.s3_paths import pdf_prompt_path
-
+from pbd.pipelines.data_processing.steps.utils import download_pdf
+import pbd.pipelines.data_processing.steps.query_mistral as query_mistral
+from pbd.pipelines.data_processing.steps.utils import zip_images
+from pbd.helper.s3_paths import pdf_markdown_path, minio_zip_path
 logger = setup_logger(__name__)
 
 
 @trigger(event="minio.upload")
-class PDFToImageFlow(FlowSpec):
+class MistralToMarkdownFlow(FlowSpec):
     """
     Metaflow pipeline for converting PDFs to images and uploading to MinIO reacting to argo events.
     """
@@ -121,45 +122,44 @@ class PDFToImageFlow(FlowSpec):
             print(f"Downloaded {self.filename} to {pdf_path}")
 
             # Convert PDF to images using config settings
-            pages_count, image_output_dir = convert_pdf_to_images(pdf_path=pdf_path, tmpdir=tmpdir)
-            print(f"Converted {self.filename} to images in {image_output_dir}")
+            #pages_count, image_output_dir = convert_pdf_to_images(pdf_path=pdf_path, tmpdir=tmpdir)
+            #print(f"Converted {self.filename} to images in {image_output_dir}")
 
             # Create zip
             pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
+
+            start = time.time()
+
+            markdown_path = os.path.join(tmpdir, f"{pdf_name}.md")
+            # Store content to markdown file
+            markdown_images_path = query_mistral.fetch_pdf_content(
+                pdf_path=pdf_path,
+                output_path=markdown_path,)
+            print(f"Markdown file created at {markdown_path}")
+
+            # Upload markdown file to MinIO
+            self._dump_md_to_minio(
+                pdf_name=pdf_name,
+                local_path=markdown_path,
+                client=client,
+            )
+            zip_output_path = minio_zip_path(pdf_name)
             zip_path = os.path.join(tmpdir, f"{pdf_name}.zip")
-            zip_images(image_output_dir, zip_path)
+            zip_images(markdown_images_path, zip_path)
             print(f"Created zip at {zip_path}")
-
-            # Build prompts for finetuning
-            #prompts = build_page_to_prompt(
-            #    pdf_path=pdf_path,
-            #    page_count=pages_count
-            #)
-            print(f"Built prompts for {pdf_name}")
-            # Dump prompts to MinIO
-            #self._dump_json_to_minio(
-            #    pdf_name=pdf_name,
-            #    tmpdir=tmpdir,
-            #    prompts=prompts,
-            #    client=client)
-            print(f"Dumped prompts to MinIO at {pdf_prompt_path(pdf_name)}")
-
-            print(f"uploading zip file to MinIO at {self.config.output_path}{pdf_name}.zip")
+            print(f"uploading zip file to MinIO at {zip_output_path}")
             # Upload to MinIO
-            zip_key = f"{self.config.output_path}{pdf_name}.zip"
             client.fput_object(
                 bucket_name=self.config.bucket_name,
-                object_name=zip_key,
+                object_name=zip_output_path,
                 file_path=zip_path,
                 content_type="application/zip",
             )
-            print(f"Uploaded zip for {pdf_name} to MinIO at {zip_key}")
-
+            print(f"Uploaded zip for {pdf_name} to MinIO at {zip_output_path}")
+            print(f"Time taken to process {pdf_name}: {time.time() - start:.2f} seconds")
             self.result = {
                 "pdf_key": self.filename,
-                "zip_key": zip_key,
                 "status": "success",
-                "pages_processed": pages_count,
             }
 
         self.next(self.end)
@@ -175,24 +175,27 @@ class PDFToImageFlow(FlowSpec):
         send_slack_message(
             token=self.slack_token,
             message=f"✅ PDF to Image conversion completed for {self.config.filepath}!",
-            channel="#zenml-pipelines",
+            channel="#metaflow-pipelines",
         )
 
-    def _dump_json_to_minio(self,
+    def _dump_md_to_minio(self,
                             pdf_name: str,
-                            tmpdir: str,
-                            prompts: dict,
+                            local_path:str,
                             client: Minio):
-        prompt_path = pdf_prompt_path(pdf_name)
-        with open(os.path.join(tmpdir, f"{pdf_name}.json"), "w") as f:
-            json.dump(prompts, f)
-        client.fput_object(
-            bucket_name=self.config.bucket_name,
-            object_name=prompt_path,
-            file_path=os.path.join(tmpdir, f"{pdf_name}.json"),
-            content_type="application/json",
-        )
-
+        upload_path = pdf_markdown_path(pdf_name)
+        try:
+            client.fput_object(
+                bucket_name=self.config.bucket_name,
+                object_name=upload_path,
+                file_path=local_path,
+                content_type="text/markdown",
+            )
+            print(f"Uploaded markdown to MinIO at {upload_path}")
+        except Exception as e:
+            print(f"Failed to upload markdown to MinIO: {e}")
+            raise ValueError(
+                f"Failed to upload markdown to MinIO: {e}"
+            )
 
 if __name__ == "__main__":
-    PDFToImageFlow()
+    MistralToMarkdownFlow()

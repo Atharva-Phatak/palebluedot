@@ -1,7 +1,5 @@
 import os
 import pymupdf
-from pbd.pipelines.data_processing.steps.anchor_text import get_anchor_text
-from pbd.pipelines.data_processing.steps.prompt import build_finetuning_prompt
 def convert_pdf_to_images(pdf_path: str,
                            tmpdir: str):
     """Convert PDF pages to images using configuration settings."""
@@ -66,19 +64,3 @@ def convert_pdf_to_images(pdf_path: str,
         # Ensure PDF is properly closed
         if pdf_doc and not pdf_doc.is_closed:
                 pdf_doc.close()
-
-
-def build_page_to_prompt(pdf_path:str,
-                         page_count:int):
-
-    """Build a prompt for finetuning using the PDF content."""
-    prompts = {}
-    for page_no in range(1, page_count+1):
-        anchor_text = get_anchor_text(
-            local_pdf_path=pdf_path,
-            page=page_no,
-            pdf_engine="pdfreport"
-        )
-        prompt = build_finetuning_prompt(anchor_text)
-        prompts[page_no] = prompt
-    return prompts

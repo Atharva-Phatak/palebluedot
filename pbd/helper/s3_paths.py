@@ -26,5 +26,5 @@ def ocr_results_path(filename: str):
 def formatted_results_path(filename: str):
     return f"formatted_results/{filename}.parquet"
 
-def pdf_prompt_path(filename: str):
-    return f"pdf_prompts/{filename}.json"
+def pdf_markdown_path(filename: str):
+    return f"markdowns/{filename}.md"
