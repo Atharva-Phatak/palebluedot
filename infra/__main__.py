@@ -13,7 +13,7 @@ from components.configuration import deploy_metaflow_config_component
 from components.slack import deploy_slack_secret
 from components.annotator import deploy_argilla_component
 from components.models_pvc import deploy_models_pvc
-from applications.secret_manager.secrets import create_argilla_secret
+from applications.secret_manager.secrets import create_argilla_secret, create_mistral_api_secret
 from components.wehooks import deploy_metaflow_webhook_components
 
 
@@ -41,6 +41,14 @@ slack_secret = deploy_slack_secret(
     namespace=metaflow_namespace,
     project_id=cfg.infiscal_project_id,
     depends_on=[minikube_start, metaflow_namespace],
+)
+
+mistral_secret = create_mistral_api_secret(
+    namespace=metaflow_namespace,
+    depends_on=[minikube_start, metaflow_namespace],
+    project_id=cfg.infiscal_project_id,
+    k8s_provider=provider,
+    environment_slug="dev",
 )
 
 # Deploy models PVC

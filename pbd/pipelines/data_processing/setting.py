@@ -31,17 +31,17 @@ RESOURCE_CONFIGS = {
     "discovery": {
         "cpu": 2,
         "memory": 1024,  # 1Gi in MB
-        "secrets": ["aws-credentials"],
+        "secrets": ["aws-credentials", "mistral-secret"],
     },
     "processing": {
         "cpu": 4,
         "memory": 3072,  # 3Gi in MB
-        "secrets": ["aws-credentials"],
+        "secrets": ["aws-credentials", "mistral-secret"],
     },
     "lightweight": {
         "cpu": 1,
         "memory": 512,  # 512Mi in MB
-        "secrets": ["aws-credentials"],
+        "secrets": ["aws-credentials", "mistral-secret"],
     },
 }
 

@@ -128,6 +128,29 @@ def create_slack_secret(
     )
     return slack_secret
 
+def create_mistral_api_secret(
+    namespace: Namespace,
+    depends_on: list,
+    project_id: str,
+    k8s_provider: k8s.Provider,
+    environment_slug: str="dev",
+):
+    mistral_token = get_secret(
+        access_key_identifier = "MISTRAL_TOKEN",
+        project_id  = project_id,
+        environment_slug = environment_slug,
+    )
+    mistral_secret = k8s.core.v1.Secret(
+        "mistral-secret",
+        metadata={
+            "name": "mistral-secret",
+            "namespace": namespace.metadata["name"],
+        },
+        string_data={"MISTRAL_TOKEN": mistral_token},
+        opts=pulumi.ResourceOptions(provider=k8s_provider, depends_on=depends_on),
+    )
+    return mistral_secret
+
 
 def create_argilla_secret(
     namespace: Namespace,
