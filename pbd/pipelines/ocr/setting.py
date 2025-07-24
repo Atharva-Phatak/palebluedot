@@ -19,7 +19,7 @@ from typing import Callable, Dict
 from metaflow import kubernetes
 
 # Docker image configuration
-DOCKER_IMAGE = "ghcr.io/atharva-phatak/pbd-data_processing:latest"
+DOCKER_IMAGE = "ghcr.io/atharva-phatak/pbd-ocr:latest"
 
 # Resource configurations matching your ZenML settings
 RESOURCE_CONFIGS = {

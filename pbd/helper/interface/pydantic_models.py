@@ -9,6 +9,7 @@ class DataProcessingPipelineConfig(pydantic.BaseModel):
     slack_channel: str
     image_dpi: int = 300
     endpoint: str = "http://minio-palebluedot.io"
+    use_mistral: bool = False
 
 
 class OCRModelParams(pydantic.BaseModel):

@@ -13,19 +13,22 @@ All configuration is loaded from a JSON file, keeping the original K8s decorator
 import os
 import tempfile
 from minio import Minio
-from metaflow import FlowSpec, step, trigger, Parameter
+from metaflow import FlowSpec, step, trigger, Parameter, kubernetes, environment
+from pbd.helper.profilers.gpu import gpu_profile
 from pbd.helper.logger import setup_logger
-from setting import processing_k8s, orchestrator_k8s
 import json
 import time
 from pbd.helper.interface.pydantic_models import DataProcessingPipelineConfig
 from pbd.helper.slack import send_slack_message
-from pbd.pipelines.data_processing.steps.utils import download_pdf
-import pbd.pipelines.data_processing.steps.query_mistral as query_mistral
-from pbd.pipelines.data_processing.steps.utils import zip_images
+from pbd.pipelines.ocr.steps.utils import download_pdf
+import pbd.pipelines.ocr.steps.query_mistral as query_mistral
+from pbd.pipelines.ocr.steps.utils import zip_images
 from pbd.helper.s3_paths import pdf_markdown_path, minio_zip_path
+from pbd.pipelines.ocr.steps.marker_ocr import process_pdf_via_marker
 logger = setup_logger(__name__)
 
+# Docker image configuration
+IMAGE_NAME = "ghcr.io/atharva-phatak/pbd-ocr:latest"
 
 @trigger(event="minio.upload")
 class MistralToMarkdownFlow(FlowSpec):
@@ -42,7 +45,12 @@ class MistralToMarkdownFlow(FlowSpec):
         help="URI to the JSON configuration file for the pipeline",
     )
 
-    @orchestrator_k8s
+    @kubernetes(
+        image=IMAGE_NAME,
+        cpu=1,
+        memory=56,
+        secrets=["aws-credentials", "slack-secret"],
+    )
     @step
     def start(self):
         """
@@ -53,14 +61,9 @@ class MistralToMarkdownFlow(FlowSpec):
         self.access_key = os.environ.get("AWS_ACCESS_KEY_ID")
         self.secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
         self.slack_token = os.environ.get("SLACK_TOKEN")
-        mistral_token = os.environ.get("MISTRAL_TOKEN")
 
         if not self.access_key or not self.secret_key:
             raise ValueError("AWS credentials not found in environment variables")
-
-        if not mistral_token:
-            raise ValueError("Mistral token not found in environment variables")
-
 
         print(f"Received filename: {self.filename} with bucket: {self.bucket_name}")
         client = Minio(
@@ -95,7 +98,18 @@ class MistralToMarkdownFlow(FlowSpec):
 
         self.next(self.process_pdfs)
 
-    @processing_k8s
+    @kubernetes(
+        image=IMAGE_NAME,
+        cpu=4,
+        memory=10000,
+        gpu=1,
+        persistent_volume_claims={"mk-ocr-pvc": "/ocr_models"},
+        shared_memory=2048,
+        labels={"app": "ocr_pipeline", "component": "ocr"},
+        secrets=["aws-credentials", "slack-secret"],
+    )
+    @environment(vars={"CUDA_VISIBLE_DEVICES": "0"})
+    @gpu_profile(interval=90, include_artifacts=False)
     @step
     def process_pdfs(self):
         """
@@ -138,10 +152,20 @@ class MistralToMarkdownFlow(FlowSpec):
 
             markdown_path = os.path.join(tmpdir, f"{pdf_name}.md")
             # Store content to markdown file
-            markdown_images_path = query_mistral.fetch_pdf_content(
-                pdf_path=pdf_path,
-                output_path=markdown_path,)
-            print(f"Markdown file created at {markdown_path}")
+
+            if self.config.use_mistral:
+                print(f"Processing PDF {pdf_name} via Mistral...")
+                images_dir = self._process_pdfs_via_mistral(
+                    pdf_path=pdf_path,
+                    markdown_path=markdown_path
+                )
+            else:
+                print(f"Processing PDF {pdf_name} via Marker...")
+                images_dir = self._process_pdfs_via_marker(
+                    tempdir=tmpdir,
+                    pdf_path=pdf_path,
+                    filename=pdf_name
+                )
 
             # Upload markdown file to MinIO
             self._dump_md_to_minio(
@@ -149,10 +173,10 @@ class MistralToMarkdownFlow(FlowSpec):
                 local_path=markdown_path,
                 client=client,
             )
-            if markdown_images_path is not None:
+            if images_dir is not None:
                 zip_output_path = minio_zip_path(pdf_name)
                 zip_path = os.path.join(tmpdir, f"{pdf_name}.zip")
-                zip_images(markdown_images_path, zip_path)
+                zip_images(images_dir, zip_path)
                 print(f"Created zip at {zip_path}")
                 print(f"uploading zip file to MinIO at {zip_output_path}")
                 # Upload to MinIO
@@ -171,7 +195,12 @@ class MistralToMarkdownFlow(FlowSpec):
 
         self.next(self.end)
 
-    @orchestrator_k8s
+    @kubernetes(
+        image=IMAGE_NAME,
+        cpu=1,
+        memory=56,
+        secrets=["aws-credentials", "slack-secret"],
+    )
     @step
     def end(self):
         """
@@ -203,6 +232,31 @@ class MistralToMarkdownFlow(FlowSpec):
             raise ValueError(
                 f"Failed to upload markdown to MinIO: {e}"
             )
+
+    def _process_pdfs_via_mistral(self,
+                                  pdf_path:str,
+                                  markdown_path:str) -> str:
+        """Process PDF using Mistral OCR and save to markdown file."""
+        markdown_images_dir = query_mistral.fetch_pdf_content(
+                pdf_path=pdf_path,
+                output_path=markdown_path)
+        print(f"Markdown file created at {markdown_path}")
+        return markdown_images_dir
+
+    def _process_pdfs_via_marker(self,
+                                 tempdir:str,
+                                 pdf_path:str,
+                                 filename:str):
+        """Process PDF using Marker OCR and save output."""
+        process_pdf_via_marker(
+            pdf_path=pdf_path,
+            output_dir=tempdir,
+            filename=filename
+        )
+        #Images are stored in the same tempdir
+        return tempdir
+
+
 
 if __name__ == "__main__":
     MistralToMarkdownFlow()

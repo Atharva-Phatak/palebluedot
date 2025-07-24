@@ -29,6 +29,8 @@ def zip_images(image_dir: str, output_zip_path: str):
             ) as zipf:
                 file_count = 0
                 for root, _, files in os.walk(image_dir):
+                    # Filter for image files
+                    files = [f for f in files if f.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp'))]
                     for file in files:
                         file_path = os.path.join(root, file)
                         arcname = os.path.relpath(file_path, image_dir)
