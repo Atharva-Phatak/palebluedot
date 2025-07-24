@@ -25,13 +25,15 @@ import pbd.pipelines.ocr.steps.query_mistral as query_mistral
 from pbd.pipelines.ocr.steps.utils import zip_images
 from pbd.helper.s3_paths import pdf_markdown_path, minio_zip_path
 from pbd.pipelines.ocr.steps.marker_ocr import process_pdf_via_marker
+
 logger = setup_logger(__name__)
 
 # Docker image configuration
 IMAGE_NAME = "ghcr.io/atharva-phatak/pbd-ocr:latest"
 
+
 @trigger(event="minio.upload")
-class MistralToMarkdownFlow(FlowSpec):
+class PDFToMarkdownFlow(FlowSpec):
     """
     Metaflow pipeline for converting PDFs to images and uploading to MinIO reacting to argo events.
     """
@@ -131,19 +133,21 @@ class MistralToMarkdownFlow(FlowSpec):
 
             # Check available disk space
             statvfs = os.statvfs(tmpdir)
-            free_space_gb = (statvfs.f_frsize * statvfs.f_bavail) / (1024 ** 3)
+            free_space_gb = (statvfs.f_frsize * statvfs.f_bavail) / (1024**3)
             print(f"Available disk space: {free_space_gb:.2f} GB")
 
             # Download PDF
-            pdf_path = download_pdf(client=client,
-                                    key=self.filename,
-                                    download_dir=tmpdir,
-                                    bucket_name=self.config.bucket_name)
+            pdf_path = download_pdf(
+                client=client,
+                key=self.filename,
+                download_dir=tmpdir,
+                bucket_name=self.config.bucket_name,
+            )
             print(f"Downloaded {self.filename} to {pdf_path}")
 
             # Convert PDF to images using config settings
-            #pages_count, image_output_dir = convert_pdf_to_images(pdf_path=pdf_path, tmpdir=tmpdir)
-            #print(f"Converted {self.filename} to images in {image_output_dir}")
+            # pages_count, image_output_dir = convert_pdf_to_images(pdf_path=pdf_path, tmpdir=tmpdir)
+            # print(f"Converted {self.filename} to images in {image_output_dir}")
 
             # Create zip
             pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
@@ -156,15 +160,12 @@ class MistralToMarkdownFlow(FlowSpec):
             if self.config.use_mistral:
                 print(f"Processing PDF {pdf_name} via Mistral...")
                 images_dir = self._process_pdfs_via_mistral(
-                    pdf_path=pdf_path,
-                    markdown_path=markdown_path
+                    pdf_path=pdf_path, markdown_path=markdown_path
                 )
             else:
                 print(f"Processing PDF {pdf_name} via Marker...")
                 images_dir = self._process_pdfs_via_marker(
-                    tempdir=tmpdir,
-                    pdf_path=pdf_path,
-                    filename=pdf_name
+                    tempdir=tmpdir, pdf_path=pdf_path, filename=pdf_name
                 )
 
             # Upload markdown file to MinIO
@@ -187,7 +188,9 @@ class MistralToMarkdownFlow(FlowSpec):
                     content_type="application/zip",
                 )
                 print(f"Uploaded zip for {pdf_name} to MinIO at {zip_output_path}")
-                print(f"Time taken to process {pdf_name}: {time.time() - start:.2f} seconds")
+                print(
+                    f"Time taken to process {pdf_name}: {time.time() - start:.2f} seconds"
+                )
                 self.result = {
                     "pdf_key": self.filename,
                     "status": "success",
@@ -214,10 +217,7 @@ class MistralToMarkdownFlow(FlowSpec):
             channel="#metaflow-pipelines",
         )
 
-    def _dump_md_to_minio(self,
-                            pdf_name: str,
-                            local_path:str,
-                            client: Minio):
+    def _dump_md_to_minio(self, pdf_name: str, local_path: str, client: Minio):
         upload_path = pdf_markdown_path(pdf_name)
         try:
             client.fput_object(
@@ -229,34 +229,22 @@ class MistralToMarkdownFlow(FlowSpec):
             print(f"Uploaded markdown to MinIO at {upload_path}")
         except Exception as e:
             print(f"Failed to upload markdown to MinIO: {e}")
-            raise ValueError(
-                f"Failed to upload markdown to MinIO: {e}"
-            )
+            raise ValueError(f"Failed to upload markdown to MinIO: {e}")
 
-    def _process_pdfs_via_mistral(self,
-                                  pdf_path:str,
-                                  markdown_path:str) -> str:
+    def _process_pdfs_via_mistral(self, pdf_path: str, markdown_path: str) -> str:
         """Process PDF using Mistral OCR and save to markdown file."""
         markdown_images_dir = query_mistral.fetch_pdf_content(
-                pdf_path=pdf_path,
-                output_path=markdown_path)
+            pdf_path=pdf_path, output_path=markdown_path
+        )
         print(f"Markdown file created at {markdown_path}")
         return markdown_images_dir
 
-    def _process_pdfs_via_marker(self,
-                                 tempdir:str,
-                                 pdf_path:str,
-                                 filename:str):
+    def _process_pdfs_via_marker(self, tempdir: str, pdf_path: str, filename: str):
         """Process PDF using Marker OCR and save output."""
-        process_pdf_via_marker(
-            pdf_path=pdf_path,
-            output_dir=tempdir,
-            filename=filename
-        )
-        #Images are stored in the same tempdir
+        process_pdf_via_marker(pdf_path=pdf_path, output_dir=tempdir, filename=filename)
+        # Images are stored in the same tempdir
         return tempdir
 
 
-
 if __name__ == "__main__":
-    MistralToMarkdownFlow()
+    PDFToMarkdownFlow()
