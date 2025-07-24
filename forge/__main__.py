@@ -11,6 +11,8 @@ from rich.table import Table
 from rich.panel import Panel
 from forge.deploy_pipelines import PipelineDeployer
 from forge.deploy_infra import InfraDeployer
+from forge.trigger_gh_actions import GitHubWorkflowTrigger
+from forge.dependency import DependencyUpdater
 
 app = typer.Typer(
     name="forge",
@@ -23,7 +25,9 @@ console = Console()
 
 @app.command()
 def deploy_pipeline(
-    pipeline_name: str = typer.Argument(..., help="Name of the pipeline to deploy"),
+    pipeline_name: str = typer.Argument(
+        None, "--pipeline", help="Name of the pipeline to deploy"
+    ),
     profile: Optional[str] = typer.Option(
         None, "--profile", "-p", help="Metaflow profile to use for deployment"
     ),
@@ -41,7 +45,7 @@ def deploy_pipeline(
     pipeline_deployer = PipelineDeployer()
     console.print(
         Panel.fit(
-            f"[bold magenta]⚡ FlowForge: Forging Pipeline: {pipeline_name}[/bold magenta]",
+            f"[bold magenta]⚡ Forge: Forging Pipeline: {pipeline_name}[/bold magenta]",
             border_style="magenta",
         )
     )
@@ -90,9 +94,11 @@ def list_pipelines():
 
 @app.command()
 def infra_action(
-    stack_name: str = typer.Argument(..., help="Name of the infrastructure stack"),
+    stack_name: str = typer.Argument(
+        None, "--stack_name", "-s", help="Name of the infrastructure stack"
+    ),
     operation: str = typer.Argument(
-        ..., help="Operation to perform (create/destroy/refresh)"
+        None, "--operation", "-o", help="Operation to perform (create/destroy/refresh)"
     ),
 ):
     """⚙️ Deploy or manage infrastructure stacks"""
@@ -115,6 +121,66 @@ def infra_action(
     else:
         console.print("[red]Invalid operation. Use create, destroy, or refresh.[/red]")
         raise typer.Exit(1)
+
+
+@app.command()
+def gh_build(
+    branch: str = typer.Option("main", "--branch", "-b", help="Branch to run on"),
+    pipeline_type: str = typer.Option(
+        "metaflow", "--type", "-t", help="Type of pipeline to build (metaflow/webhook)"
+    ),
+    folder: Optional[str] = typer.Option(
+        None,
+        "--folder",
+        "-f",
+        help="Specific folder to build (overrides change detection)",
+    ),
+):
+    """Trigger Metaflow Pipelines CI/CD workflow"""
+    trigger = GitHubWorkflowTrigger()
+    workflow_inputs = {"folder": folder} if folder else None
+    if pipeline_type == "metaflow":
+        console.print("[bold green]Triggering Metaflow CI/CD workflow...[/bold green]")
+        success = trigger.trigger_workflow(
+            "ci_cd_metaflow_pipelines.yaml", branch, workflow_inputs
+        )
+    elif pipeline_type == "webhook":
+        console.print("[bold green]Triggering Webhook CI/CD workflow...[/bold green]")
+        success = trigger.trigger_workflow(
+            "ci_cd_webhook.yaml", branch, workflow_inputs
+        )
+    else:
+        console.print("[red]Invalid pipeline type. Use 'metaflow' or 'webhook'.[/red]")
+        raise typer.Exit(1)
+    if not success:
+        raise typer.Exit(1)
+    else:
+        console.print("[green]✅ Metaflow workflow triggered successfully![/green]")
+
+
+@app.command()
+def list_gh_workflows():
+    """List available workflows"""
+    trigger = GitHubWorkflowTrigger()
+    trigger.list_workflows()
+
+
+@app.command()
+def dependency_update(
+    pipeline_name: str = typer.Argument(
+        ..., help="Name of the pipeline folder in pbd/pipelines/"
+    ),
+    dependency: str = typer.Argument(
+        ..., help='Dependency to install like "metaflow==2.15.18"'
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose logging"
+    ),
+):
+    updater = DependencyUpdater(
+        pipeline_name=pipeline_name, dependency=dependency, verbose=verbose
+    )
+    updater.update_dependency()
 
 
 if __name__ == "__main__":
