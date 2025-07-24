@@ -20,4 +20,13 @@ def deploy_models_pvc(
         storage_path=cfg.model_storage_path,
         depends_on=depends_on,
     )
-    return model_pv_claims
+    ocr_model_pv_claims = deploy_persistent_volume_claims(
+        namespace=namespace,
+        provider=k8s_provider,
+        pv_name=cfg.ocr_model_pv_name,
+        pvc_name=cfg.ocr_model_pvc_name,
+        storage_capacity=cfg.ocr_model_storage_capcity,
+        storage_path=cfg.ocr_model_storage_path,
+        depends_on=depends_on,
+    )
+    return model_pv_claims, ocr_model_pv_claims
