@@ -20,6 +20,8 @@ load_dotenv(os.path.join(secret_path, ".env"))
 
 
 class InfraDeployer:
+    """Handles deployment, destruction, and refresh of infrastructure stacks using Pulumi Automation API."""
+
     def __init__(
         self,
         stack_name: str,
@@ -28,6 +30,19 @@ class InfraDeployer:
         log_file: str = None,
         verbose: bool = False,
     ):
+        """Initializes the InfraDeployer.
+
+        Args:
+            stack_name (str): Name of the stack to deploy.
+            operation (str): Operation to perform (deploy, destroy, refresh).
+            passphrase (str, optional): Pulumi config passphrase. Defaults to None.
+            log_file (str, optional): Path to the log file. Defaults to None.
+            verbose (bool, optional): If True, prints verbose output. Defaults to False.
+
+        Raises:
+            ValueError: If Pulumi passphrase is required but not provided.
+            FileNotFoundError: If the infrastructure base path does not exist.
+        """
         self.stack_name = stack_name
         self.operation = operation
         self.passphrase = passphrase
@@ -72,6 +87,7 @@ class InfraDeployer:
         )
 
     def _setup_logging(self):
+        """Sets up logging to file and console."""
         log_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "logs"))
         os.makedirs(log_dir, exist_ok=True)
 
@@ -98,6 +114,13 @@ class InfraDeployer:
         self.logger.propagate = False
 
     def log_and_print(self, message: str, level: str = "info", exc: Exception = None):
+        """Logs a message and prints it to the console.
+
+        Args:
+            message (str): The message to log and print.
+            level (str, optional): Log level ('info', 'warning', 'error'). Defaults to "info".
+            exc (Exception, optional): Exception to log. Defaults to None.
+        """
         clean_message = re.sub(r"\[/?[^\]]*\]", "", message)
 
         if level == "error":
@@ -118,6 +141,11 @@ class InfraDeployer:
         self.console.print(message)
 
     def _log_output(self, output: str):
+        """Processes and logs output from Pulumi operations.
+
+        Args:
+            output (str): Output string from Pulumi.
+        """
         output_stripped = output.strip()
         output_lower = output_stripped.lower()
 
@@ -162,6 +190,14 @@ class InfraDeployer:
             self.console.print(output_stripped)
 
     def create_stack(self):
+        """Creates or selects a Pulumi stack.
+
+        Returns:
+            auto.Stack: The Pulumi stack object.
+
+        Raises:
+            Exception: If stack creation or selection fails.
+        """
         try:
             self._stack = auto.create_stack(
                 stack_name=self.stack_name, work_dir=self._infra_base_path
@@ -192,6 +228,11 @@ class InfraDeployer:
         return self._stack
 
     def deploy(self):
+        """Deploys infrastructure for the specified stack.
+
+        Raises:
+            Exception: If deployment fails.
+        """
         self.log_and_print(
             f"[bold green]Deploying infrastructure for stack: {self.stack_name} using operation: {self.operation}[/bold green]"
         )
@@ -216,6 +257,11 @@ class InfraDeployer:
             raise
 
     def destroy(self):
+        """Destroys infrastructure for the specified stack.
+
+        Raises:
+            Exception: If destruction fails.
+        """
         self.log_and_print(
             f"[bold red]Destroying infrastructure for stack: {self.stack_name} using operation: {self.operation}[/bold red]"
         )
@@ -240,6 +286,11 @@ class InfraDeployer:
             raise
 
     def refresh(self):
+        """Refreshes infrastructure state for the specified stack.
+
+        Raises:
+            Exception: If refresh fails.
+        """
         self.log_and_print(
             f"[bold yellow]Refreshing infrastructure for stack: {self.stack_name} using operation: {self.operation}[/bold yellow]"
         )
@@ -264,9 +315,20 @@ class InfraDeployer:
             raise
 
     def get_log_file_path(self) -> str:
+        """Returns the path to the log file.
+
+        Returns:
+            str: Path to the log file.
+        """
         return self.log_file
 
     def _signal_handler(self, signum, frame):
+        """Handles termination signals for graceful shutdown.
+
+        Args:
+            signum (int): Signal number.
+            frame: Current stack frame.
+        """
         self.log_and_print(
             f"[yellow]Received signal {signum}. Cleaning up...[/yellow]",
             level="warning",
@@ -275,6 +337,7 @@ class InfraDeployer:
         sys.exit(0)
 
     def cleanup(self):
+        """Cleans up resources, closes log handlers, and resets stack."""
         try:
             if hasattr(self, "logger") and self.logger:
                 self.logger.info("Cleaning up InfraDeployer resources")
@@ -292,4 +355,5 @@ class InfraDeployer:
             )
 
     def __del__(self):
+        """Destructor to ensure cleanup is called."""
         self.cleanup()

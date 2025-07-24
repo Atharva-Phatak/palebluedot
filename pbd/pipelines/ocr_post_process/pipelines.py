@@ -66,7 +66,7 @@ from pbd.helper.slack import send_slack_message
 IMAGE_NAME = "ghcr.io/atharva-phatak/pbd-ocr_post_process:latest"
 
 
-@trigger_on_finish(flow="OCRFlow")
+@trigger_on_finish(flow="PDFToMarkdownFlow")
 class OCRPostProcessFlow(FlowSpec):
     """
     Metaflow pipeline for post-processing OCR results.
