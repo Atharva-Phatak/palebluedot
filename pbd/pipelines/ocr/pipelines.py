@@ -25,6 +25,7 @@ import pbd.pipelines.ocr.steps.query_mistral as query_mistral
 from pbd.pipelines.ocr.steps.utils import zip_images
 from pbd.helper.s3_paths import pdf_markdown_path, minio_zip_path
 from pbd.pipelines.ocr.steps.marker_ocr import process_pdf_via_marker
+from pbd.helper.s3_paths import data_processing_pipeline_config_path
 
 logger = setup_logger(__name__)
 
@@ -75,7 +76,8 @@ class PDFToMarkdownFlow(FlowSpec):
             secure=False,
         )
         try:
-            response = client.get_object(self.bucket_name, self.config_uri)
+            config_path = data_processing_pipeline_config_path()
+            response = client.get_object(self.bucket_name, config_path)
             config_bytes = response.read()
             config_data = json.loads(config_bytes.decode("utf-8"))
             pydantic_model_input = {
@@ -88,7 +90,7 @@ class PDFToMarkdownFlow(FlowSpec):
             }
             self.config = DataProcessingPipelineConfig(**pydantic_model_input)
             print(f"Loaded configuration: {self.config}")
-            print(f"Successfully loaded config from {self.config_uri}")
+            print(f"Successfully loaded config from {config_path}")
 
         except Exception as e:
             logger.error(f"Failed to load config from MinIO: {e}")
