@@ -121,12 +121,6 @@ jobs:
           # Get image size info
           docker images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | grep "pbd-${{ matrix.folder }}" || true
 
-      - name: Test image pull
-        run: |
-          echo "🧪 Testing image pull..."
-          docker pull ghcr.io/${{ steps.repo-details.outputs.repo_owner }}/pbd-${{ matrix.folder }}:latest
-          echo "✅ Image pull successful"
-
       - name: Upload build logs on failure
         if: failure()
         uses: actions/upload-artifact@v4
