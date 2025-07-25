@@ -7,7 +7,7 @@ from marker.converters.pdf import PdfConverter
 from marker.output import save_output
 import os
 
-BASE_MODEL_DIR = "/ocr_models"
+BASE_MODEL_DIR = "ocr_models"
 
 
 def load_marker_models_dict(device=None, dtype=None):
