@@ -9,15 +9,16 @@ def deploy_persistent_volume_claims(
     provider: k8s.Provider,
     storage_capacity: str,
     storage_path: str,
-    storage_class_name: str = "standard",
+    storage_class_name: str = "manual-model-storage",  # ✅ Use a unique storage class
     depends_on: list = None,
 ):
+    depends_on = depends_on or []
+
     # Create a Persistent Volume
     pv = k8s.core.v1.PersistentVolume(
         pv_name,
         metadata=k8s.meta.v1.ObjectMetaArgs(
             name=pv_name,
-            namespace=namespace.metadata["name"],
         ),
         spec=k8s.core.v1.PersistentVolumeSpecArgs(
             capacity={"storage": storage_capacity},
@@ -25,13 +26,12 @@ def deploy_persistent_volume_claims(
             persistent_volume_reclaim_policy="Retain",
             volume_mode="Filesystem",
             storage_class_name=storage_class_name,
-            # Fixed: Use host_path directly instead of persistent_volume_source
             host_path=k8s.core.v1.HostPathVolumeSourceArgs(path=storage_path),
         ),
         opts=pulumi.ResourceOptions(provider=provider, depends_on=depends_on),
     )
 
-    # Create a Persistent Volume Claim
+    # Create a Persistent Volume Claim that binds to the above PV
     pvc = k8s.core.v1.PersistentVolumeClaim(
         pvc_name,
         metadata=k8s.meta.v1.ObjectMetaArgs(
@@ -45,7 +45,7 @@ def deploy_persistent_volume_claims(
             ),
             storage_class_name=storage_class_name,
             volume_mode="Filesystem",
-            volume_name=pv.metadata.name,
+            volume_name=pv.metadata.name,  # ✅ Explicitly bind to your PV
         ),
         opts=pulumi.ResourceOptions(provider=provider, depends_on=[pv] + depends_on),
     )

@@ -19,8 +19,8 @@ redis_replica_mount_path: "/home/atharvaphatak/Desktop/minikube_path/redis_repli
 sql_host_path: "/home/atharva/Desktop/minikube_path/mysql"
 minikube_cpus: 14
 minikube_memory: "45g"
-minikube_disk_size: "500GB"
-minikube_addons: "ingress,metrics-server"
+minikube_disk_size: "650GB"
+minikube_addons: "ingress,metrics-server,nvidia-device-plugin"
 minikube_gpus: "all"
 infiscal_project_id: "ed73be73-bfc2-4950-a262-2cbd4a33d57f"
 minio_ingress_host: "minio-palebluedot.io"
