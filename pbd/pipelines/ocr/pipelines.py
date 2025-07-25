@@ -11,7 +11,6 @@ All configuration is loaded from a JSON file, keeping the original K8s decorator
 """
 
 import os
-import tempfile
 from minio import Minio
 from metaflow import FlowSpec, step, trigger, Parameter, kubernetes, environment
 from pbd.helper.profilers.gpu import gpu_profile
@@ -130,73 +129,75 @@ class PDFToMarkdownFlow(FlowSpec):
             secure=False,
         )
 
-        with tempfile.TemporaryDirectory() as tmpdir:
-            print(f"Using temporary directory: {tmpdir}")
+        print(f"Available models : {os.listdir('/ocr_models')}")
+        tmpdir = "tempdir"  # Define the path first
+        os.makedirs(tmpdir, exist_ok=True)  # Create it
+        print(f"Using temporary directory: {tmpdir}")
 
-            # Check available disk space
-            statvfs = os.statvfs(tmpdir)
-            free_space_gb = (statvfs.f_frsize * statvfs.f_bavail) / (1024**3)
-            print(f"Available disk space: {free_space_gb:.2f} GB")
+        # Check available disk space
+        statvfs = os.statvfs(tmpdir)
+        free_space_gb = (statvfs.f_frsize * statvfs.f_bavail) / (1024**3)
+        print(f"Available disk space: {free_space_gb:.2f} GB")
 
-            # Download PDF
-            pdf_path = download_pdf(
-                client=client,
-                key=self.filename,
-                download_dir=tmpdir,
+        # Download PDF
+        pdf_path = download_pdf(
+            client=client,
+            key=self.filename,
+            download_dir=tmpdir,
+            bucket_name=self.config.bucket_name,
+        )
+        print(f"Downloaded {self.filename} to {pdf_path}")
+
+        # Convert PDF to images using config settings
+        # pages_count, image_output_dir = convert_pdf_to_images(pdf_path=pdf_path, tmpdir=tmpdir)
+        # print(f"Converted {self.filename} to images in {image_output_dir}")
+
+        # Create zip
+        pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
+
+        start = time.time()
+
+        markdown_path = os.path.join(tmpdir, f"{pdf_name}.md")
+        # Store content to markdown file
+
+        if self.config.use_mistral:
+            print(f"Processing PDF {pdf_name} via Mistral...")
+            images_dir = self._process_pdfs_via_mistral(
+                pdf_path=pdf_path, markdown_path=markdown_path
+            )
+        else:
+            print(f"Processing PDF {pdf_name} via Marker...")
+            images_dir = self._process_pdfs_via_marker(
+                tempdir=tmpdir, pdf_path=pdf_path, filename=pdf_name
+            )
+
+        # Upload markdown file to MinIO
+        self._dump_md_to_minio(
+            pdf_name=pdf_name,
+            local_path=markdown_path,
+            client=client,
+        )
+        if images_dir is not None:
+            zip_output_path = minio_zip_path(pdf_name)
+            zip_path = os.path.join(tmpdir, f"{pdf_name}.zip")
+            zip_images(images_dir, zip_path)
+            print(f"Created zip at {zip_path}")
+            print(f"uploading zip file to MinIO at {zip_output_path}")
+            # Upload to MinIO
+            client.fput_object(
                 bucket_name=self.config.bucket_name,
+                object_name=zip_output_path,
+                file_path=zip_path,
+                content_type="application/zip",
             )
-            print(f"Downloaded {self.filename} to {pdf_path}")
-
-            # Convert PDF to images using config settings
-            # pages_count, image_output_dir = convert_pdf_to_images(pdf_path=pdf_path, tmpdir=tmpdir)
-            # print(f"Converted {self.filename} to images in {image_output_dir}")
-
-            # Create zip
-            pdf_name = os.path.splitext(os.path.basename(pdf_path))[0]
-
-            start = time.time()
-
-            markdown_path = os.path.join(tmpdir, f"{pdf_name}.md")
-            # Store content to markdown file
-
-            if self.config.use_mistral:
-                print(f"Processing PDF {pdf_name} via Mistral...")
-                images_dir = self._process_pdfs_via_mistral(
-                    pdf_path=pdf_path, markdown_path=markdown_path
-                )
-            else:
-                print(f"Processing PDF {pdf_name} via Marker...")
-                images_dir = self._process_pdfs_via_marker(
-                    tempdir=tmpdir, pdf_path=pdf_path, filename=pdf_name
-                )
-
-            # Upload markdown file to MinIO
-            self._dump_md_to_minio(
-                pdf_name=pdf_name,
-                local_path=markdown_path,
-                client=client,
+            print(f"Uploaded zip for {pdf_name} to MinIO at {zip_output_path}")
+            print(
+                f"Time taken to process {pdf_name}: {time.time() - start:.2f} seconds"
             )
-            if images_dir is not None:
-                zip_output_path = minio_zip_path(pdf_name)
-                zip_path = os.path.join(tmpdir, f"{pdf_name}.zip")
-                zip_images(images_dir, zip_path)
-                print(f"Created zip at {zip_path}")
-                print(f"uploading zip file to MinIO at {zip_output_path}")
-                # Upload to MinIO
-                client.fput_object(
-                    bucket_name=self.config.bucket_name,
-                    object_name=zip_output_path,
-                    file_path=zip_path,
-                    content_type="application/zip",
-                )
-                print(f"Uploaded zip for {pdf_name} to MinIO at {zip_output_path}")
-                print(
-                    f"Time taken to process {pdf_name}: {time.time() - start:.2f} seconds"
-                )
-                self.result = {
-                    "pdf_key": self.filename,
-                    "status": "success",
-                }
+            self.result = {
+                "pdf_key": self.filename,
+                "status": "success",
+            }
 
         self.next(self.end)
 
