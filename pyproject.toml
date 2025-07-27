@@ -8,7 +8,7 @@ dependencies = [
  "pre-commit>=4.2.0",
  "typer",
  "rich",
- "metaflow",
+ "metaflow==2.15.21",
  "pulumi>=3.181.0",
  "pulumi-kubernetes>=4.23.0",
  "pulumi-command>=1.1.0",
@@ -16,6 +16,7 @@ dependencies = [
  "infisicalsdk>=1.0.9",
  "pulumi-minio>=0.16.4",
  "omegaconf>=2.3.0",
+ "ruff>=0.12.5",
 ]
 
 [project.scripts]
@@ -29,4 +30,4 @@ requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-include = ["forge*"]
+include = ["forge*", "infrastructure*", "infrastructure/components*"]

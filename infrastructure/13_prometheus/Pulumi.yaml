@@ -1,0 +1,3 @@
+name: Prometheus
+runtime: python
+description: This stack deploys Prometheus for monitoring the Pale Blue Dot infrastructure.

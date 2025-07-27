@@ -1,3 +1,0 @@
-name: constellation
-runtime: python
-description: Pulumi project to deploy on prem k8s cluster for LLM training and inference.

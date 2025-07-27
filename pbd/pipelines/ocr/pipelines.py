@@ -106,7 +106,7 @@ class PDFToMarkdownFlow(FlowSpec):
         cpu=4,
         memory=10000,
         gpu=1,
-        persistent_volume_claims={"mk-ocr-pvc": "/ocr_models"},
+        persistent_volume_claims={"mk-model-pvc": "/ocr_models"},
         shared_memory=2048,
         labels={"app": "ocr_pipeline", "component": "ocr"},
         secrets=["aws-credentials", "slack-secret"],

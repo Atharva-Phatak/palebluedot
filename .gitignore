@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 .vscode
 .secrets/
-infra/charts/
+infrastructure/11_annotator/charts
 # Pulumi stack files (contain sensitive data and environment-specific config)
 Pulumi.*.yaml
 

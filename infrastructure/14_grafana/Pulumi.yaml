@@ -1,0 +1,3 @@
+name: Grafana
+runtime: python
+description: This stack deploys Grafana for visualizing metrics collected by Prometheus in the Pale Blue Dot infrastructure.

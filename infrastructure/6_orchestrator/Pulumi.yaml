@@ -1,0 +1,3 @@
+name: metaflow
+runtime: python
+description: Pulumi program to deploy Metaflow orchestrator on Kubernetes

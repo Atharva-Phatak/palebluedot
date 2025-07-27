@@ -1,0 +1,3 @@
+name: cluster
+runtime: python
+description: Pulumi project to deploy on-premises Kubernetes cluster for LLM training and inference.
