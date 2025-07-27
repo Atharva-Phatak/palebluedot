@@ -1,6 +1,14 @@
 #!/bin/bash
 # Docker Build and Push Script for PBD Pipelines with Timing
 # Usage: ./build_and_push.sh <pipeline_name> [tag]
+#!/bin/sh
+
+# Load environment variables from .env file
+set -o allexport
+. .env
+set +o allexport
+
+echo "Infisical secrets loaded into environment."
 
 # Function to format duration in human readable format
 format_duration() {
@@ -38,14 +46,16 @@ USERNAME="atharva-phatak"
 
 # Navigate to root directory (parent of scripts folder)
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-DOCKERFILE_PATH="$ROOT_DIR/pbd/pipelines/${PIPELINE_NAME}/Dockerfile"
-IMAGE_NAME="ghcr.io/${USERNAME}/pbd-${PIPELINE_NAME}:${TAG}"
+BUILD_CONTEXT_DIR="$ROOT_DIR/pbd"  # Change build context to pbd directory
+DOCKERFILE_PATH="$BUILD_CONTEXT_DIR/pipelines/${PIPELINE_NAME}/Dockerfile"
+IMAGE_NAME="ghcr.io/${USERNAME}/${PIPELINE_NAME}:${TAG}"
 
 echo "Pipeline: $PIPELINE_NAME"
 echo "Tag: $TAG"
 echo "Image name: $IMAGE_NAME"
 echo "Dockerfile path: $DOCKERFILE_PATH"
 echo "Root directory: $ROOT_DIR"
+echo "Build context: $BUILD_CONTEXT_DIR"
 echo "----------------------------------------"
 
 # Check if Dockerfile exists
@@ -53,22 +63,23 @@ VALIDATION_START_TIME=$(date +%s)
 if [ ! -f "$DOCKERFILE_PATH" ]; then
     echo "Error: Dockerfile not found at '$DOCKERFILE_PATH'"
     echo "Available pipelines:"
-    ls -1 "$ROOT_DIR/pbd/pipelines/" 2>/dev/null | grep -v __pycache__ || echo "No pipelines found"
+    ls -1 "$BUILD_CONTEXT_DIR/pipelines/" 2>/dev/null | grep -v __pycache__ || echo "No pipelines found"
     exit 1
 fi
 VALIDATION_END_TIME=$(date +%s)
 VALIDATION_DURATION=$((VALIDATION_END_TIME - VALIDATION_START_TIME))
 
-# Change to root directory for build context
-cd "$ROOT_DIR"
+# Change to build context directory
+cd "$BUILD_CONTEXT_DIR"
 
 echo "🔨 Building Docker image..."
-echo "Command: docker build --no-cache -f pbd/pipelines/${PIPELINE_NAME}/Dockerfile -t ${IMAGE_NAME} ."
+echo "Command: docker build --no-cache -f pipelines/${PIPELINE_NAME}/Dockerfile -t ${IMAGE_NAME} ."
+echo "Build context: $(pwd)"
 echo "----------------------------------------"
 
 # Build the Docker image with timing
 BUILD_START_TIME=$(date +%s)
-docker build --no-cache -f "pbd/pipelines/${PIPELINE_NAME}/Dockerfile" -t "$IMAGE_NAME" .
+docker build --no-cache -f "pipelines/${PIPELINE_NAME}/Dockerfile" -t "$IMAGE_NAME" .
 BUILD_EXIT_CODE=$?
 BUILD_END_TIME=$(date +%s)
 BUILD_DURATION=$((BUILD_END_TIME - BUILD_START_TIME))
@@ -104,7 +115,7 @@ if [ $PUSH_EXIT_CODE -eq 0 ]; then
     echo "----------------------------------------"
     echo "✅ Success! Image pushed successfully"
     echo "Image: $IMAGE_NAME"
-    echo "Registry URL: https://github.com/${USERNAME}/pkgs/container/pbd-${PIPELINE_NAME}"
+    echo "Registry URL: https://github.com/${USERNAME}/pkgs/container/${PIPELINE_NAME}"
     echo ""
     echo "📊 TIMING SUMMARY"
     echo "==================="
