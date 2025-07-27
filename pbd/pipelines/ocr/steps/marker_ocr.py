@@ -55,7 +55,8 @@ def process_pdf_via_marker(pdf_path: str, output_dir: str, filename: str):
         converter = create_pdf_converted()
         rendered_ = converter(pdf_path)
         print(f"PDF {filename} processed and now saving to {output_dir}")
-        save_output(rendered=rendered_, output_dir=output_dir, filename=filename)
+        save_output(rendered=rendered_, output_dir=output_dir, fname_base=filename)
+        print(f"Output saved for {filename} in {output_dir}")
     except Exception as e:
         print(f"Error processing PDF {filename}: {str(e)}")
         raise e

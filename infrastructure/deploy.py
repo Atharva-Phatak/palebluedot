@@ -95,6 +95,12 @@ def deploy_sequentially():
         path=Path(infra_base_path) / "10_webhooks",
         config={"metaflow_namespace": metaflow_namespace_name},
     )
+    # Deploy persistent volume claims
+    _ = deploy_stack(
+        name="12_persistent_claims",
+        path=Path(infra_base_path) / "12_persistent_claims",
+        config={"metaflow_namespace": metaflow_namespace_name},
+    )
 
     # Deploy monitoring components
     prometheus_stack = deploy_stack(
