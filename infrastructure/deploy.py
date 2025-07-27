@@ -113,6 +113,11 @@ def deploy_sequentially():
         path=Path(infra_base_path) / "15_metaflow_config",
         config={"metaflow_namespace": metaflow_namespace_name},
     )
+    deploy_stack(
+        name="16_additional_secrets",
+        path=Path(infra_base_path) / "16_additional_secrets",
+        config={"metaflow_namespace": metaflow_namespace_name},
+    )
     print("Cleaning up downloaded charts...")
     charts_path = Path(infra_base_path) / "11_annotator/charts"
     if charts_path.exists():

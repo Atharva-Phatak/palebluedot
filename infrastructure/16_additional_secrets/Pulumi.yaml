@@ -1,0 +1,3 @@
+name: additional_secrets
+runtime: python
+description: This stack deploys additional secrets required for the Pale Blue Dot infrastructure, including those for Metaflow and other services.
