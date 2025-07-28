@@ -26,14 +26,12 @@ class PostProcessingParams(pydantic.BaseModel):
 class OCRPipelineConfig(pydantic.BaseModel):
     minio_endpoint: str
     image_path: str
-    local_path: str
-    extract_to: str
     ocr_model_path: str
     ocr_params: OCRModelParams
     ocr_model_batch_size: int
 
     filename: str
-    extracted_zip_path: str
+    raw_data_path: str
     bucket: str
     run_test: bool = False
 
