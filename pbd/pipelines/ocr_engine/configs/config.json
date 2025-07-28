@@ -1,10 +1,9 @@
 {
   "minio_endpoint" : "minio-palebluedot.io",
-  "image_path": "extracted_data",
   "bucket" : "data-bucket",
-  "ocr_model_path" : "/models/Qwen2.5-VL-7B-Instruct-unsloth-bnb-4bit",
+  "ocr_model_path" : "/models/olmOCR-7B-0725-FP8",
   "ocr_params" : {
-    "max_tokens" : 80000
+    "max_tokens" : 16384
   },
   "ocr_model_batch_size" : 20,
   "run_test" : false
