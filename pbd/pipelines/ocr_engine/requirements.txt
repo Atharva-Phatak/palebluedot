@@ -571,6 +571,8 @@ pygments==2.19.2
     #   ipython
     #   nbconvert
     #   rich
+pymupdf==1.26.3
+    # via ocr-engine
 pyparsing==3.2.3
     # via matplotlib
 python-dateutil==2.9.0.post0
