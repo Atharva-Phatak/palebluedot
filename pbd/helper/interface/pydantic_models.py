@@ -14,6 +14,7 @@ class DataProcessingPipelineConfig(pydantic.BaseModel):
 
 class OCRModelParams(pydantic.BaseModel):
     max_tokens: int
+    temperature: float
 
 
 class PostProcessingParams(pydantic.BaseModel):
