@@ -133,10 +133,11 @@ def extract_pdf_to_images(
         local_path=temp_pdf_path,
     )
     print(f"Downloaded {raw_data_path} to {temp_pdf_path}")
-    image_path = convert_pdf_to_images(
+    page_count, image_path = convert_pdf_to_images(
         pdf_path=pdf_path,
         tmpdir=tmpdir,
     )
+    print(f"Converted {page_count} pages to images")
     image_paths = [f"{tmpdir}/{img}" for img in os.listdir(image_path)]
     image_paths = sort_pages_by_number(pages=image_paths)
     return image_paths
