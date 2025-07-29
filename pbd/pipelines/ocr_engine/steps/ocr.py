@@ -73,7 +73,7 @@ def do_inference(
     max_new_tokens: int,
     batch_size: int,
     temperature: float = 0.1,
-    max_model_len: int = 32768,
+    max_model_len: int = 20000,
 ) -> list[dict]:
     """
     Runs OCR inference on a list of images using a multimodal LLM, batching requests for efficiency.
