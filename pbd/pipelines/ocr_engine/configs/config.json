@@ -6,6 +6,6 @@
     "max_tokens" : 4096,
     "temperature" : 0.1
   },
-  "ocr_model_batch_size" : 20,
+  "ocr_model_batch_size" : 10,
   "run_test" : false
 }

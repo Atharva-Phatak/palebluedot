@@ -128,14 +128,14 @@ class OCRFlow(FlowSpec):
     @kubernetes(
         image=IMAGE_NAME,
         cpu=4,
-        memory=10000,
+        memory=16000,
         gpu=1,
         persistent_volume_claims={"mk-model-pvc": "/models"},
         shared_memory=2048,
         labels={"app": "ocr_pipeline", "component": "process_ocr"},
         secrets=["aws-credentials", "slack-secret"],
     )
-    @environment(vars={"CUDA_VISIBLE_DEVICES": "0"})
+    @environment(vars={"CUDA_VISIBLE_DEVICES": "0", "VLLM_USE_V1": "0"})
     @gpu_profile(interval=60, include_artifacts=False)
     @step
     def process_ocr(self):
