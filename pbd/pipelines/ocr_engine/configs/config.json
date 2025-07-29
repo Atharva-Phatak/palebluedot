@@ -3,7 +3,7 @@
   "bucket" : "data-bucket",
   "ocr_model_path" : "/models/olmOCR-7B-0725-FP8",
   "ocr_params" : {
-    "max_tokens" : 16384,
+    "max_tokens" : 4096,
     "temperature" : 0.1
   },
   "ocr_model_batch_size" : 20,
