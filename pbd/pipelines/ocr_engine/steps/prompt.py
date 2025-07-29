@@ -56,7 +56,11 @@ def get_ocr_prompt():
 
 def build_no_anchoring_yaml_prompt() -> str:
     return (
+        "<|im_start|>system\nYou are a helpful assistant.<|im_end|>\n"
+        "<|im_start|>user\n<|vision_start|><|image_pad|><|vision_end|>"
         "Attached is one page of a document that you must process. "
         "Just return the plain text representation of this document as if you were reading it naturally. Convert equations to LateX and tables to markdown.\n"
         "Return your output as markdown, with a front matter section on top specifying values for the primary_language, is_rotation_valid, rotation_correction, is_table, and is_diagram parameters."
+        "<|im_end|>\n"
+        "<|im_start|>assistant\n"
     )
