@@ -1965,7 +1965,7 @@ requires-dist = [
     { name = "pymupdf", specifier = ">=1.26.3" },
     { name = "s3fs", specifier = ">=0.4.2" },
     { name = "slack-sdk", specifier = ">=3.35.0" },
-    { name = "transformers", specifier = ">=4.52.4" },
+    { name = "transformers", specifier = "<4.54.0" },
     { name = "vllm", specifier = "==0.9.0.1" },
 ]
 
@@ -3318,7 +3318,7 @@ wheels = [
 
 [[package]]
 name = "transformers"
-version = "4.54.0"
+version = "4.53.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "filelock" },
@@ -3332,9 +3332,9 @@ dependencies = [
     { name = "tokenizers" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fb/4b/3341d2fade52634d877476f4ed5fa8f7bf3f1e867bfba76f0fb341e2885f/transformers-4.54.0.tar.gz", hash = "sha256:843da4d66a573cef3d1b2e7a1d767e77da054621e69d9f3faff761e55a1f8203", size = 9510412, upload-time = "2025-07-25T18:58:20.826Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f1/5c/49182918b58eaa0b4c954fd0e37c79fc299e5643e69d70089d0b0eb0cd9b/transformers-4.53.3.tar.gz", hash = "sha256:b2eda1a261de79b78b97f7888fe2005fc0c3fabf5dad33d52cc02983f9f675d8", size = 9197478, upload-time = "2025-07-22T07:30:51.51Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/cc/34/4d82dc596764de9d14285f8ed53b50896bf05fbbcd71a82c6d174b3ab8c7/transformers-4.54.0-py3-none-any.whl", hash = "sha256:c96e607f848625965b76c677b2c2576f2c7b7097c1c5292b281919d90675a25e", size = 11176597, upload-time = "2025-07-25T18:58:17.677Z" },
+    { url = "https://files.pythonhosted.org/packages/41/b1/d7520cc5cb69c825599042eb3a7c986fa9baa8a8d2dea9acd78e152c81e2/transformers-4.53.3-py3-none-any.whl", hash = "sha256:5aba81c92095806b6baf12df35d756cf23b66c356975fb2a7fa9e536138d7c75", size = 10826382, upload-time = "2025-07-22T07:30:48.458Z" },
 ]
 
 [[package]]

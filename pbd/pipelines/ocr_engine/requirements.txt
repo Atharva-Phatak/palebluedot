@@ -783,7 +783,7 @@ traitlets==5.14.3
     #   nbclient
     #   nbconvert
     #   nbformat
-transformers==4.54.0
+transformers==4.53.3
     # via
     #   compressed-tensors
     #   ocr-engine
