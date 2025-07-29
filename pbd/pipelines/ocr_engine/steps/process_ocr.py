@@ -59,9 +59,7 @@ def simple_inference(
             for img_path in batch
         ]
         start = time.time()
-        outputs = model.generate(
-            inputs, use_tqdm=False, sampling_params=sampling_params
-        )
+        outputs = model.generate(inputs, use_tqdm=True, sampling_params=sampling_params)
         processed_outputs = [parse_output(output.outputs[0].text) for output in outputs]
         print(
             f"Processed batch {indx // batch_size} in {time.time() - start:.2f} seconds"
