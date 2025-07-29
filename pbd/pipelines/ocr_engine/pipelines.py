@@ -107,7 +107,7 @@ class OCRFlow(FlowSpec):
         image=IMAGE_NAME,
         cpu=1,
         memory=56,
-        secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
+        secrets=["aws-credentials", "slack-secret"],
     )
     @step
     def start(self):
@@ -133,7 +133,7 @@ class OCRFlow(FlowSpec):
         persistent_volume_claims={"mk-model-pvc": "/models"},
         shared_memory=2048,
         labels={"app": "ocr_pipeline", "component": "process_ocr"},
-        secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
+        secrets=["aws-credentials", "slack-secret"],
     )
     @environment(vars={"CUDA_VISIBLE_DEVICES": "0"})
     @gpu_profile(interval=60, include_artifacts=False)
@@ -159,7 +159,7 @@ class OCRFlow(FlowSpec):
         image=IMAGE_NAME,
         cpu=1,
         memory=56,
-        secrets=["aws-credentials", "slack-secret", "argilla-auth-secret"],
+        secrets=["aws-credentials", "slack-secret"],
     )
     @step
     def end(self):
