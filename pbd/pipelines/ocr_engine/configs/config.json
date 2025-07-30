@@ -1,11 +1,11 @@
 {
   "minio_endpoint" : "minio-palebluedot.io",
   "bucket" : "data-bucket",
-  "ocr_model_path" : "/models/olmOCR-7B-0725-FP8",
+  "ocr_model_path" : "/models/Nanonets-OCR-s",
   "ocr_params" : {
     "max_tokens" : 4096,
     "temperature" : 0.1
   },
-  "ocr_model_batch_size" : 10,
+  "ocr_model_batch_size" : 20,
   "run_test" : false
 }

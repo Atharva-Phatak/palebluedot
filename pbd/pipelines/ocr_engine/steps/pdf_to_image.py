@@ -1,7 +1,8 @@
 import os
 import pymupdf
-def convert_pdf_to_images(pdf_path: str,
-                           tmpdir: str):
+
+
+def convert_pdf_to_images(pdf_path: str, tmpdir: str):
     """Convert PDF pages to images using configuration settings."""
     pdf_doc = None
     try:
@@ -33,13 +34,9 @@ def convert_pdf_to_images(pdf_path: str,
                 # Use a reasonable DPI to avoid memory issues
                 pixmap = page.get_pixmap(dpi=dpi)
                 extension = (
-                        "jpg"
-                        if image_format.upper() == "JPEG"
-                        else image_format.lower()
-                    )
-                img_path = os.path.join(
-                        image_output_dir, f"page_{i + 1}.{extension}"
-                    )
+                    "jpg" if image_format.upper() == "JPEG" else image_format.lower()
+                )
+                img_path = os.path.join(image_output_dir, f"page_{i + 1}.{extension}")
                 pixmap.save(img_path, image_format)
 
                 # Clear pixmap to free memory
@@ -52,10 +49,10 @@ def convert_pdf_to_images(pdf_path: str,
                 print(f"Error processing page {i + 1}: {str(e)}")
                 raise
 
-            print(
-                f"Saved {pages_count} images for {pdf_name} at {dpi} DPI in {image_format} format."
-            )
-            return pages_count, image_output_dir
+        print(
+            f"Saved {pages_count} images for {pdf_name} at {dpi} DPI in {image_format} format."
+        )
+        return pages_count, image_output_dir
 
     except Exception as e:
         print(f"Error converting PDF to images: {str(e)}")
@@ -63,4 +60,4 @@ def convert_pdf_to_images(pdf_path: str,
     finally:
         # Ensure PDF is properly closed
         if pdf_doc and not pdf_doc.is_closed:
-                pdf_doc.close()
+            pdf_doc.close()

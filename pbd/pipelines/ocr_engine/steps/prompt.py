@@ -64,3 +64,17 @@ def build_no_anchoring_yaml_prompt() -> str:
         "<|im_end|>\n"
         "<|im_start|>assistant\n"
     )
+
+
+def get_nanonets_ocr_prompt():
+    ocr_prompt = (
+        "<|im_start|>system\n"
+        " Extract the text from the above document as if you were reading it naturally. Return the tables in html format. Return the equations in LaTeX representation."
+        "If there is an image in the document and image caption is not present, add a small description of the image inside the <img></img> tag; otherwise, add the image caption inside <img></img>. Watermarks should be wrapped in brackets."
+        "Ex: <watermark>OFFICIAL COPY</watermark>. Page numbers should be wrapped in brackets. Ex: <page_number>14</page_number> or <page_number>9/22</page_number>."
+        "Prefer using ☐ and ☑ for check boxes."
+        "<|im_end|>\n"
+        "<|im_start|>user\n<|vision_start|><|image_pad|><|vision_end|><|im_end|>\n"
+        "<|im_start|>assistant\n"
+    )
+    return ocr_prompt

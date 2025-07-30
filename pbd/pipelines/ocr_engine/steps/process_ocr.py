@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 import time
 from pbd.pipelines.ocr_engine.steps.process_image import fetch_image
-from pbd.pipelines.ocr_engine.steps.prompt import build_no_anchoring_yaml_prompt
+from pbd.pipelines.ocr_engine.steps.prompt import get_nanonets_ocr_prompt
 from pbd.pipelines.ocr_engine.steps.format import FrontMatterParser, PageResponse
 import json
 
@@ -51,7 +51,7 @@ def simple_inference(
         batch = image_paths[indx : indx + batch_size]
         inputs = [
             {
-                "prompt": build_no_anchoring_yaml_prompt(),
+                "prompt": get_nanonets_ocr_prompt(),
                 "multi_modal_data": {
                     "image": fetch_image(img_path),
                 },
@@ -60,16 +60,16 @@ def simple_inference(
         ]
         start = time.time()
         outputs = model.generate(inputs, use_tqdm=True, sampling_params=sampling_params)
-        processed_outputs = [parse_output(output.outputs[0].text) for output in outputs]
+        # processed_outputs = [parse_output(output.outputs[0].text) for output in outputs]
         print(
             f"Processed batch {indx // batch_size} in {time.time() - start:.2f} seconds"
         )
-        for img_path, output in zip(batch, processed_outputs):
+        for img_path, output in zip(batch, outputs):
             page_no = extract_page_number(img_path)
             generated_texts.append(
                 {
                     "page": page_no,
-                    "content": output.natural_text or "",
+                    "content": output.outputs[0].text,
                 }
             )
     return generated_texts
