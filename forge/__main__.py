@@ -14,6 +14,7 @@ from forge.deploy_pipelines import PipelineDeployer
 from forge.deploy_infra import InfraDeployer
 from forge.trigger_gh_actions import GitHubWorkflowTrigger
 from forge.dependency import DependencyUpdater
+from forge.create_template import create_pipeline
 
 app = typer.Typer(
     name="forge",
@@ -207,6 +208,29 @@ def dependency_update(
         pipeline_name=pipeline_name, dependency=dependency, verbose=verbose
     )
     updater.update_dependency()
+
+
+@app.command()
+def scaffold(
+    pipeline_name: str = typer.Argument(..., help="Name of the pipeline to scaffold"),
+):
+    """🛠️ Scaffold a new pipeline template"""
+
+    console.print(
+        Panel.fit(
+            f"[bold green]🛠️ forge: Scaffolding Pipeline Template: {pipeline_name}[/bold green]",
+            border_style="green",
+        )
+    )
+
+    try:
+        create_pipeline(pipeline_name)
+        console.print(
+            f"[green]✅ Successfully created pipeline template: {pipeline_name}[/green]"
+        )
+    except Exception as e:
+        console.print(f"[red]Error creating pipeline template: {e}[/red]")
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":

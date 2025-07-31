@@ -17,6 +17,7 @@ dependencies = [
  "pulumi-minio>=0.16.4",
  "omegaconf>=2.3.0",
  "ruff>=0.12.5",
+ "copier>=9.8.0",
 ]
 
 [project.scripts]
