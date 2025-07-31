@@ -1,54 +1,51 @@
-def generate_post_processing_prompt(input_problem: str):
-    return f"""You are a specialized extraction system for physics problems with complete solutions.
+def get_segmentation_prompt(md_chunk: str) -> str:
+    return f"""You are a Markdown segmenter and classifier for physics textbooks.
 
-TASK: Extract fully solved physics problems from the provided content.
+Your task is to split the given Markdown content into **logical content blocks**, and label each block with its **type**.
 
-EXTRACTION CRITERIA:
-A valid extraction requires BOTH components:
-1. Problem Statement: Clear, complete question or scenario
-2. Complete Solution: Multi-step worked solution with mathematical derivations
-
-EXCLUSIONS:
-- Problems with only final answers or brief explanations
-- Multiple choice, true/false, or fill-in-the-blank questions
-- Incomplete solutions or solution fragments
-- Problems requiring you to fill in missing steps
-
-OUTPUT FORMAT:
-For each valid problem-solution pair found:
-
-**Problem Statement:**
-[Exact copy of original problem text, preserving all formatting and LaTeX]
-
-**Solution Steps:**
-Step 1: [Clear description of this step's purpose]
-Equation: $$ [Original LaTeX equation] $$
-SymPy: [Valid SymPy Python code for this equation]
-
-Step 2: [Description of next step]
-Equation: $$ [Next equation] $$
-SymPy: [Corresponding SymPy code]
-
-[Continue for all solution steps...]
-
-**Final Answer:**
-$$ [Final result with proper formatting] $$
+Return a list of JSON objects, where each object has:
+- `"type"`: one of ["heading", "definition", "derivation", "example", "problem", "solution", "theory", "note", "caption", "other"]
+- `"content"`: the full Markdown content for that block
 
 ---
 
-IMPORTANT NOTES:
-- Preserve all original LaTeX formatting exactly
-- Convert equations to valid SymPy syntax (use proper Python variable names, operators, and functions)
-- Maintain logical flow between solution steps
-- Include units in final answers when present
-- If multiple problems exist, separate each with "---"
+### 💡 GUIDELINES FOR SEGMENTATION AND LABELING:
 
-If no valid problem-solution pairs are found, respond with:
-```
-No complete problem-solution pairs found in the provided content.
-```
+1. **Preserve continuation logic**:
+   - If a block continues a solution, derivation, or example from the previous section **without a new heading**, treat it as part of that block’s continuation.
 
-INPUT CONTENT:
+2. **What counts as a `solution`**:
+   - A solution is any step-by-step worked answer to a problem, exercise, or example.
+   - Clues: equations with substitutions, phrases like “Given”, “Therefore”, “So”, “Putting values”, “We get”, boxed answers, and final numeric values with units.
+   - Solutions often directly follow problems or examples.
 
-{input_problem}
+3. **What counts as a `derivation`**:
+   - A formal, general mathematical development of a formula or law.
+   - Often includes symbolic calculus, without being tied to a specific numeric problem.
+   - May contain math, figures, and graph interpretations.
+
+4. **What counts as `theory`**:
+   - Conceptual or descriptive explanations of physics principles, often accompanied by a few math equations or graphs.
+   - Does not solve a specific problem, and does not derive a new formula.
+   - Use this when content is too broad or verbal to be a `derivation`.
+
+5. **Headings**:
+   - Use `"heading"` **only** for standalone section titles or chapter headings like `## Moment of Inertia`.
+   - It must be short (1–2 lines), must **not contain LaTeX equations**, and must not be followed by a long explanation.
+   - If the block contains multiple paragraphs or math, classify it as `"derivation"` or `"theory"` instead.
+
+6. **Other block types**:
+   - `"definition"`: Short boxed/inlined definitions of key terms (e.g. "Momentum is defined as...").
+   - `"example"`: A labeled example like `Example 11.4`, usually with an associated `"solution"`.
+   - `"exercise"`: A question to be solved by the student, often without a solution.
+   - `"note"`: Side notes, clarifications, conceptual remarks.
+   - `"caption"`: Descriptions of images, graphs, or tables.
+   - `"other"`: Anything that doesn't fit into the above types.
+
+---
+
+Only return **valid JSON** — no explanations, no markdown formatting.
+
+Markdown content:
+{md_chunk}
 """

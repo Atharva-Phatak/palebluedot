@@ -31,32 +31,26 @@ import time
 import torch
 from transformers import AutoTokenizer
 import vllm
-from pbd.pipelines.ocr_post_process.steps.prompt import generate_post_processing_prompt
+from pbd.pipelines.ocr_post_process.steps.prompt import get_segmentation_prompt
 from pbd.helper.s3_paths import formatted_results_path
 from dataclasses import asdict
 from pbd.helper.file_upload import store_extracted_texts_to_minio
 
 
-def chunk_prompts(
-    chunk_size: int, tokenizer, data: list[dict]
-) -> list[tuple[str, list[dict]]]:
-    batches = []
-    for indx in range(0, len(data), chunk_size):
-        chunk = data[indx : indx + chunk_size]
-        contents = [ex["content"] for ex in chunk]
-        concat_contents = "\n\n".join(contents)
-
-        prompt_text = generate_post_processing_prompt(concat_contents)
-        prompt = tokenizer.apply_chat_template(
-            [{"role": "user", "content": prompt_text}],
+def process_prompts(tokenizer, batch: list) -> list[tuple[str, list[dict]]]:
+    prompts, contents = [], []
+    for example in batch:
+        prompt = get_segmentation_prompt(example)
+        messages = [{"role": "user", "content": prompt}]
+        text = tokenizer.apply_chat_template(
+            messages,
             tokenize=False,
             add_generation_prompt=True,
             enable_thinking=False,
         )
-        batches.append(
-            (prompt, concat_contents)
-        )  # return both prompt and associated examples
-    return batches
+        prompts.append(text)
+        contents.append(example)
+    return prompts, contents
 
 
 def load_model_and_tokenizer(model_path: str, batch_size: int, max_model_len: int):
@@ -76,51 +70,40 @@ def load_model_and_tokenizer(model_path: str, batch_size: int, max_model_len: in
 
 def extract_problem_solution(
     max_model_len: int,
-    data: list[dict],
+    data: list,
     model_path: str,
     sampling_params: dict,
     bucket_name: str,
     batch_size: int,
     filename: str,
     minio_endpoint: str,
-    chunk_size: int,
 ):
     # empty cuda cache before starting new step
     if torch.cuda.is_available():
         print("Emptying cuda cache before starting new step.")
         torch.cuda.empty_cache()
+    results = []
     tokenizer, model = load_model_and_tokenizer(
         max_model_len=max_model_len, model_path=model_path, batch_size=batch_size
     )
     params = vllm.SamplingParams(**sampling_params)
-    results = []
     start = time.time()
-    print(
-        f"🚀 Starting inference with {len(data)} samples, chunk size = {chunk_size}, batch size = {batch_size}"
-    )
-    chunks = chunk_prompts(
-        chunk_size=chunk_size,
-        tokenizer=tokenizer,
-        data=data,
-    )
-    print(f"Total batches to process: {len(chunks)}")
-    for indx in range(0, len(chunks), batch_size):
-        batch_slice = chunks[indx : indx + batch_size]
-        current_prompts = [b[0] for b in batch_slice]
-        current_contents = [b[1] for b in batch_slice]
-
+    total_batches = len(data) // batch_size
+    print(f"Total batches to process: {total_batches}")
+    for indx in range(0, len(data), batch_size):
+        batch_slice = data[indx : indx + batch_size]
+        current_prompts, current_contents = process_prompts(tokenizer, batch_slice)
         gen_time = time.time()
         outputs = model.generate(
             prompts=current_prompts, sampling_params=params, use_tqdm=False
         )
-
         for chunk, output in zip(current_contents, outputs):
             generated_text = output.outputs[0].text
             results.append({"content": chunk, "generated": generated_text})
         print(f"Batch {indx} processed in {(time.time() - gen_time):.2f} seconds, ")
     path = formatted_results_path(filename)
     print(
-        f"\n🎉 Completed inference in {(time.time() - start)//60 :.2f} minutes. Storing results to MinIO at {path}"
+        f"\n🎉 Completed inference in {(time.time() - start) // 60:.2f} minutes. Storing results to MinIO at {path}"
     )
     store_extracted_texts_to_minio(
         dataset=results,

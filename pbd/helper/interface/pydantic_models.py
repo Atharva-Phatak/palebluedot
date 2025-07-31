@@ -40,6 +40,7 @@ class OCRPostProcessPipelineConfig(pydantic.BaseModel):
     minio_endpoint: str
     filename: str
     bucket: str
+    max_model_len: int = 16384
     post_processing_model_path: str
     post_processing_params: PostProcessingParams
     post_processing_batch_size: int

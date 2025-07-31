@@ -60,7 +60,6 @@ from pbd.helper.file_download import download_from_minio
 from datasets import load_dataset
 from pbd.pipelines.ocr_post_process.steps.process_text import extract_problem_solution
 import time
-from pbd.pipelines.ocr_post_process.steps.utils import find_max_model_len_and_chunk_size
 from pbd.helper.slack import send_slack_message
 
 IMAGE_NAME = "ghcr.io/atharva-phatak/pbd-ocr_post_process:latest"
@@ -109,7 +108,7 @@ class OCRPostProcessFlow(FlowSpec):
             local_path=f"/tmp/{self.config.filename}.parquet",
         )
         ds = load_dataset("parquet", data_files=[local_path])
-        return ds["train"].to_list()
+        return ds["train"]["content"].to_list()
 
     @kubernetes(
         image=IMAGE_NAME,
@@ -143,7 +142,7 @@ class OCRPostProcessFlow(FlowSpec):
         labels={"app": "ocr_pipeline", "component": "post_process_ocr"},
         secrets=["aws-credentials", "slack-secret"],
     )
-    @environment(vars={"CUDA_VISIBLE_DEVICES": "0", "VLLM_USE_V1": "0"})
+    @environment(vars={"CUDA_VISIBLE_DEVICES": "0"})
     @gpu_profile(interval=60, include_artifacts=False)
     @step
     def post_process(self):
@@ -154,19 +153,14 @@ class OCRPostProcessFlow(FlowSpec):
         start = time.time()
         data = self._load_data()
         print(f"Loaded {len(data)} records for post-processing from MinIO")
-        _, max_model_len = find_max_model_len_and_chunk_size(
-            data=data,
-            model_path=self.config.post_processing_model_path,
-        )
         extract_problem_solution(
             data=data,
-            max_model_len=max_model_len,
+            max_model_len=self.config.max_model_len,
             model_path=self.config.post_processing_model_path,
             sampling_params=self.config.post_processing_params.model_dump(
                 exclude_none=True
             ),
             batch_size=self.config.post_processing_batch_size,
-            chunk_size=10,
             bucket_name=self.config.bucket,
             filename=self.config.filename,
             minio_endpoint=self.config.minio_endpoint,
