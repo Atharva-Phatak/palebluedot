@@ -1,0 +1,11 @@
+_min_copier_version: "7.0"
+
+folder_name:
+  type: str
+  help: What is the name of the pipeline folder?
+  placeholder: my_pipeline
+
+destination_path:
+  type: str
+  help: Where should the files be created?
+  default: "pbd/pipelines/{{ folder_name }}"

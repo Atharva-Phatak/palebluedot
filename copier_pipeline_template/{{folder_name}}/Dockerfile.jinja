@@ -1,0 +1,13 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+COPY helper /app/pbd/helper
+COPY pipelines/{{ folder_name }} /app/pbd/pipelines/{{ folder_name }}
+
+RUN pip install --no-cache-dir -r /app/pbd/pipelines/{{ folder_name }}/requirements.txt
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH="/app"
+
+CMD ["/bin/bash"]
