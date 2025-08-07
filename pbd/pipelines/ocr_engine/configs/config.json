@@ -1,7 +1,7 @@
 {
   "minio_endpoint" : "minio-palebluedot.io",
   "bucket" : "data-bucket",
-  "ocr_model_path" : "/models/Nanonets-OCR-s",
+  "ocr_model_path" : "/models/dots.ocr",
   "ocr_params" : {
     "max_tokens" : 4096,
     "temperature" : 0.1

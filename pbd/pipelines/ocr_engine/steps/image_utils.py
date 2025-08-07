@@ -6,6 +6,7 @@ MAX_PIXELS = 16384 * 28 * 28
 IMAGE_FACTOR = 28
 MAX_RATIO = 200
 
+
 def round_by_factor(number: int, factor: int) -> int:
     """Returns the closest integer to 'number' that is divisible by 'factor'."""
     return round(number / factor) * factor
@@ -26,7 +27,7 @@ def smart_resize(
     width: int,
     factor: int = IMAGE_FACTOR,
     min_pixels: int = MIN_PIXELS,
-    max_pixels: int = MAX_PIXELS
+    max_pixels: int = MAX_PIXELS,
 ) -> tuple[int, int]:
     """
     Rescales the image so that the following conditions are met:
@@ -55,25 +56,26 @@ def smart_resize(
 
 
 def to_rgb(pil_image: Image.Image) -> Image.Image:
-    if pil_image.mode == 'RGBA':
+    if pil_image.mode == "RGBA":
         white_background = Image.new("RGB", pil_image.size, (255, 255, 255))
-        white_background.paste(pil_image, mask=pil_image.split()[3])  # Use alpha channel as mask
+        white_background.paste(
+            pil_image, mask=pil_image.split()[3]
+        )  # Use alpha channel as mask
         return white_background
     else:
         return pil_image.convert("RGB")
 
 
-def fetch_image(image_path:str,
-                size_factor: int = IMAGE_FACTOR) -> Image.Image:
+def fetch_image(image_path: str, size_factor: int = IMAGE_FACTOR) -> Image.Image:
     image = Image.open(image_path)
     image = to_rgb(image)
     width, height = image.size
     resized_height, resized_width = smart_resize(
-            height,
-            width,
-            factor=size_factor,
-            min_pixels=MIN_PIXELS,
-            max_pixels=MAX_PIXELS,
-        )
+        height,
+        width,
+        factor=size_factor,
+        min_pixels=MIN_PIXELS,
+        max_pixels=MAX_PIXELS,
+    )
     image = image.resize((resized_width, resized_height))
     return image

@@ -2,10 +2,8 @@ from vllm import LLM, SamplingParams
 import re
 from pathlib import Path
 import time
-from pbd.pipelines.ocr_engine.steps.process_image import fetch_image
+from pbd.pipelines.ocr_engine.steps.image_utils import fetch_image
 from pbd.pipelines.ocr_engine.steps.prompt import get_nanonets_ocr_prompt
-from pbd.pipelines.ocr_engine.steps.format import FrontMatterParser, PageResponse
-import json
 
 
 def extract_page_number(filename: str) -> int:
@@ -25,17 +23,6 @@ def extract_page_number(filename: str) -> int:
     if match:
         return int(match.group(1))
     raise ValueError(f"Invalid filename format for page number: {filename}")
-
-
-def parse_output(output: str) -> PageResponse:
-    base_response_data = json.loads(output)
-
-    model_response_markdown = base_response_data["choices"][0]["message"]["content"]
-
-    parser = FrontMatterParser(front_matter_class=PageResponse)
-    front_matter, text = parser._extract_front_matter_and_text(model_response_markdown)
-    page_response = parser._parse_front_matter(front_matter, text)
-    return page_response
 
 
 def simple_inference(
