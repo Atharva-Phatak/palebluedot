@@ -7,9 +7,9 @@ from flytekit import task, workflow, Resources
     requests=Resources(cpu="1", mem="512Mi"),
     limits=Resources(cpu="2", mem="1Gi"),
     environment={
-        "AWS_ACCESS_KEY_ID": "minio@1234",
-        "AWS_SECRET_ACCESS_KEY": "minio@local1234",
-        "AWS_REGION": "us-east-1",
+        "FLYTE_AWS_ACCESS_KEY_ID": "minio@1234",
+        "FLYTE_AWS_SECRET_ACCESS_KEY": "minio@local1234",
+        "FLYTE_AWS_ENDPOINT": "http://minio-palebluedot.io",
     },
 )
 def compute_square(x: int) -> int:
