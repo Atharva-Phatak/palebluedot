@@ -3,7 +3,7 @@ from flytekit import task, workflow, Resources
 
 
 @task(
-    container_image="ghcr.io/atharvaphatak/pbd-flyte_test:latest",
+    container_image="ghcr.io/atharva-phatak/pbd-flyte_test:latest",
     requests=Resources(cpu="1", mem="512Mi"),
     limits=Resources(cpu="2", mem="1Gi"),
 )
