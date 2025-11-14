@@ -1,6 +1,25 @@
 import pulumi
 import pulumi_kubernetes as k8s
 from infrastructure.helper.infisical_client import get_infiscal_sdk
+import secrets
+import string
+from infrastructure.helper.constants import SecretNames
+
+
+def generate_password(length: int = 32):
+    """Generate password"""
+    chars = string.ascii_letters + string.digits + string.punctuation
+    return "".join(secrets.choice(chars) for _ in range(length))
+
+
+def generate_sensible_access_key(app_name: str, user_name: str, suffix_length: int = 6):
+    """
+    Generates a human-readable, sensible MinIO access key.
+    Example output: MINIO-USER-A1B2C3
+    """
+    chars = string.ascii_uppercase + string.digits
+    suffix = "".join(secrets.choice(chars) for _ in range(suffix_length))
+    return f"{app_name.upper()}-{user_name.upper()}-{suffix}"
 
 
 def get_secret(access_key_identifier: str, project_id: str, environment_slug: str):
@@ -13,6 +32,39 @@ def get_secret(access_key_identifier: str, project_id: str, environment_slug: st
         secret_path="/",
     )
     return _secret.secretValue
+
+
+def create_infiscal_secret(
+    project_id: str, environment_slug: str, secret_name: str, secret_value: str
+):
+    """Method to create secret via infiscal."""
+    client = get_infiscal_sdk()
+    _secret = client.secrets.create_secret_by_name(
+        secret_name=secret_name,
+        project_id=project_id,
+        environment_slug=environment_slug,
+        secret_value=secret_value,
+    )
+    return _secret.secretValue
+
+
+def generate_minio_secret(project_id: str, environment_slug: str):
+    minio_access_key = generate_sensible_access_key(
+        app_name="minio", user_name="atharva"
+    )
+    minio_secret_key = generate_minio_secret()
+    minio_access_key = create_infiscal_secret(
+        project_id=project_id,
+        environment_slug=environment_slug,
+        secret_name=SecretNames.MINIO_ACCESS_KEY.value,
+        secret_value=minio_access_key,
+    )
+    minio_secret_key = create_infiscal_secret(
+        project_id=project_id,
+        environment_slug=environment_slug,
+        secret_name=SecretNames.MINIO_SECRET_KEY.value,
+        secret_value=minio_secret_key,
+    )
 
 
 def create_aws_secret(
