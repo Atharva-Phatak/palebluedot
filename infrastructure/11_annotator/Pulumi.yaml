@@ -1,3 +1,0 @@
-name: Annotator
-runtime: python
-description: This stack deploys the Annotator service for processing and annotating data in the Pale Blue Dot infrastructure.

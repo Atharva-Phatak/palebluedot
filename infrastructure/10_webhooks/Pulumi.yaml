@@ -1,3 +1,0 @@
-name: webhooks
-runtime: python
-description: This stack deploys webhooks for the Pale Blue Dot infrastructure, enabling event-driven interactions and integrations with other services.

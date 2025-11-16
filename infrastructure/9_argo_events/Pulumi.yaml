@@ -1,3 +1,0 @@
-name: argo_events
-runtime: python
-description: Pulumi program to deploy Argo Events on Kubernetes

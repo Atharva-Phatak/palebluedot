@@ -1,3 +1,0 @@
-name: argo_workflows
-runtime: python
-description: Pulumi program to deploy Argo workflows on Kubernetes

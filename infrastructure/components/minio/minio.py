@@ -1,8 +1,12 @@
 import pulumi
 import pulumi_kubernetes as k8s
 from infrastructure.helper.infisical_client import get_infiscal_sdk
-from infrastructure.helper.persistent_claims import deploy_persistent_volume_claims
+from infrastructure.components.persistent_claims.pv import (
+    deploy_persistent_volume_claims,
+)
 import pulumi_minio as pm
+from infrastructure.helper.secrets import generate_minio_secret, create_k8s_aws_secret
+from infrastructure.helper.constants import SecretNames, InfrastructureConfig
 
 
 def get_minio_secret(
@@ -207,18 +211,28 @@ def deploy_minio_buckets(
 
 
 def deploy_minio_components(
-    cfg,
+    cfg: InfrastructureConfig,
     provider: k8s.Provider,
     namespace: str,
     depends_on: list = None,
 ):
     depends_on = [] if depends_on is None else depends_on
+    generate_minio_secret(
+        project_id=cfg.infiscal_project_id,
+        environment_slug="dev",
+    )
+    k8s_secret = create_k8s_aws_secret(
+        provider=provider,
+        namespace=namespace,
+        project_id=cfg.infiscal_project_id,
+        depends_on=depends_on,
+    )
     minio_pv_claim = deploy_persistent_volume_claims(
         namespace=namespace,
         provider=provider,
         pv_name=cfg.pv_name,
         pvc_name=cfg.pvc_name,
-        storage_capacity=cfg.mk_storage_capacity,
+        storage_capacity=cfg.minio_storage_capacity,
         storage_path=cfg.storage_path,
         depends_on=depends_on,
     )
@@ -230,20 +244,20 @@ def deploy_minio_components(
         deployment_name=cfg.minio_deployment_name,
         service_name=cfg.minio_service_name,
         pvc_name=minio_pv_claim.metadata["name"],
-        depends_on=depends_on + [minio_pv_claim],
-        access_key_identifier="minio_access_key",
-        secret_key_identifier="minio_secret_key",
+        depends_on=depends_on + [minio_pv_claim] + [k8s_secret],
+        access_key_identifier=SecretNames.MINIO_ACCESS_KEY.value,
+        secret_key_identifier=SecretNames.MINIO_SECRET_KEY.value,
         project_id=cfg.infiscal_project_id,
         environment_slug="dev",
     )
     # Deploy MinIO buckets
     deploy_minio_buckets(
-        access_key_identifier="minio_access_key",
-        secret_key_identifier="minio_secret_key",
+        access_key_identifier=SecretNames.MINIO_ACCESS_KEY.value,
+        secret_key_identifier=SecretNames.MINIO_SECRET_KEY.value,
         infiscal_project_id=cfg.infiscal_project_id,
         environment_slug="dev",
         depends_on=depends_on + [minio_chart, minio_pv_claim],
-        buckets=[cfg.data_bucket, cfg.metaflow_bucket],
+        buckets=[cfg.data_bucket, cfg.zenml_bucket],
         ingress_host=cfg.minio_ingress_host,
     )
     return minio_chart

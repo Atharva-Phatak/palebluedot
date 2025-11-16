@@ -1,0 +1,54 @@
+artifact_store:
+  name: minio_store
+  flavor: s3
+  configuration:
+    path: s3://zenml-bucket
+    client_kwargs:
+      endpoint_url: http://minio-palebluedot.io
+      region_name: us-east-1
+
+orchestrator:
+  name: k8s_orchestrator
+  flavor: kubernetes
+  configuration:
+    kubernetes_context: minikube   
+
+container_registry:
+  name: ghcr
+  flavor: github
+  configuration: 
+    uri: ghcr.io/atharva-phatak
+
+code_repository:
+  name: github_repo
+  flavor: github
+  configuration:
+    owner: Atharva-Phatak
+    repository: palebluedot
+    token: null
+
+alerter:
+  name: slack_alerter
+  flavor: slack
+  configuration:
+    slack_token: null
+    channel_id: null
+
+secrets:
+  github_secret:
+    env_var: GH_TOKEN
+    values:
+      pa_token: null
+  slack_secret:
+    env_var: SLACK_TOKEN
+    values:
+      pa_token: null
+
+
+stack:
+  name: k8s_stack
+  components:
+    orchestrator: k8s_orchestrator
+    artifact_store: minio_store
+    container_registry: ghcr
+    alerter: slack_alerter

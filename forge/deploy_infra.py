@@ -12,6 +12,7 @@ console = Console()
 secret_path: str = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", ".secrets")
 )
+console.print(f"🔐 Loading secrets from: {secret_path}")
 load_dotenv(os.path.join(secret_path, ".env"))
 
 

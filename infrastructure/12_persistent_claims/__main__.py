@@ -8,7 +8,7 @@ import pulumi
 provider = get_k8s_provider()
 cfg = load_config()
 pconfig = pulumi.Config()
-namespace_name = pconfig.require("metaflow_namespace")
+namespace_name = pconfig.require("namespace")
 # Deploy pv that has models
 model_pv_claims = deploy_persistent_volume_claims(
     namespace=namespace_name,

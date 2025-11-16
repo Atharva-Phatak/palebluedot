@@ -1,3 +1,0 @@
-name: metaflow_config
-runtime: python
-description: This stack deploys Metaflow Config for visualizing metrics collected by Prometheus in the Pale Blue Dot infrastructure.

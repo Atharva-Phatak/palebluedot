@@ -17,9 +17,9 @@ minikube_start = start_minikube(
     models_mount_path=cfg.model_storage_path,
 )
 provider = get_k8s_provider(depends_on=[minikube_start])
-metaflow_namespace = create_namespace(
-    namespace="metaflow",
+zenml_namespace = create_namespace(
+    namespace="zenml",
     provider=provider,
     depends_on=[minikube_start],
 )
-pulumi.export("metaflow_namespace", metaflow_namespace.metadata["name"])
+pulumi.export("namespace", zenml_namespace.metadata["name"])

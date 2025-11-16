@@ -7,14 +7,13 @@ forge CLI
 import typer
 from typing import Optional
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
 
-from forge.deploy_pipelines import PipelineDeployer
 from forge.deploy_infra import InfraDeployer
 from forge.trigger_gh_actions import GitHubWorkflowTrigger
 from forge.dependency import DependencyUpdater
 from forge.create_template import create_pipeline
+from forge.register_zenml_stack import ZenMLSetup
 
 app = typer.Typer(
     name="forge",
@@ -23,78 +22,6 @@ app = typer.Typer(
 )
 
 console = Console()
-
-
-@app.command()
-def deploy_pipeline(
-    pipeline_name: str = typer.Argument(..., help="Name of the pipeline to deploy"),
-    profile: Optional[str] = typer.Option(
-        None, "--profile", "-p", help="Metaflow profile to use for deployment"
-    ),
-    namespace: Optional[str] = typer.Option(
-        None, "--namespace", "-n", help="Kubernetes namespace for deployment"
-    ),
-    image: Optional[str] = typer.Option(
-        None, "--image", "-i", help="Docker image to use for the workflow"
-    ),
-    force: bool = typer.Option(
-        False, "--force", "-f", help="Force forging without confirmation"
-    ),
-):
-    """⚡ Forge a Metaflow pipeline into Argo Workflows"""
-    pipeline_deployer = PipelineDeployer()
-
-    console.print(
-        Panel.fit(
-            f"[bold magenta]⚡ Forge: Deploying Metaflow Pipeline: {pipeline_name}[/bold magenta]",
-            border_style="magenta",
-        )
-    )
-
-    pipeline_path = pipeline_deployer.get_pipeline_path(pipeline_name)
-    if not pipeline_path:
-        raise typer.Exit(1)
-
-    success = pipeline_deployer.deploy_to_argo(pipeline_name)
-    if not success:
-        raise typer.Exit(1)
-
-    console.print(f"[green]✅ Successfully forged pipeline: {pipeline_name}[/green]")
-    console.print(f"[blue]Pipeline path: {pipeline_path}[/blue]")
-    if profile:
-        console.print(f"[blue]Using Metaflow profile: {profile}[/blue]")
-    if namespace:
-        console.print(f"[blue]Using Kubernetes namespace: {namespace}[/blue]")
-    if image:
-        console.print(f"[blue]Using Docker image: {image}[/blue]")
-
-
-@app.command()
-def list_pipelines():
-    """📋 List all available pipelines"""
-    console.print(
-        Panel.fit(
-            "[bold cyan]📋 forge: Listing Available Pipelines[/bold cyan]",
-            border_style="cyan",
-        )
-    )
-
-    pipeline_deployer = PipelineDeployer()
-    pipelines = pipeline_deployer.discover_pipelines()
-
-    if not pipelines:
-        console.print("[yellow]No pipelines found in pbd/pipelines/[/yellow]")
-        return
-
-    table = Table(title="Available Pipelines")
-    table.add_column("Pipeline Name", style="cyan")
-    table.add_column("Path", style="dim")
-
-    for pipeline in pipelines:
-        pipeline_path = pipeline_deployer.pipelines_base_path / pipeline / "pipeline.py"
-        table.add_row(pipeline, str(pipeline_path))
-
-    console.print(table)
 
 
 @app.command()
@@ -230,6 +157,26 @@ def scaffold(
         )
     except Exception as e:
         console.print(f"[red]Error creating pipeline template: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command()
+def register_zenml_stack(
+    stack_name: str = typer.Argument(..., help="Name of the ZenML stack"),
+):
+    """🔐 Register ZenML stack components like secrets, artifact store, and orchestrator"""
+    console.print(
+        Panel.fit(
+            "[bold blue]🔐 forge: Registering ZenML Stack Components[/bold blue]",
+            border_style="blue",
+        )
+    )
+    try:
+        zenml_setup = ZenMLSetup(stack_name=stack_name)
+        zenml_setup.setup()
+        console.print("[green]✅ ZenML stack registration complete![/green]")
+    except Exception as e:
+        console.print(f"[red]Error registering ZenML stack: {e}[/red]")
         raise typer.Exit(1)
 
 

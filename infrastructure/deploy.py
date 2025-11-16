@@ -7,7 +7,7 @@ import shutil
 def get_base_path():
     current_file = os.path.abspath(__file__)
     base_path = os.path.abspath(os.path.join(current_file, "..", "..", ".."))
-    infra_base_path = os.path.join(base_path, "PaleBlueDot/infrastructure")
+    infra_base_path = os.path.join(base_path, "palebluedot/infrastructure")
     return infra_base_path
 
 
@@ -46,60 +46,38 @@ def deploy_sequentially():
         path=Path(infra_base_path) / "1_cluster",
     )
     outputs = cluster_stack.outputs()  # ✅ this is a dictionary
-    metaflow_namespace_name = outputs["metaflow_namespace"].value
-
+    zenml_namespace_name = outputs["namespace"].value
+    print(f"✅ Cluster and namespace deployed: {zenml_namespace_name}")
     # Deploy arc runner
     _ = deploy_stack(
         name="7_arc_runner",
         path=Path(infra_base_path) / "7_arc_runner",
     )
-    # Deploy annotator
-    _ = deploy_stack(
-        name="11_annotator",
-        path=Path(infra_base_path) / "11_annotator",
-    )
     # Deploy minio
     _ = deploy_stack(
         name="4_minio",
         path=Path(infra_base_path) / "4_minio",
-        config={"metaflow_namespace": metaflow_namespace_name},
+        config={"namespace": zenml_namespace_name},
     )
     # Deploy postgres
     _ = deploy_stack(
-        name="5_postgres",
-        path=Path(infra_base_path) / "5_postgres",
-        config={"metaflow_namespace": metaflow_namespace_name},
+        name="5_sql",
+        path=Path(infra_base_path) / "5_sql",
+        config={"namespace": zenml_namespace_name},
     )
+    print("✅ MinIO and SQL deployed.")
     # Deploy orchestrator
     _ = deploy_stack(
         name="6_orchestrator",
         path=Path(infra_base_path) / "6_orchestrator",
-        config={"metaflow_namespace": metaflow_namespace_name},
+        config={"namespace": zenml_namespace_name},
     )
-
-    # Deploy argo workflows
-    _ = deploy_stack(
-        name="8_argo_workflows",
-        path=Path(infra_base_path) / "8_argo_workflows",
-        config={"metaflow_namespace": metaflow_namespace_name},
-    )
-    # Deploy argo events
-    _ = deploy_stack(
-        name="9_argo_events",
-        path=Path(infra_base_path) / "9_argo_events",
-        config={"metaflow_namespace": metaflow_namespace_name},
-    )
-    # Deploy webhooks
-    _ = deploy_stack(
-        name="10_webhooks",
-        path=Path(infra_base_path) / "10_webhooks",
-        config={"metaflow_namespace": metaflow_namespace_name},
-    )
+    print("✅ Orchestrator deployed.")
     # Deploy persistent volume claims
     _ = deploy_stack(
         name="12_persistent_claims",
         path=Path(infra_base_path) / "12_persistent_claims",
-        config={"metaflow_namespace": metaflow_namespace_name},
+        config={"namespace": zenml_namespace_name},
     )
 
     # Deploy monitoring components
@@ -114,18 +92,17 @@ def deploy_sequentially():
         path=Path(infra_base_path) / "14_grafana",
         config={"monitoring_namespace": monitoring_namespace},
     )
-    _ = deploy_stack(
-        name="metaflow_config",
-        path=Path(infra_base_path) / "15_metaflow_config",
-        config={"metaflow_namespace": metaflow_namespace_name},
-    )
     deploy_stack(
         name="16_additional_secrets",
         path=Path(infra_base_path) / "16_additional_secrets",
-        config={"metaflow_namespace": metaflow_namespace_name},
+        config={"namespace": zenml_namespace_name},
     )
     print("Cleaning up downloaded charts...")
     charts_path = Path(infra_base_path) / "11_annotator/charts"
+    zenml_charts_path = Path(infra_base_path) / "6_orchestrator/charts"
+    if zenml_charts_path.exists():
+        shutil.rmtree(str(zenml_charts_path))
+        print("✅ ZenML charts cleaned up.")
     if charts_path.exists():
         shutil.rmtree(str(charts_path))
         print("✅ Charts cleaned up.")

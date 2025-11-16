@@ -4,11 +4,12 @@ from infrastructure.helper.infisical_client import get_infiscal_sdk
 import secrets
 import string
 from infrastructure.helper.constants import SecretNames
+import os
 
 
 def generate_password(length: int = 32):
     """Generate password"""
-    chars = string.ascii_letters + string.digits + string.punctuation
+    chars = string.ascii_letters + string.digits
     return "".join(secrets.choice(chars) for _ in range(length))
 
 
@@ -37,22 +38,42 @@ def get_secret(access_key_identifier: str, project_id: str, environment_slug: st
 def create_infiscal_secret(
     project_id: str, environment_slug: str, secret_name: str, secret_value: str
 ):
-    """Method to create secret via infiscal."""
+    """Create a secret via Infisical, only if it doesn't already exist."""
     client = get_infiscal_sdk()
+
+    # Try to fetch the secret first
+    try:
+        existing_secret = client.secrets.get_secret_by_name(
+            secret_name=secret_name,
+            project_id=project_id,
+            environment_slug=environment_slug,
+            secret_path="/",  # same path you would use for creation
+        )
+        if existing_secret:
+            print(f"⚠️ Secret '{secret_name}' already exists. Skipping creation.")
+            return existing_secret.secretValue
+    except Exception:
+        # If secret does not exist, SDK may throw an error. Ignore that.
+        pass
+
+    # Create secret if not found
     _secret = client.secrets.create_secret_by_name(
         secret_name=secret_name,
         project_id=project_id,
         environment_slug=environment_slug,
+        secret_path="/",
         secret_value=secret_value,
     )
+    print(f"✅ Secret '{secret_name}' created.")
     return _secret.secretValue
 
 
 def generate_minio_secret(project_id: str, environment_slug: str):
+    """Generate MinIO access and secret keys and store them in Infisical."""
     minio_access_key = generate_sensible_access_key(
         app_name="minio", user_name="atharva"
     )
-    minio_secret_key = generate_minio_secret()
+    minio_secret_key = generate_password()
     minio_access_key = create_infiscal_secret(
         project_id=project_id,
         environment_slug=environment_slug,
@@ -65,9 +86,64 @@ def generate_minio_secret(project_id: str, environment_slug: str):
         secret_name=SecretNames.MINIO_SECRET_KEY.value,
         secret_value=minio_secret_key,
     )
+    return minio_access_key, minio_secret_key
 
 
-def create_aws_secret(
+def generate_mysql_secret(project_id: str, environment_slug: str):
+    mysql_user = generate_sensible_access_key(app_name="mysql", user_name="zenml")
+    mysql_password = generate_password()
+    mysql_user = create_infiscal_secret(
+        project_id=project_id,
+        environment_slug=environment_slug,
+        secret_name=SecretNames.MYSQL_USER.value,
+        secret_value=mysql_user,
+    )
+    mysql_password = create_infiscal_secret(
+        project_id=project_id,
+        environment_slug=environment_slug,
+        secret_name=SecretNames.MYSQL_PASSWORD.value,
+        secret_value=mysql_password,
+    )
+    return mysql_user, mysql_password
+
+
+def generate_slack_secret(project_id: str, environment_slug: str):
+    slack_token = os.getenv("SLACK_TOKEN")
+    slack_token = create_infiscal_secret(
+        project_id=project_id,
+        environment_slug=environment_slug,
+        secret_name=SecretNames.SLACK_TOKEN.value,
+        secret_value=slack_token,
+    )
+    return slack_token
+
+
+def generate_gh_secret(project_id: str, environment_slug: str):
+    gh_token = os.getenv("GH_TOKEN")
+    gh_token = create_infiscal_secret(
+        project_id=project_id,
+        environment_slug=environment_slug,
+        secret_name="gh_token",
+        secret_value=gh_token,
+    )
+    return gh_token
+
+
+def generate_zenml_jwt_secret(
+    project_id: str,
+    environment_slug: str,
+):
+    jwt_secret = secrets.token_hex(32)
+    jwt_secret = create_infiscal_secret(
+        project_id=project_id,
+        environment_slug=environment_slug,
+        secret_name=SecretNames.ZENML_JWT_SECRET.value,
+        secret_value=jwt_secret,
+    )
+    return jwt_secret
+
+
+def create_k8s_aws_secret(
     provider: k8s.Provider,
     namespace: str,
     project_id: str,
@@ -99,15 +175,14 @@ def create_aws_secret(
     return aws_credentials_secret
 
 
-def create_gh_secret(
+def create_k8s_gh_secret(
     namespace: str,
     project_id: str,
     depends_on: list,
     k8s_provider: k8s.Provider,
     environment_slug: str = "dev",
 ):
-    github_token = get_secret(
-        access_key_identifier="gh_token",
+    gh_token = generate_gh_secret(
         project_id=project_id,
         environment_slug=environment_slug,
     )
@@ -117,49 +192,57 @@ def create_gh_secret(
             "name": "gha-rs-github-secret",
             "namespace": namespace,
         },
-        string_data={"github_token": github_token},
+        string_data={"github_token": gh_token},
         opts=pulumi.ResourceOptions(provider=k8s_provider),
     )
     return github_secret
 
 
-def create_postgres_secret(
+def create_k8s_mysql_secret(
     namespace: str,
     project_id: str,
     environment_slug: str,
-    access_key_identifier: str,
     k8s_provider: k8s.Provider,
     depends_on: list = None,
 ):
-    postgres_password = get_secret(
+    mysql_password = get_secret(
         project_id=project_id,
         environment_slug=environment_slug,
-        access_key_identifier=access_key_identifier,
+        access_key_identifier=SecretNames.MYSQL_PASSWORD.value,
+    )
+    mysql_user = get_secret(
+        project_id=project_id,
+        environment_slug=environment_slug,
+        access_key_identifier=SecretNames.MYSQL_USER.value,
     )
 
-    postgres_secret = k8s.core.v1.Secret(
-        "metaflow-db-secret",
+    mysql_secret = k8s.core.v1.Secret(
+        "mysql-secret",
         metadata={
-            "name": "metaflow-db-secret",
+            "name": "mysql-secret",
             "namespace": namespace,  # Same namespace as the Helm chart
         },
-        string_data={"postgres-password": postgres_password},
+        string_data={
+            "mysql-password": mysql_password,
+            "mysql-root-password": mysql_password,
+            "mysql-replication-password": mysql_password,
+            "mysql-user": mysql_user,
+        },
         opts=pulumi.ResourceOptions(
             provider=k8s_provider, depends_on=depends_on if depends_on else []
         ),
     )
-    return postgres_secret
+    return mysql_secret
 
 
-def create_slack_secret(
+def create_k8s_slack_secret(
     namespace: str,
     depends_on: list,
     project_id: str,
     k8s_provider: k8s.Provider,
     environment_slug: str = "dev",
 ):
-    slack_token = get_secret(
-        access_key_identifier="slack_token",
+    slack_token = generate_slack_secret(
         project_id=project_id,
         environment_slug=environment_slug,
     )
@@ -173,68 +256,3 @@ def create_slack_secret(
         opts=pulumi.ResourceOptions(provider=k8s_provider, depends_on=depends_on),
     )
     return slack_secret
-
-
-def create_mistral_api_secret(
-    namespace: str,
-    depends_on: list,
-    project_id: str,
-    k8s_provider: k8s.Provider,
-    environment_slug: str = "dev",
-):
-    mistral_token = get_secret(
-        access_key_identifier="MISTRAL_TOKEN",
-        project_id=project_id,
-        environment_slug=environment_slug,
-    )
-    mistral_secret = k8s.core.v1.Secret(
-        "mistral-secret",
-        metadata={
-            "name": "mistral-secret",
-            "namespace": namespace,
-        },
-        string_data={"MISTRAL_TOKEN": mistral_token},
-        opts=pulumi.ResourceOptions(provider=k8s_provider, depends_on=depends_on),
-    )
-    return mistral_secret
-
-
-def create_argilla_secret(
-    namespace: str,
-    argilla_access_key_identifier: str,
-    argilla_secret_key_identifier: str,
-    argilla_api_key_identifier: str,
-    k8s_provider: k8s.Provider,
-    project_id: str,
-    depends_on: list = None,
-    environment_slug: str = "dev",
-):
-    argilla_access_key = get_secret(
-        access_key_identifier=argilla_access_key_identifier,
-        project_id=project_id,
-        environment_slug=environment_slug,
-    )
-    argilla_secret_key = get_secret(
-        access_key_identifier=argilla_secret_key_identifier,
-        project_id=project_id,
-        environment_slug=environment_slug,
-    )
-    argilla_api_key = get_secret(
-        access_key_identifier=argilla_api_key_identifier,
-        project_id=project_id,
-        environment_slug=environment_slug,
-    )
-    argilla_secret = k8s.core.v1.Secret(
-        "argilla-auth-secret",
-        metadata={
-            "name": "argilla-auth-secret",
-            "namespace": namespace,
-        },
-        string_data={
-            "argilla_username": argilla_access_key,
-            "argilla_password": argilla_secret_key,
-            "argilla_apiKey": argilla_api_key,
-        },
-        opts=pulumi.ResourceOptions(provider=k8s_provider, depends_on=depends_on),
-    )
-    return argilla_secret
