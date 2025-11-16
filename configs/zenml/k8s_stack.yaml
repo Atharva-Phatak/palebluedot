@@ -11,12 +11,12 @@ orchestrator:
   name: k8s_orchestrator
   flavor: kubernetes
   configuration:
-    kubernetes_context: minikube   
+    kubernetes_context: minikube
 
 container_registry:
   name: ghcr
   flavor: github
-  configuration: 
+  configuration:
     uri: ghcr.io/atharva-phatak
 
 code_repository:
