@@ -4,6 +4,7 @@ __pycache__/
 *$py.class
 .vscode
 .secrets/
+data/
 infrastructure/11_annotator/charts
 # Pulumi stack files (contain sensitive data and environment-specific config)
 Pulumi.*.yaml
@@ -12,6 +13,7 @@ Pulumi.*.yaml
 .pulumi/
 .idea/
 pbd/data_collection
+pbd/pipelines/data_prep/notebooks
 # Jupyter notebooks
 *.ipynb
 .ipynb_checkpoints/
