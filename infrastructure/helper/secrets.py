@@ -256,3 +256,27 @@ def create_k8s_slack_secret(
         opts=pulumi.ResourceOptions(provider=k8s_provider, depends_on=depends_on),
     )
     return slack_secret
+
+
+def create_k8s_wandb_secret(
+    namespace: str,
+    depends_on: list,
+    project_id: str,
+    k8s_provider: k8s.Provider,
+    environment_slug: str = "dev",
+):
+    wandb_key = get_secret(
+        access_key_identifier="wb_api",
+        project_id=project_id,
+        environment_slug=environment_slug,
+    )
+    wandb_secret = k8s.core.v1.Secret(
+        "wandb-secret",
+        metadata={
+            "name": "wandb-secret",
+            "namespace": namespace,
+        },
+        string_data={"WANDB_API": wandb_key},
+        opts=pulumi.ResourceOptions(provider=k8s_provider, depends_on=depends_on),
+    )
+    return wandb_secret

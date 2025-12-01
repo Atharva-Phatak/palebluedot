@@ -31,6 +31,13 @@ forge = "forge.__main__:app"
 [tool.uv]
 package = true
 
+[tool.uv.workspace]
+members = [
+    "notebooks",
+    "pbd/pipelines/data_prep",
+    "pbd/pipelines/pretrain",
+]
+
 [build-system]
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"

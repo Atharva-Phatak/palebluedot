@@ -1,8 +1,9 @@
 from pathlib import Path
 from typing import Optional
+from pbd.pipelines.pretrain.steps.callbacks.base import Callback
 
 
-class CheckpointCallback:
+class CheckpointCallback(Callback):
     """Saves model checkpoints at specified intervals with full state preservation."""
 
     def __init__(

@@ -1,33 +1,25 @@
-from typing import Optional
 import wandb
+from pbd.pipelines.pretrain.steps.callbacks.base import Callback
+import os
 
 
-class WandbCallback:
+class WandbCallback(Callback):
     """Logs metrics to Weights & Biases with proper accelerate integration."""
 
     def __init__(
         self,
-        project: str,
-        name: Optional[str] = None,
-        config: Optional[dict] = None,
-        log_model: bool = False,
-        **wandb_kwargs,
     ):
-        self.project = project
-        self.name = name
-        self.config = config
-        self.log_model = log_model
-        self.wandb_kwargs = wandb_kwargs
+        _key = os.getenv("WANDB_API")
+        wandb.login(key=_key)
         self.run = None
 
     def on_train_start(self, trainer):
         if trainer.acc.is_main_process:
             self.run = wandb.init(
-                project=self.project,
-                name=self.name,
-                config=self.config,
+                project=trainer.trainer_state.wandb_config.project,
+                name=trainer.trainer_state.wandb_config.name,
+                config=trainer.trainer_state.dict(),
                 resume="allow",
-                **self.wandb_kwargs,
             )
             trainer.logger.info(f"W&B run initialized: {self.run.name}")
 
@@ -37,19 +29,10 @@ class WandbCallback:
     def on_step_end(self, trainer):
         if trainer.acc.is_main_process:
             # Get all metrics
-            metrics = trainer.metrics.get_all_metrics()
-            metrics["train/loss_ema"] = trainer.loss_ema
+            metrics = trainer.metrics.tracked_metrics
             metrics["train/global_step"] = trainer.global_step
 
-            # Rename for W&B
-            wandb_metrics = {
-                f"train/{k}"
-                if not k.startswith(("train/", "eval/", "system/"))
-                else k: v
-                for k, v in metrics.items()
-            }
-
-            wandb.log(wandb_metrics, step=trainer.global_step)
+            wandb.log(metrics, step=trainer.global_step)
 
     def on_exception(self, trainer, e):
         """Log exception to W&B and mark run as failed."""
@@ -63,7 +46,7 @@ class WandbCallback:
 
     def on_train_end(self, trainer):
         if trainer.acc.is_main_process:
-            if self.log_model:
+            if trainer.trainer_state.wandb_config.log_model:
                 trainer.logger.info("Saving final model to W&B")
                 wandb.save("model_final.pt")
             wandb.finish()
